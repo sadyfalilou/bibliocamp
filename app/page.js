@@ -45,8 +45,15 @@ export default function Home() {
   const [listings, setListings] = useState([])
   const [search, setSearch] = useState('')
   const [user, setUser] = useState(null)
+  const [userProfile, setUserProfile] = useState(null)
+  const [profilesMap, setProfilesMap] = useState({})
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState('acheter') // 'acheter' | 'vendre' | 'mes-annonces'
+  const [selectedBook, setSelectedBook] = useState(null)
+  const [relatedListings, setRelatedListings] = useState([])
+  const [filterMethod, setFilterMethod] = useState('all')
+  const [expandedSeller, setExpandedSeller] = useState(null)
+  const [showSellerBooks, setShowSellerBooks] = useState(null) // id du vendeur dont on affiche les livres
   const [phone, setPhone] = useState('')
   const [countryCode, setCountryCode] = useState('CA')
   const [phoneError, setPhoneError] = useState('')
@@ -63,7 +70,22 @@ export default function Home() {
       .from('listings')
       .select('*')
       .order('created_at', { ascending: false })
-    if (!error) setListings(data)
+    if (!error && data) {
+      setListings(data)
+      // Charger les profils des vendeurs
+      const userIds = [...new Set(data.map(l => l.user_id).filter(Boolean))]
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, first_name, last_name, campus, institution')
+          .in('id', userIds)
+        if (profiles) {
+          const map = {}
+          profiles.forEach(p => { map[p.id] = p })
+          setProfilesMap(map)
+        }
+      }
+    }
   }
 
   useEffect(() => {
@@ -74,6 +96,13 @@ export default function Home() {
         setUser(data.user)
         const savedPhone = data.user?.user_metadata?.phone_verified
         if (savedPhone) setPhoneSaved(true)
+        // Charger le profil de l'utilisateur connecté
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', data.user.id)
+          .single()
+        if (profile) setUserProfile(profile)
       } catch (e) {
         window.location.href = '/login'
         return
@@ -121,9 +150,15 @@ export default function Home() {
     // Backup : si Supabase ne répond pas en 10s, avance quand même
     const backup = setTimeout(() => advance(null), 10000)
 
-    supabase.auth.updateUser({ phone: formatted })
-      .then(({ error }) => { clearTimeout(backup); advance(error) })
-      .catch(() => { clearTimeout(backup); advance(null) })
+    supabase.auth.signInWithOtp({ phone: formatted, options: { shouldCreateUser: false } })
+      .then(({ error }) => {
+        clearTimeout(backup)
+        advance(error)
+      })
+      .catch(() => {
+        clearTimeout(backup)
+        advance(null)
+      })
   }
 
   const handleVerifyOtp = async () => {
@@ -135,7 +170,7 @@ export default function Home() {
     const formatted = `${dialCode}${digits}`
     try {
       const result = await Promise.race([
-        supabase.auth.verifyOtp({ phone: formatted, token: otp, type: 'phone_change' }),
+        supabase.auth.verifyOtp({ phone: formatted, token: otp, type: 'sms' }),
         new Promise(resolve => setTimeout(() => resolve({ error: null }), 6000))
       ])
       if (result?.error) {
@@ -161,6 +196,16 @@ export default function Home() {
   )
 
   const myListings = listings?.filter(item => item.user_id === user?.id)
+
+  useEffect(() => {
+    if (!selectedBook) { setRelatedListings([]); return }
+    const related = listings.filter(item => {
+      if (item.id === selectedBook.id) return false
+      if (selectedBook.isbn && item.isbn) return item.isbn === selectedBook.isbn
+      return item.title.toLowerCase() === selectedBook.title.toLowerCase()
+    })
+    setRelatedListings(related)
+  }, [selectedBook, listings])
 
   if (loading) return (
     <div style={{
@@ -188,14 +233,19 @@ export default function Home() {
         }}>
           📚 BIBLIOCAMP
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <span style={{ color: '#a0aec0', fontSize: 13 }}>{user?.email}</span>
-          <div style={{
-            width: 34, height: 34, background: '#00c9a7', borderRadius: '50%',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            color: 'white', fontWeight: 700, fontSize: 14
-          }}>
-            {user?.email?.[0]?.toUpperCase()}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <span style={{ color: '#a0aec0', fontSize: 13 }}>
+            {userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name || ''}`.trim() : user?.email}
+          </span>
+          <div
+            onClick={() => router.push('/profile')}
+            title="Mon profil"
+            style={{
+              width: 34, height: 34, background: '#00c9a7', borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer'
+            }}>
+            {(userProfile?.first_name || user?.email)?.[0]?.toUpperCase()}
           </div>
           <button onClick={handleLogout} style={{
             background: 'transparent', color: '#a0aec0',
@@ -266,6 +316,23 @@ export default function Home() {
               onMouseLeave={e => e.target.style.background = '#1a2e4a'}
             >
               + Publier un manuel
+            </button>
+
+            <div style={{ height: 1, background: '#e2e8f0', margin: '12px 0' }} />
+
+            <button
+              onClick={() => router.push('/profile')}
+              style={{
+                width: '100%', padding: '10px',
+                background: 'transparent', color: '#718096',
+                border: '1px solid #e2e8f0', borderRadius: 10,
+                fontWeight: 600, fontSize: 13, cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+              }}
+              onMouseEnter={e => { e.currentTarget.style.borderColor = '#00c9a7'; e.currentTarget.style.color = '#00c9a7' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#718096' }}
+            >
+              👤 Mon profil
             </button>
           </div>
         </aside>
@@ -357,7 +424,12 @@ export default function Home() {
                         )}
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, color: '#00a88a', fontSize: 15, marginBottom: 2 }}>
+                        <div
+                          onClick={() => setSelectedBook(item)}
+                          style={{ fontWeight: 700, color: '#00a88a', fontSize: 15, marginBottom: 2, cursor: 'pointer' }}
+                          onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                          onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+                        >
                           {item.title}
                         </div>
                         {item.authors && (
@@ -378,8 +450,26 @@ export default function Home() {
                         {item.description && (
                           <div style={{ fontSize: 13, color: '#a0aec0', marginTop: 2 }}>{item.description}</div>
                         )}
-                        <div style={{ fontSize: 12, color: '#b0bec5', marginTop: 4 }}>
-                          {timeAgo(item.created_at)}
+                        {(() => {
+                          const p = profilesMap[item.user_id]
+                          const name = p?.first_name ? `${p.first_name} ${p.last_name || ''}`.trim() : item.campus
+                          const sub = p?.institution || item.campus
+                          if (!name && !sub) return null
+                          return (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
+                              <div style={{ width: 20, height: 20, background: 'linear-gradient(135deg,#1a2e4a,#00c9a7)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 9, color: 'white', fontWeight: 700, flexShrink: 0 }}>
+                                {(name || '?')[0].toUpperCase()}
+                              </div>
+                              <span style={{ fontSize: 12, fontWeight: 600, color: '#4a5568' }}>{name}</span>
+                              {sub && <span style={{ fontSize: 11, color: '#a0aec0' }}>· {sub}</span>}
+                            </div>
+                          )
+                        })()}
+                        <div style={{ display: 'flex', gap: 5, marginTop: 4, alignItems: 'center', flexWrap: 'wrap' }}>
+                          {item.meet_campus && <span style={{ background: '#ede9fe', color: '#6c63ff', fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 20 }}>🏫</span>}
+                          {item.meet_city && <span style={{ background: '#fef3c7', color: '#d97706', fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 20 }}>🏙️</span>}
+                          {item.post && <span style={{ background: '#dbeafe', color: '#2563eb', fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 20 }}>📦</span>}
+                          <span style={{ fontSize: 11, color: '#b0bec5' }}>{timeAgo(item.created_at)}</span>
                         </div>
                       </div>
                       <div style={{ textAlign: 'right', flexShrink: 0 }}>
@@ -687,6 +777,281 @@ export default function Home() {
 
         </main>
       </div>
+
+      {/* ===== SLIDE-OVER ===== */}
+      {selectedBook && (() => {
+        const allSellers = [selectedBook, ...relatedListings].sort((a, b) => a.price - b.price)
+        const filteredSellers = allSellers.filter(s => {
+          if (filterMethod === 'campus') return s.meet_campus
+          if (filterMethod === 'city') return s.meet_city
+          if (filterMethod === 'post') return s.post
+          return true
+        })
+        return (
+        <>
+          {/* Overlay */}
+          <div
+            onClick={() => { setSelectedBook(null); setFilterMethod('all'); setExpandedSeller(null) }}
+            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200 }}
+          />
+
+          {/* Panneau */}
+          <div style={{
+            position: 'fixed', top: 0, right: 0,
+            width: 500, maxWidth: '100vw', height: '100vh',
+            background: '#f5f7fa', zIndex: 201,
+            boxShadow: '-8px 0 40px rgba(0,0,0,0.15)',
+            display: 'flex', flexDirection: 'column',
+            fontFamily: "'Segoe UI', sans-serif"
+          }}>
+
+            {/* ── ZONE HAUTE : infos livre ── */}
+            <div style={{ background: 'white', borderBottom: '2px solid #e2e8f0', flexShrink: 0 }}>
+
+              {/* Header */}
+              <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f0f4f8' }}>
+                <div style={{ fontSize: 12, color: '#a0aec0' }}>Manuels / <strong style={{ color: '#1a2e4a' }}>Détail</strong></div>
+                <button onClick={() => { setSelectedBook(null); setFilterMethod('all'); setExpandedSeller(null) }} style={{
+                  background: '#f0f4f8', border: 'none', borderRadius: '50%', width: 30, height: 30,
+                  cursor: 'pointer', fontSize: 16, color: '#718096'
+                }}>×</button>
+              </div>
+
+              {/* Livre principal */}
+              <div style={{ padding: '16px 20px', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
+                {selectedBook.image_url ? (
+                  <img src={selectedBook.image_url} alt={selectedBook.title} style={{ width: 80, height: 100, objectFit: 'cover', borderRadius: 8, flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }} />
+                ) : (
+                  <div style={{ width: 80, height: 100, background: 'linear-gradient(135deg,#1a2e4a,#0d4f6b)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, flexShrink: 0 }}>📖</div>
+                )}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <h2 style={{ fontSize: 17, fontWeight: 800, color: '#1a2e4a', margin: '0 0 6px', lineHeight: 1.3 }}>{selectedBook.title}</h2>
+                  {selectedBook.authors && <div style={{ fontSize: 13, color: '#718096', marginBottom: 3 }}>✍️ {selectedBook.authors}</div>}
+                  {selectedBook.isbn && (
+                    <div style={{ fontSize: 12, color: '#718096', marginBottom: 6 }}>
+                      ISBN <span style={{ color: '#00a88a', fontWeight: 600 }}>{selectedBook.isbn}</span>
+                    </div>
+                  )}
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {selectedBook.course_code && <span style={{ background: '#e6f9f5', color: '#00a88a', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>{selectedBook.course_code}</span>}
+                  </div>
+                </div>
+              </div>
+
+              {/* Bouton Vendre mon exemplaire */}
+              <div style={{ padding: '0 20px 16px' }}>
+                <button
+                  onClick={() => { setSelectedBook(null); router.push('/create') }}
+                  style={{
+                    width: '100%', padding: '10px',
+                    background: 'white', color: '#00a88a',
+                    border: '2px solid #00c9a7', borderRadius: 8,
+                    fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = '#f0fdf9' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'white' }}
+                >
+                  💰 Vendre mon exemplaire de ce manuel
+                </button>
+              </div>
+            </div>
+
+            {/* ── ZONE BASSE : tous les vendeurs ── */}
+            <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
+
+              {/* Titre + filtres */}
+              <div style={{ marginBottom: 14 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a', marginBottom: 8 }}>
+                  {allSellers.length} vendeur{allSellers.length > 1 ? 's' : ''} pour ce manuel · trié par prix
+                </div>
+                <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                  {[
+                    { key: 'all', label: 'Tous' },
+                    { key: 'campus', label: '🏫 Campus' },
+                    { key: 'city', label: '🏙️ Ville' },
+                    { key: 'post', label: '📦 Postal' },
+                  ].map(f => (
+                    <button key={f.key} onClick={() => setFilterMethod(f.key)} style={{
+                      padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                      cursor: 'pointer', border: 'none',
+                      background: filterMethod === f.key ? '#1a2e4a' : '#e2e8f0',
+                      color: filterMethod === f.key ? 'white' : '#4a5568'
+                    }}>{f.label}</button>
+                  ))}
+                </div>
+              </div>
+
+              {filteredSellers.length === 0 ? (
+                <div style={{ textAlign: 'center', color: '#a0aec0', padding: '30px', fontSize: 13 }}>
+                  Aucun vendeur avec cette méthode
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                  {filteredSellers.map(s => {
+                    const isOpen = expandedSeller === s.id
+                    const savings = s.original_price > 0 && s.original_price > s.price
+                      ? Math.round(((s.original_price - s.price) / s.original_price) * 100)
+                      : null
+                    return (
+                      <div key={s.id} style={{
+                        background: 'white', borderRadius: 12,
+                        border: isOpen ? '2px solid #00c9a7' : '1px solid #e2e8f0',
+                        overflow: 'hidden', transition: 'border-color 0.15s'
+                      }}>
+                        {/* Ligne compacte — toujours visible */}
+                        <div
+                          style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
+                          onClick={() => setExpandedSeller(isOpen ? null : s.id)}
+                        >
+                          <div style={{ flex: 1 }}>
+                            <div style={{ fontWeight: 700, color: '#1a2e4a', fontSize: 13 }}>
+                              {(() => {
+                                const p = profilesMap[s.user_id]
+                                return p?.first_name ? `${p.first_name} ${p.last_name || ''}`.trim() : (s.campus || 'Vendeur')
+                              })()}
+                            </div>
+                            {(() => {
+                              const p = profilesMap[s.user_id]
+                              const inst = p?.institution || s.campus
+                              return inst ? <div style={{ fontSize: 11, color: '#a0aec0' }}>🏫 {inst}</div> : null
+                            })()}
+                            <div style={{ display: 'flex', gap: 4, marginTop: 3, flexWrap: 'wrap', alignItems: 'center' }}>
+                              {s.meet_campus && <span style={{ background: '#ede9fe', color: '#6c63ff', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 600 }}>🏫 Campus</span>}
+                              {s.meet_city && <span style={{ background: '#fef3c7', color: '#d97706', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 600 }}>🏙️ Ville</span>}
+                              {s.post && <span style={{ background: '#dbeafe', color: '#2563eb', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 600 }}>📦 Postal</span>}
+                              {s.description && <span style={{ fontSize: 10, color: '#a0aec0' }}>· {s.description}</span>}
+                            </div>
+                          </div>
+                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                            <div style={{ fontSize: 18, fontWeight: 900, color: '#1a2e4a' }}>{s.price} $</div>
+                            {savings && <span style={{ background: '#00c9a7', color: 'white', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 700 }}>-{savings}%</span>}
+                          </div>
+                          <div style={{ color: '#a0aec0', fontSize: 14, flexShrink: 0 }}>{isOpen ? '▲' : '▼'}</div>
+                        </div>
+
+                        {/* Détails expandés */}
+                        {isOpen && (
+                          <div style={{ padding: '0 14px 14px', borderTop: '1px solid #f0f4f8' }}>
+                            <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr', gap: '8px 12px', margin: '12px 0', fontSize: 13 }}>
+                              {s.isbn && <><span style={{ color: '#a0aec0', fontWeight: 600 }}>ISBN</span><span style={{ color: '#00a88a', fontWeight: 600 }}>{s.isbn}</span></>}
+                              <span style={{ color: '#a0aec0', fontWeight: 600 }}>Tu paies</span>
+                              <span>
+                                <strong style={{ color: '#1a2e4a', fontSize: 16 }}>{s.price} $</strong>
+                                {savings && <span style={{ marginLeft: 8, background: '#00c9a7', color: 'white', borderRadius: 20, padding: '2px 8px', fontSize: 11, fontWeight: 700 }}>-{savings}%</span>}
+                              </span>
+                              {s.original_price > 0 && <><span style={{ color: '#a0aec0', fontWeight: 600 }}>Prix neuf</span><span style={{ color: '#a0aec0', textDecoration: 'line-through' }}>{s.original_price} $</span></>}
+                              {s.description && <><span style={{ color: '#a0aec0', fontWeight: 600 }}>État</span><span style={{ color: '#1a2e4a' }}>{s.description}</span></>}
+                              {(() => {
+                                const p = profilesMap[s.user_id]
+                                const name = p?.first_name ? `${p.first_name} ${p.last_name || ''}`.trim() : null
+                                const inst = p?.institution || null
+                                return <>
+                                  {name && <><span style={{ color: '#a0aec0', fontWeight: 600 }}>Vendeur</span><span style={{ color: '#1a2e4a', fontWeight: 600 }}>{name}</span></>}
+                                  {inst && <><span style={{ color: '#a0aec0', fontWeight: 600 }}>Institution</span><span style={{ color: '#1a2e4a' }}>{inst}</span></>}
+                                  {s.campus && <><span style={{ color: '#a0aec0', fontWeight: 600 }}>Campus</span><span style={{ color: '#1a2e4a' }}>{s.campus}</span></>}
+                                </>
+                              })()}
+                              <span style={{ color: '#a0aec0', fontWeight: 600 }}>Publié</span><span style={{ color: '#718096' }}>{timeAgo(s.created_at)}</span>
+                              <span style={{ color: '#a0aec0', fontWeight: 600 }}>Transaction</span>
+                              <span style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                                {s.meet_campus && <span style={{ background: '#ede9fe', color: '#6c63ff', borderRadius: 20, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>🏫 Campus</span>}
+                                {s.meet_city && <span style={{ background: '#fef3c7', color: '#d97706', borderRadius: 20, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>🏙️ En ville</span>}
+                                {s.post && <span style={{ background: '#dbeafe', color: '#2563eb', borderRadius: 20, padding: '2px 8px', fontSize: 11, fontWeight: 600 }}>📦 Postal</span>}
+                              </span>
+                            </div>
+
+                            {/* Autres annonces du vendeur — toggle */}
+                            {(() => {
+                              const otherBooks = listings.filter(l => l.user_id === s.user_id && l.id !== s.id)
+                              if (otherBooks.length === 0) return null
+                              const open = showSellerBooks === s.id
+                              return (
+                                <div style={{ marginBottom: 12 }}>
+                                  <button
+                                    onClick={() => setShowSellerBooks(open ? null : s.id)}
+                                    style={{
+                                      width: '100%', padding: '10px 14px',
+                                      background: open ? '#1a2e4a' : '#f0f4f8',
+                                      color: open ? 'white' : '#1a2e4a',
+                                      border: 'none', borderRadius: 8,
+                                      fontWeight: 700, fontSize: 13, cursor: 'pointer',
+                                      display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+                                    }}
+                                  >
+                                    <span>📚 {otherBooks.length} autre{otherBooks.length > 1 ? 's' : ''} annonce{otherBooks.length > 1 ? 's' : ''} de ce vendeur</span>
+                                    <span style={{ fontSize: 16 }}>{open ? '▲' : '▼'}</span>
+                                  </button>
+
+                                  {open && (
+                                    <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
+                                      {otherBooks.map(ob => (
+                                        <div key={ob.id}
+                                          onClick={() => { setSelectedBook(ob); setExpandedSeller(null); setShowSellerBooks(null) }}
+                                          style={{
+                                            display: 'flex', alignItems: 'center', gap: 10,
+                                            background: 'white', borderRadius: 8, padding: '10px 12px',
+                                            border: '1px solid #e2e8f0', cursor: 'pointer',
+                                            transition: 'all 0.15s'
+                                          }}
+                                          onMouseEnter={e => { e.currentTarget.style.borderColor = '#00c9a7'; e.currentTarget.style.background = '#f0fdf9' }}
+                                          onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.background = 'white' }}
+                                        >
+                                          {ob.image_url ? (
+                                            <img src={ob.image_url} style={{ width: 36, height: 44, objectFit: 'cover', borderRadius: 5, flexShrink: 0 }} />
+                                          ) : (
+                                            <div style={{ width: 36, height: 44, background: 'linear-gradient(135deg,#1a2e4a,#0d4f6b)', borderRadius: 5, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16, flexShrink: 0 }}>📖</div>
+                                          )}
+                                          <div style={{ flex: 1, minWidth: 0 }}>
+                                            <div style={{ fontSize: 12, fontWeight: 700, color: '#00a88a', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ob.title}</div>
+                                            {ob.authors && <div style={{ fontSize: 10, color: '#a0aec0' }}>{ob.authors}</div>}
+                                            {ob.description && <div style={{ fontSize: 10, color: '#718096' }}>{ob.description}</div>}
+                                          </div>
+                                          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                            <div style={{ fontSize: 14, fontWeight: 800, color: '#1a2e4a' }}>{ob.price} $</div>
+                                            {ob.original_price > 0 && ob.original_price > ob.price && (
+                                              <span style={{ background: '#00c9a7', color: 'white', borderRadius: 20, padding: '1px 5px', fontSize: 9, fontWeight: 700 }}>
+                                                -{Math.round(((ob.original_price - ob.price) / ob.original_price) * 100)}%
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  )}
+                                </div>
+                              )
+                            })()}
+
+                            <a href={`mailto:?subject=BiblioCamp - ${s.title}&body=Bonjour, je suis intéressé par votre manuel "${s.title}" à ${s.price}$.`} style={{ textDecoration: 'none' }}>
+                              <button style={{
+                                width: '100%', padding: '10px',
+                                background: '#1a2e4a', color: 'white', border: 'none',
+                                borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer'
+                              }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#00c9a7'}
+                                onMouseLeave={e => e.currentTarget.style.background = '#1a2e4a'}
+                              >✉️ Contacter ce vendeur</button>
+                            </a>
+
+                            {user?.id === s.user_id && (
+                              <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
+                                <button onClick={() => { setSelectedBook(null); router.push(`/edit/${s.id}`) }} style={{ flex: 1, padding: '8px', background: '#f0fdf9', color: '#00c9a7', border: '1px solid #00c9a7', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>✏️ Modifier</button>
+                                <button onClick={() => { handleDelete(s.id); setSelectedBook(null) }} style={{ flex: 1, padding: '8px', background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>🗑️ Supprimer</button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </>
+        )
+      })()}
     </div>
   )
 }

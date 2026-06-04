@@ -1,12 +1,13 @@
 'use client'
 
-import { useState, useRef } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
 
 const ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
 
 export default function Create() {
+  const [userId, setUserId] = useState(null)
   const [title, setTitle] = useState('')
   const [authors, setAuthors] = useState('')
   const [isbn, setIsbn] = useState('')
@@ -14,11 +15,21 @@ export default function Create() {
   const [price, setPrice] = useState('')
   const [originalPrice, setOriginalPrice] = useState('')
   const [etat, setEtat] = useState('')
+  const [campus, setCampus] = useState('')
+  const [meetCampus, setMeetCampus] = useState(false)
+  const [meetCity, setMeetCity] = useState(false)
+  const [post, setPost] = useState(false)
   const [image, setImage] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const fileInputRef = useRef(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) setUserId(session.user.id)
+    })
+  }, [])
 
   const savingsPercent = price && originalPrice && Number(originalPrice) > 0
     ? Math.round(((Number(originalPrice) - Number(price)) / Number(originalPrice)) * 100)
@@ -45,8 +56,6 @@ export default function Create() {
       imageUrl = data.publicUrl
     }
 
-    const { data: { user } } = await supabase.auth.getUser()
-
     const { error } = await supabase.from('listings').insert([{
       title,
       authors,
@@ -55,8 +64,12 @@ export default function Create() {
       price: Number(price),
       original_price: originalPrice ? Number(originalPrice) : null,
       description: etat,
+      campus,
+      meet_campus: meetCampus,
+      meet_city: meetCity,
+      post,
       image_url: imageUrl,
-      user_id: user?.id
+      user_id: userId
     }])
 
     setLoading(false)
@@ -215,6 +228,53 @@ export default function Create() {
                       }}
                     >
                       {e}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* CAMPUS */}
+              <div style={{ marginTop: 18 }}>
+                <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
+                  Campus / Université
+                </label>
+                <input
+                  placeholder="ex: UQAM, HEC Montréal, McGill, Concordia..."
+                  value={campus}
+                  onChange={e => setCampus(e.target.value)}
+                  style={{
+                    width: '100%', padding: '11px 14px',
+                    border: '1px solid #cbd5e0', borderRadius: 8,
+                    fontSize: 15, outline: 'none', boxSizing: 'border-box'
+                  }}
+                  onFocus={e => e.target.style.borderColor = '#00c9a7'}
+                  onBlur={e => e.target.style.borderColor = '#cbd5e0'}
+                />
+              </div>
+
+              {/* MÉTHODES DE TRANSACTION */}
+              <div style={{ marginTop: 18 }}>
+                <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 10 }}>
+                  Méthodes de transaction
+                </label>
+                <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                  {[
+                    { key: 'campus', label: '🏫 Rencontre sur campus', state: meetCampus, set: setMeetCampus, color: '#6c63ff' },
+                    { key: 'city', label: '🏙️ Rencontre en ville', state: meetCity, set: setMeetCity, color: '#f59e0b' },
+                    { key: 'post', label: '📦 Envoi postal', state: post, set: setPost, color: '#3b82f6' },
+                  ].map(m => (
+                    <button key={m.key} type="button" onClick={() => m.set(!m.state)} style={{
+                      padding: '10px 18px',
+                      border: `2px solid ${m.state ? m.color : '#cbd5e0'}`,
+                      borderRadius: 20,
+                      background: m.state ? `${m.color}15` : 'white',
+                      color: m.state ? m.color : '#4a5568',
+                      fontWeight: m.state ? 700 : 500,
+                      fontSize: 13, cursor: 'pointer', transition: 'all 0.15s',
+                      display: 'flex', alignItems: 'center', gap: 6
+                    }}>
+                      {m.state && <span>✓</span>}
+                      {m.label}
                     </button>
                   ))}
                 </div>
