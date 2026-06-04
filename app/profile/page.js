@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
 
@@ -23,9 +23,13 @@ export default function Profile() {
   const [campus, setCampus] = useState('')
   const [institution, setInstitution] = useState('')
   const [program, setProgram] = useState('')
+  const [avatarUrl, setAvatarUrl] = useState(null)
+  const [avatarPreview, setAvatarPreview] = useState(null)
+  const [uploadingAvatar, setUploadingAvatar] = useState(false)
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const avatarInputRef = useRef(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -46,14 +50,39 @@ export default function Profile() {
         setCampus(data.campus || '')
         setInstitution(data.institution || '')
         setProgram(data.program || '')
+        setAvatarUrl(data.avatar_url || null)
+        setAvatarPreview(data.avatar_url || null)
       }
       setLoading(false)
     }
     init()
   }, [])
 
-  const completion = [firstName, lastName, campus, institution, program]
-    .filter(v => v.trim() !== '').length
+  const completion = [firstName, lastName, campus, institution, program, avatarUrl]
+    .filter(v => v && v.toString().trim() !== '').length
+
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    setAvatarPreview(URL.createObjectURL(file))
+    setUploadingAvatar(true)
+
+    const ext = file.name.split('.').pop()
+    const fileName = `${user.id}/avatar.${ext}`
+
+    const { error } = await supabase.storage
+      .from('avatars')
+      .upload(fileName, file, { upsert: true })
+
+    if (error) { alert('Erreur upload photo'); setUploadingAvatar(false); return }
+
+    const { data } = supabase.storage.from('avatars').getPublicUrl(fileName)
+    const url = `${data.publicUrl}?t=${Date.now()}`
+    setAvatarUrl(url)
+
+    await supabase.from('profiles').upsert({ id: user.id, avatar_url: url })
+    setUploadingAvatar(false)
+  }
 
   const handleSave = async (e) => {
     e.preventDefault()
@@ -64,7 +93,8 @@ export default function Profile() {
       last_name: lastName,
       campus,
       institution,
-      program
+      program,
+      avatar_url: avatarUrl
     })
     setSaving(false)
     if (error) { alert('Erreur : ' + error.message); return }
@@ -126,19 +156,71 @@ export default function Profile() {
 
           {/* Avatar + email */}
           <div style={{ background: 'white', borderRadius: 14, padding: '24px', border: '1px solid #e2e8f0', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 16 }}>
-            <div style={{
-              width: 64, height: 64, background: 'linear-gradient(135deg, #1a2e4a, #00c9a7)',
-              borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontWeight: 900, fontSize: 24, flexShrink: 0
-            }}>
-              {firstName ? firstName[0].toUpperCase() : user?.email?.[0]?.toUpperCase()}
+
+            {/* Photo cliquable */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              <div
+                onClick={() => avatarInputRef.current?.click()}
+                style={{
+                  width: 80, height: 80, borderRadius: '50%', cursor: 'pointer',
+                  overflow: 'hidden', position: 'relative',
+                  border: '3px solid #00c9a7',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.12)'
+                }}
+              >
+                {avatarPreview ? (
+                  <img src={avatarPreview} alt="avatar" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{
+                    width: '100%', height: '100%',
+                    background: 'linear-gradient(135deg, #1a2e4a, #00c9a7)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    color: 'white', fontWeight: 900, fontSize: 28
+                  }}>
+                    {firstName ? firstName[0].toUpperCase() : user?.email?.[0]?.toUpperCase()}
+                  </div>
+                )}
+                {/* Overlay hover */}
+                <div style={{
+                  position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                  opacity: 0, transition: 'opacity 0.2s',
+                  color: 'white', fontSize: 11, fontWeight: 600, gap: 2
+                }}
+                  onMouseEnter={e => e.currentTarget.style.opacity = 1}
+                  onMouseLeave={e => e.currentTarget.style.opacity = 0}
+                >
+                  <span style={{ fontSize: 18 }}>📷</span>
+                  Modifier
+                </div>
+              </div>
+              {uploadingAvatar && (
+                <div style={{
+                  position: 'absolute', inset: 0, borderRadius: '50%',
+                  background: 'rgba(0,201,167,0.7)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  color: 'white', fontSize: 11, fontWeight: 700
+                }}>⏳</div>
+              )}
+              <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
             </div>
-            <div>
+
+            <div style={{ flex: 1 }}>
               <div style={{ fontWeight: 700, color: '#1a2e4a', fontSize: 16 }}>
                 {firstName && lastName ? `${firstName} ${lastName}` : 'Ton nom'}
               </div>
               <div style={{ color: '#718096', fontSize: 13 }}>{user?.email}</div>
               {institution && <div style={{ color: '#00c9a7', fontSize: 12, fontWeight: 600, marginTop: 2 }}>🏫 {institution}</div>}
+              <button type="button" onClick={() => avatarInputRef.current?.click()} style={{
+                marginTop: 8, background: 'none', border: '1px solid #e2e8f0',
+                borderRadius: 8, padding: '5px 12px', fontSize: 12,
+                color: '#718096', cursor: 'pointer', fontWeight: 600
+              }}
+                onMouseEnter={e => { e.currentTarget.style.borderColor = '#00c9a7'; e.currentTarget.style.color = '#00c9a7' }}
+                onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#718096' }}
+              >
+                📷 {avatarUrl ? 'Changer la photo' : 'Ajouter une photo'}
+              </button>
             </div>
           </div>
 

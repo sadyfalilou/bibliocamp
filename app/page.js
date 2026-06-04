@@ -52,8 +52,15 @@ export default function Home() {
   const [selectedBook, setSelectedBook] = useState(null)
   const [relatedListings, setRelatedListings] = useState([])
   const [filterMethod, setFilterMethod] = useState('all')
+  // Filtres liste principale
+  const [sortBy, setSortBy] = useState('recent')
+  const [filterInstitution, setFilterInstitution] = useState('')
+  const [filterEtat, setFilterEtat] = useState('')
+  const [filterTransaction, setFilterTransaction] = useState('')
   const [expandedSeller, setExpandedSeller] = useState(null)
-  const [showSellerBooks, setShowSellerBooks] = useState(null) // id du vendeur dont on affiche les livres
+  const [showSellerBooks, setShowSellerBooks] = useState(null)
+  const [wishlist, setWishlist] = useState(new Set())
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [phone, setPhone] = useState('')
   const [countryCode, setCountryCode] = useState('CA')
   const [phoneError, setPhoneError] = useState('')
@@ -103,6 +110,7 @@ export default function Home() {
           .eq('id', data.user.id)
           .single()
         if (profile) setUserProfile(profile)
+        fetchWishlist(data.user.id)
       } catch (e) {
         window.location.href = '/login'
         return
@@ -114,6 +122,26 @@ export default function Home() {
     const { data: listener } = supabase.auth.onAuthStateChange(() => fetchListings())
     return () => listener.subscription.unsubscribe()
   }, [])
+
+  const fetchWishlist = async (userId) => {
+    const { data } = await supabase
+      .from('wishlist')
+      .select('listing_id')
+      .eq('user_id', userId)
+    if (data) setWishlist(new Set(data.map(w => w.listing_id)))
+  }
+
+  const toggleWishlist = async (listingId) => {
+    const isInWishlist = wishlist.has(listingId)
+    if (isInWishlist) {
+      await supabase.from('wishlist').delete()
+        .eq('user_id', user.id).eq('listing_id', listingId)
+      setWishlist(prev => { const next = new Set(prev); next.delete(listingId); return next })
+    } else {
+      await supabase.from('wishlist').insert({ user_id: user.id, listing_id: listingId })
+      setWishlist(prev => new Set([...prev, listingId]))
+    }
+  }
 
   const handleDelete = async (id) => {
     if (!confirm('Supprimer ce manuel ?')) return
@@ -190,10 +218,33 @@ export default function Home() {
     }
   }
 
-  const filtered = listings?.filter(item =>
-    item.title.toLowerCase().includes(search.toLowerCase()) ||
-    item.course_code?.toLowerCase().includes(search.toLowerCase())
-  )
+  const filtered = listings?.filter(item => {
+    if (search && !item.title.toLowerCase().includes(search.toLowerCase()) &&
+        !item.course_code?.toLowerCase().includes(search.toLowerCase())) return false
+    if (filterEtat && item.description !== filterEtat) return false
+    if (filterTransaction === 'campus' && !item.meet_campus) return false
+    if (filterTransaction === 'city' && !item.meet_city) return false
+    if (filterTransaction === 'post' && !item.post) return false
+    if (filterInstitution) {
+      const p = profilesMap[item.user_id]
+      if ((item.campus || p?.institution) !== filterInstitution) return false
+    }
+    return true
+  }).sort((a, b) => {
+    if (sortBy === 'price_asc') return a.price - b.price
+    if (sortBy === 'price_desc') return b.price - a.price
+    if (sortBy === 'savings') {
+      const sa = a.original_price > 0 ? (a.original_price - a.price) / a.original_price : 0
+      const sb = b.original_price > 0 ? (b.original_price - b.price) / b.original_price : 0
+      return sb - sa
+    }
+    return new Date(b.created_at) - new Date(a.created_at) // recent
+  })
+
+  // Institutions disponibles dans les listings
+  const availableInstitutions = [...new Set(
+    listings?.map(item => item.campus || profilesMap[item.user_id]?.institution).filter(Boolean)
+  )].sort()
 
   const myListings = listings?.filter(item => item.user_id === user?.id)
 
@@ -233,30 +284,110 @@ export default function Home() {
         }}>
           📚 BIBLIOCAMP
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <span style={{ color: '#a0aec0', fontSize: 13 }}>
-            {userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name || ''}`.trim() : user?.email}
-          </span>
-          <div
-            onClick={() => router.push('/profile')}
-            title="Mon profil"
+        {/* Menu profil style Airbnb */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setShowProfileMenu(!showProfileMenu)}
             style={{
-              width: 34, height: 34, background: '#00c9a7', borderRadius: '50%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer'
-            }}>
-            {(userProfile?.first_name || user?.email)?.[0]?.toUpperCase()}
-          </div>
-          <button onClick={handleLogout} style={{
-            background: 'transparent', color: '#a0aec0',
-            border: '1px solid #2d4a6b', padding: '6px 14px',
-            borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600
-          }}
-            onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#00c9a7' }}
-            onMouseLeave={e => { e.currentTarget.style.color = '#a0aec0'; e.currentTarget.style.borderColor = '#2d4a6b' }}
+              display: 'flex', alignItems: 'center', gap: 10,
+              background: showProfileMenu ? '#243d5a' : 'transparent',
+              border: `1px solid ${showProfileMenu ? '#4a6a8a' : '#2d4a6b'}`,
+              borderRadius: 30, padding: '5px 6px 5px 12px',
+              cursor: 'pointer', transition: 'box-shadow 0.15s',
+              boxShadow: showProfileMenu ? '0 2px 8px rgba(0,0,0,0.3)' : 'none'
+            }}
+            onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,0,0,0.3)'}
+            onMouseLeave={e => { if (!showProfileMenu) e.currentTarget.style.boxShadow = 'none' }}
           >
-            Déconnexion
+            {/* Hamburger */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 3.5 }}>
+              <div style={{ width: 15, height: 1.5, background: '#a0aec0', borderRadius: 2 }} />
+              <div style={{ width: 15, height: 1.5, background: '#a0aec0', borderRadius: 2 }} />
+              <div style={{ width: 15, height: 1.5, background: '#a0aec0', borderRadius: 2 }} />
+            </div>
+            {/* Avatar */}
+            {userProfile?.avatar_url ? (
+              <img src={userProfile.avatar_url} alt="avatar" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+            ) : (
+              <div style={{ width: 32, height: 32, background: '#00c9a7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+                {(userProfile?.first_name || user?.email)?.[0]?.toUpperCase()}
+              </div>
+            )}
           </button>
+
+          {/* Dropdown */}
+          {showProfileMenu && (
+            <>
+              {/* Overlay pour fermer */}
+              <div
+                onClick={() => setShowProfileMenu(false)}
+                style={{ position: 'fixed', inset: 0, zIndex: 300 }}
+              />
+              <div style={{
+                position: 'absolute', top: 'calc(100% + 10px)', right: 0,
+                background: 'white', borderRadius: 14,
+                boxShadow: '0 8px 30px rgba(0,0,0,0.15)',
+                minWidth: 220, zIndex: 301,
+                overflow: 'hidden', border: '1px solid #e2e8f0'
+              }}>
+                {/* Infos utilisateur */}
+                <div style={{ padding: '14px 16px', borderBottom: '1px solid #f0f4f8', background: '#f8fafc', display: 'flex', alignItems: 'center', gap: 12 }}>
+                  {userProfile?.avatar_url ? (
+                    <img src={userProfile.avatar_url} alt="avatar" style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                  ) : (
+                    <div style={{ width: 44, height: 44, background: 'linear-gradient(135deg,#1a2e4a,#00c9a7)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 18, flexShrink: 0 }}>
+                      {(userProfile?.first_name || user?.email)?.[0]?.toUpperCase()}
+                    </div>
+                  )}
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#1a2e4a', fontSize: 14 }}>
+                      {userProfile?.first_name ? `${userProfile.first_name} ${userProfile.last_name || ''}`.trim() : 'Mon compte'}
+                    </div>
+                    <div style={{ fontSize: 12, color: '#a0aec0' }}>{user?.email}</div>
+                    {userProfile?.institution && <div style={{ fontSize: 11, color: '#00a88a', marginTop: 2 }}>🏫 {userProfile.institution}</div>}
+                  </div>
+                </div>
+
+                {/* Items */}
+                {[
+                  { icon: '❤️', label: 'Mes favoris', badge: wishlist.size > 0 ? wishlist.size : null, action: () => { setView('favoris'); setShowProfileMenu(false) } },
+                  { icon: '✉️', label: 'Messages', badge: null, action: () => { setShowProfileMenu(false) }, soon: true },
+                  { icon: '📋', label: 'Mes annonces', badge: null, action: () => { setView('mes-annonces'); setShowProfileMenu(false) } },
+                  { icon: '👤', label: 'Mon profil', badge: null, action: () => { router.push('/profile'); setShowProfileMenu(false) } },
+                ].map(item => (
+                  <div key={item.label} onClick={item.action} style={{
+                    display: 'flex', alignItems: 'center', gap: 12,
+                    padding: '13px 16px', cursor: 'pointer',
+                    borderBottom: '1px solid #f0f4f8',
+                    transition: 'background 0.1s',
+                    opacity: item.soon ? 0.5 : 1
+                  }}
+                    onMouseEnter={e => { if (!item.soon) e.currentTarget.style.background = '#f8fafc' }}
+                    onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                  >
+                    <span style={{ fontSize: 18, width: 24, textAlign: 'center' }}>{item.icon}</span>
+                    <span style={{ flex: 1, fontSize: 14, color: '#1a2e4a', fontWeight: 500 }}>{item.label}</span>
+                    {item.badge && (
+                      <span style={{ background: '#e53e3e', color: 'white', borderRadius: 20, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>{item.badge}</span>
+                    )}
+                    {item.soon && <span style={{ fontSize: 10, color: '#a0aec0', background: '#f0f4f8', borderRadius: 20, padding: '1px 7px' }}>Bientôt</span>}
+                  </div>
+                ))}
+
+                {/* Déconnexion */}
+                <div onClick={() => { handleLogout(); setShowProfileMenu(false) }} style={{
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '13px 16px', cursor: 'pointer', transition: 'background 0.1s'
+                }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#fff5f5'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                >
+                  <span style={{ fontSize: 18, width: 24, textAlign: 'center' }}>🚪</span>
+                  <span style={{ fontSize: 14, color: '#e53e3e', fontWeight: 600 }}>Déconnexion</span>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </header>
 
@@ -284,6 +415,7 @@ export default function Home() {
             { key: 'acheter', icon: '🛒', label: 'Acheter' },
             { key: 'vendre', icon: '🏷️', label: 'Vendre' },
             { key: 'mes-annonces', icon: '📋', label: 'Mes annonces' },
+            { key: 'favoris', icon: '❤️', label: 'Mes favoris', badge: wishlist.size > 0 ? wishlist.size : null },
           ].map(item => (
             <div key={item.key}
               onClick={() => setView(item.key)}
@@ -299,7 +431,13 @@ export default function Home() {
               onMouseEnter={e => { if (view !== item.key) e.currentTarget.style.background = '#f7fafc' }}
               onMouseLeave={e => { if (view !== item.key) e.currentTarget.style.background = 'transparent' }}
             >
-              <span>{item.icon}</span><span>{item.label}</span>
+              <span>{item.icon}</span>
+              <span style={{ flex: 1 }}>{item.label}</span>
+              {item.badge && (
+                <span style={{ background: '#e53e3e', color: 'white', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 700 }}>
+                  {item.badge}
+                </span>
+              )}
             </div>
           ))}
 
@@ -389,8 +527,74 @@ export default function Home() {
                 </div>
               </div>
 
-              <p style={{ color: '#718096', fontSize: 14, marginBottom: 16, fontStyle: 'italic' }}>
-                Les derniers manuels ajoutés...
+              {/* ── BARRE DE FILTRES ── */}
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 16, alignItems: 'center' }}>
+
+                {/* Tri */}
+                <select value={sortBy} onChange={e => setSortBy(e.target.value)} style={{
+                  padding: '8px 12px', border: '1px solid #e2e8f0', borderRadius: 8,
+                  fontSize: 13, outline: 'none', background: 'white', cursor: 'pointer',
+                  color: '#1a2e4a', fontWeight: 600
+                }}>
+                  <option value="recent">📅 Plus récent</option>
+                  <option value="price_asc">💲 Prix croissant</option>
+                  <option value="price_desc">💲 Prix décroissant</option>
+                  <option value="savings">🏷️ Meilleure économie</option>
+                </select>
+
+                {/* Institution */}
+                <select value={filterInstitution} onChange={e => setFilterInstitution(e.target.value)} style={{
+                  padding: '8px 12px', border: `1px solid ${filterInstitution ? '#00c9a7' : '#e2e8f0'}`,
+                  borderRadius: 8, fontSize: 13, outline: 'none',
+                  background: filterInstitution ? '#f0fdf9' : 'white',
+                  cursor: 'pointer', color: filterInstitution ? '#00a88a' : '#1a2e4a', fontWeight: 600
+                }}>
+                  <option value="">🏫 Institution</option>
+                  {availableInstitutions.map(i => <option key={i} value={i}>{i}</option>)}
+                </select>
+
+                {/* État */}
+                <select value={filterEtat} onChange={e => setFilterEtat(e.target.value)} style={{
+                  padding: '8px 12px', border: `1px solid ${filterEtat ? '#00c9a7' : '#e2e8f0'}`,
+                  borderRadius: 8, fontSize: 13, outline: 'none',
+                  background: filterEtat ? '#f0fdf9' : 'white',
+                  cursor: 'pointer', color: filterEtat ? '#00a88a' : '#1a2e4a', fontWeight: 600
+                }}>
+                  <option value="">📖 État</option>
+                  {['Neuf', 'Très bon état', 'Bon état', 'Acceptable'].map(e => <option key={e} value={e}>{e}</option>)}
+                </select>
+
+                {/* Méthode */}
+                <select value={filterTransaction} onChange={e => setFilterTransaction(e.target.value)} style={{
+                  padding: '8px 12px', border: `1px solid ${filterTransaction ? '#00c9a7' : '#e2e8f0'}`,
+                  borderRadius: 8, fontSize: 13, outline: 'none',
+                  background: filterTransaction ? '#f0fdf9' : 'white',
+                  cursor: 'pointer', color: filterTransaction ? '#00a88a' : '#1a2e4a', fontWeight: 600
+                }}>
+                  <option value="">🤝 Méthode</option>
+                  <option value="campus">🏫 Campus</option>
+                  <option value="city">🏙️ En ville</option>
+                  <option value="post">📦 Postal</option>
+                </select>
+
+                {/* Reset si filtres actifs */}
+                {(filterInstitution || filterEtat || filterTransaction || sortBy !== 'recent') && (
+                  <button onClick={() => { setFilterInstitution(''); setFilterEtat(''); setFilterTransaction(''); setSortBy('recent') }} style={{
+                    padding: '8px 12px', background: '#fff5f5', color: '#e53e3e',
+                    border: '1px solid #fed7d7', borderRadius: 8,
+                    fontSize: 13, cursor: 'pointer', fontWeight: 600
+                  }}>
+                    × Réinitialiser
+                  </button>
+                )}
+              </div>
+
+              <p style={{ color: '#718096', fontSize: 13, marginBottom: 12 }}>
+                {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
+                {search && ` pour "${search}"`}
+                {filterEtat && ` · ${filterEtat}`}
+                {filterInstitution && ` · ${filterInstitution}`}
+                {filterTransaction && ` · ${filterTransaction === 'campus' ? 'Campus' : filterTransaction === 'city' ? 'En ville' : 'Postal'}`}
               </p>
 
               {filtered.length === 0 ? (
@@ -452,8 +656,8 @@ export default function Home() {
                         )}
                         {(() => {
                           const p = profilesMap[item.user_id]
-                          const name = p?.first_name ? `${p.first_name} ${p.last_name || ''}`.trim() : item.campus
-                          const sub = p?.institution || item.campus
+                          const name = p?.first_name ? `${p.first_name} ${p.last_name || ''}`.trim() : (item.campus || null)
+                          const sub = item.campus || p?.institution
                           if (!name && !sub) return null
                           return (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
@@ -486,6 +690,21 @@ export default function Home() {
                             -{Math.round(((item.original_price - item.price) / item.original_price) * 100)}%
                           </div>
                         )}
+                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginBottom: 4 }}>
+                          <button
+                            onClick={e => { e.stopPropagation(); toggleWishlist(item.id) }}
+                            title={wishlist.has(item.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+                            style={{
+                              background: wishlist.has(item.id) ? '#fff0f0' : '#f7fafc',
+                              color: wishlist.has(item.id) ? '#e53e3e' : '#a0aec0',
+                              border: `1px solid ${wishlist.has(item.id) ? '#fed7d7' : '#e2e8f0'}`,
+                              padding: '5px 10px', borderRadius: 7,
+                              cursor: 'pointer', fontSize: 14, fontWeight: 600
+                            }}
+                          >
+                            {wishlist.has(item.id) ? '❤️' : '🤍'}
+                          </button>
+                        </div>
                         {item.user_id === user?.id && (
                           <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
                             <button onClick={() => router.push(`/edit/${item.id}`)} style={{
@@ -702,6 +921,89 @@ export default function Home() {
             </>
           )}
 
+          {/* ===== VUE FAVORIS ===== */}
+          {view === 'favoris' && (
+            <>
+              <h1 style={{ fontSize: 26, fontWeight: 900, color: '#1a2e4a', margin: '0 0 6px' }}>Mes favoris</h1>
+              <p style={{ color: '#718096', fontSize: 14, margin: '0 0 24px' }}>
+                {wishlist.size} livre{wishlist.size !== 1 ? 's' : ''} sauvegardé{wishlist.size !== 1 ? 's' : ''}
+              </p>
+
+              {wishlist.size === 0 ? (
+                <div style={{ background: 'white', borderRadius: 14, padding: '50px', border: '1px solid #e2e8f0', textAlign: 'center', color: '#a0aec0' }}>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>🤍</div>
+                  <p style={{ marginBottom: 20 }}>Aucun livre sauvegardé.</p>
+                  <button onClick={() => setView('acheter')} style={{ background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 10, padding: '12px 24px', fontWeight: 700, cursor: 'pointer' }}>
+                    Parcourir les manuels
+                  </button>
+                </div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  {listings.filter(item => wishlist.has(item.id)).map(item => {
+                    const p = profilesMap[item.user_id]
+                    const sellerName = p?.first_name ? `${p.first_name} ${p.last_name || ''}`.trim() : (item.campus || null)
+                    return (
+                      <div key={item.id} style={{
+                        background: 'white', borderRadius: 10, padding: '16px 20px',
+                        display: 'flex', alignItems: 'center', gap: 16,
+                        border: '1px solid #e2e8f0', transition: 'box-shadow 0.15s'
+                      }}
+                        onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'}
+                        onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+                      >
+                        <div style={{ flexShrink: 0 }}>
+                          {item.image_url ? (
+                            <img src={item.image_url} alt={item.title} style={{ width: 54, height: 68, objectFit: 'cover', borderRadius: 6 }} />
+                          ) : (
+                            <div style={{ width: 54, height: 68, background: 'linear-gradient(135deg,#1a2e4a,#0d4f6b)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>📖</div>
+                          )}
+                        </div>
+                        <div style={{ flex: 1 }}>
+                          <div onClick={() => setSelectedBook(item)} style={{ fontWeight: 700, color: '#00a88a', fontSize: 15, marginBottom: 2, cursor: 'pointer' }}
+                            onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                            onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+                          >{item.title}</div>
+                          {item.authors && <div style={{ fontSize: 13, color: '#718096' }}>✍️ {item.authors}</div>}
+                          {item.course_code && <div style={{ fontSize: 13, color: '#718096' }}>Cours : <strong>{item.course_code}</strong></div>}
+                          {sellerName && (
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
+                              <div style={{ width: 16, height: 16, background: 'linear-gradient(135deg,#1a2e4a,#00c9a7)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: 'white', fontWeight: 700 }}>
+                                {sellerName[0].toUpperCase()}
+                              </div>
+                              <span style={{ fontSize: 11, color: '#718096' }}>{sellerName}</span>
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
+                            {item.meet_campus && <span style={{ background: '#ede9fe', color: '#6c63ff', borderRadius: 20, padding: '1px 6px', fontSize: 10, fontWeight: 600 }}>🏫</span>}
+                            {item.meet_city && <span style={{ background: '#fef3c7', color: '#d97706', borderRadius: 20, padding: '1px 6px', fontSize: 10, fontWeight: 600 }}>🏙️</span>}
+                            {item.post && <span style={{ background: '#dbeafe', color: '#2563eb', borderRadius: 20, padding: '1px 6px', fontSize: 10, fontWeight: 600 }}>📦</span>}
+                            <span style={{ fontSize: 11, color: '#b0bec5' }}>{timeAgo(item.created_at)}</span>
+                          </div>
+                        </div>
+                        <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                          <div style={{ fontSize: 20, fontWeight: 900, color: '#1a2e4a', marginBottom: 8 }}>{item.price} $</div>
+                          {item.original_price > 0 && item.original_price > item.price && (
+                            <div style={{ background: '#00c9a7', color: 'white', borderRadius: 20, padding: '3px 8px', fontSize: 11, fontWeight: 700, marginBottom: 8, display: 'inline-block' }}>
+                              -{Math.round(((item.original_price - item.price) / item.original_price) * 100)}%
+                            </div>
+                          )}
+                          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                            <button onClick={() => setSelectedBook(item)} style={{ background: '#f0fdf9', color: '#00c9a7', border: '1px solid #00c9a7', padding: '5px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                              Voir
+                            </button>
+                            <button onClick={() => toggleWishlist(item.id)} style={{ background: '#fff0f0', color: '#e53e3e', border: '1px solid #fed7d7', padding: '5px 10px', borderRadius: 7, cursor: 'pointer', fontSize: 12 }}>
+                              ❤️
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </>
+          )}
+
           {/* ===== VUE MES ANNONCES ===== */}
           {view === 'mes-annonces' && (
             <>
@@ -838,12 +1140,33 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Bouton Vendre mon exemplaire */}
-              <div style={{ padding: '0 20px 16px' }}>
+              {/* Boutons action */}
+              <div style={{ padding: '0 20px 16px', display: 'flex', gap: 10 }}>
                 <button
-                  onClick={() => { setSelectedBook(null); router.push('/create') }}
+                  onClick={() => toggleWishlist(selectedBook.id)}
                   style={{
-                    width: '100%', padding: '10px',
+                    padding: '10px 14px', flexShrink: 0,
+                    background: wishlist.has(selectedBook.id) ? '#fff0f0' : '#f7fafc',
+                    color: wishlist.has(selectedBook.id) ? '#e53e3e' : '#a0aec0',
+                    border: `1px solid ${wishlist.has(selectedBook.id) ? '#fed7d7' : '#e2e8f0'}`,
+                    borderRadius: 8, fontWeight: 700, fontSize: 16, cursor: 'pointer'
+                  }}
+                  title={wishlist.has(selectedBook.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}
+                >
+                  {wishlist.has(selectedBook.id) ? '❤️' : '🤍'}
+                </button>
+                <button
+                  onClick={() => {
+                    const params = new URLSearchParams()
+                    if (selectedBook.title) params.set('title', selectedBook.title)
+                    if (selectedBook.authors) params.set('authors', selectedBook.authors)
+                    if (selectedBook.isbn) params.set('isbn', selectedBook.isbn)
+                    if (selectedBook.course_code) params.set('course', selectedBook.course_code)
+                    setSelectedBook(null)
+                    router.push(`/create?${params.toString()}`)
+                  }}
+                  style={{
+                    flex: 1, padding: '10px',
                     background: 'white', color: '#00a88a',
                     border: '2px solid #00c9a7', borderRadius: 8,
                     fontWeight: 700, fontSize: 13, cursor: 'pointer',
@@ -852,7 +1175,7 @@ export default function Home() {
                   onMouseEnter={e => { e.currentTarget.style.background = '#f0fdf9' }}
                   onMouseLeave={e => { e.currentTarget.style.background = 'white' }}
                 >
-                  💰 Vendre mon exemplaire de ce manuel
+                  💰 Vendre mon exemplaire
                 </button>
               </div>
             </div>
@@ -860,25 +1183,41 @@ export default function Home() {
             {/* ── ZONE BASSE : tous les vendeurs ── */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '16px 20px' }}>
 
-              {/* Titre + filtres */}
+              {/* Titre + filtres dynamiques */}
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a', marginBottom: 8 }}>
-                  {allSellers.length} vendeur{allSellers.length > 1 ? 's' : ''} pour ce manuel · trié par prix
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a', marginBottom: 10 }}>
+                  {allSellers.length} vendeur{allSellers.length > 1 ? 's' : ''} · trié par prix
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                  {[
-                    { key: 'all', label: 'Tous' },
-                    { key: 'campus', label: '🏫 Campus' },
-                    { key: 'city', label: '🏙️ Ville' },
-                    { key: 'post', label: '📦 Postal' },
-                  ].map(f => (
-                    <button key={f.key} onClick={() => setFilterMethod(f.key)} style={{
-                      padding: '5px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                      cursor: 'pointer', border: 'none',
-                      background: filterMethod === f.key ? '#1a2e4a' : '#e2e8f0',
-                      color: filterMethod === f.key ? 'white' : '#4a5568'
-                    }}>{f.label}</button>
-                  ))}
+                  {(() => {
+                    const countCampus = allSellers.filter(s => s.meet_campus).length
+                    const countCity = allSellers.filter(s => s.meet_city).length
+                    const countPost = allSellers.filter(s => s.post).length
+                    const methods = [
+                      { key: 'all', label: 'Tous', count: allSellers.length },
+                      countCampus > 0 && { key: 'campus', label: '🏫 Campus', count: countCampus },
+                      countCity > 0 && { key: 'city', label: '🏙️ Ville', count: countCity },
+                      countPost > 0 && { key: 'post', label: '📦 Postal', count: countPost },
+                    ].filter(Boolean)
+                    return methods.map(f => (
+                      <button key={f.key} onClick={() => setFilterMethod(f.key)} style={{
+                        padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                        cursor: 'pointer',
+                        border: filterMethod === f.key ? 'none' : '1px solid #e2e8f0',
+                        background: filterMethod === f.key ? '#1a2e4a' : 'white',
+                        color: filterMethod === f.key ? 'white' : '#4a5568',
+                        display: 'flex', alignItems: 'center', gap: 5,
+                        boxShadow: filterMethod === f.key ? '0 2px 6px rgba(0,0,0,0.15)' : 'none'
+                      }}>
+                        {f.label}
+                        <span style={{
+                          background: filterMethod === f.key ? 'rgba(255,255,255,0.25)' : '#f0f4f8',
+                          color: filterMethod === f.key ? 'white' : '#718096',
+                          borderRadius: 20, padding: '0 6px', fontSize: 10, fontWeight: 700
+                        }}>{f.count}</span>
+                      </button>
+                    ))
+                  })()}
                 </div>
               </div>
 
@@ -904,6 +1243,17 @@ export default function Home() {
                           style={{ padding: '12px 14px', display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer' }}
                           onClick={() => setExpandedSeller(isOpen ? null : s.id)}
                         >
+                          {/* Mini avatar vendeur */}
+                          {(() => {
+                            const p = profilesMap[s.user_id]
+                            return p?.avatar_url ? (
+                              <img src={p.avatar_url} alt="avatar" style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                            ) : (
+                              <div style={{ width: 36, height: 36, background: 'linear-gradient(135deg,#1a2e4a,#00c9a7)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
+                                {(p?.first_name || s.campus || '?')[0].toUpperCase()}
+                              </div>
+                            )
+                          })()}
                           <div style={{ flex: 1 }}>
                             <div style={{ fontWeight: 700, color: '#1a2e4a', fontSize: 13 }}>
                               {(() => {
@@ -913,7 +1263,7 @@ export default function Home() {
                             </div>
                             {(() => {
                               const p = profilesMap[s.user_id]
-                              const inst = p?.institution || s.campus
+                              const inst = s.campus || p?.institution
                               return inst ? <div style={{ fontSize: 11, color: '#a0aec0' }}>🏫 {inst}</div> : null
                             })()}
                             <div style={{ display: 'flex', gap: 4, marginTop: 3, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -945,11 +1295,11 @@ export default function Home() {
                               {(() => {
                                 const p = profilesMap[s.user_id]
                                 const name = p?.first_name ? `${p.first_name} ${p.last_name || ''}`.trim() : null
-                                const inst = p?.institution || null
+                                // Campus annonce > institution profil (une seule source, pas de contradiction)
+                                const location = s.campus || p?.institution || null
                                 return <>
                                   {name && <><span style={{ color: '#a0aec0', fontWeight: 600 }}>Vendeur</span><span style={{ color: '#1a2e4a', fontWeight: 600 }}>{name}</span></>}
-                                  {inst && <><span style={{ color: '#a0aec0', fontWeight: 600 }}>Institution</span><span style={{ color: '#1a2e4a' }}>{inst}</span></>}
-                                  {s.campus && <><span style={{ color: '#a0aec0', fontWeight: 600 }}>Campus</span><span style={{ color: '#1a2e4a' }}>{s.campus}</span></>}
+                                  {location && <><span style={{ color: '#a0aec0', fontWeight: 600 }}>Campus</span><span style={{ color: '#1a2e4a' }}>{location}</span></>}
                                 </>
                               })()}
                               <span style={{ color: '#a0aec0', fontWeight: 600 }}>Publié</span><span style={{ color: '#718096' }}>{timeAgo(s.created_at)}</span>

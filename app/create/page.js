@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 
 const ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
 
@@ -24,11 +24,21 @@ export default function Create() {
   const fileInputRef = useRef(null)
   const [loading, setLoading] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) setUserId(session.user.id)
     })
+    // Pré-remplir depuis les params URL (vendre mon exemplaire)
+    const t = searchParams.get('title')
+    const a = searchParams.get('authors')
+    const i = searchParams.get('isbn')
+    const c = searchParams.get('course')
+    if (t) setTitle(t)
+    if (a) setAuthors(a)
+    if (i) setIsbn(i)
+    if (c) setCourse(c)
   }, [])
 
   const savingsPercent = price && originalPrice && Number(originalPrice) > 0
@@ -74,7 +84,7 @@ export default function Create() {
 
     setLoading(false)
     if (error) { alert('Erreur: ' + error.message); return }
-    router.push('/')
+    window.location.href = '/'
   }
 
   return (
@@ -115,9 +125,10 @@ export default function Create() {
           <div style={{ fontSize: 13, color: '#a0aec0', marginBottom: 8 }}>
             Accueil / Manuels / <span style={{ color: '#1a2e4a', fontWeight: 600 }}>Publier un manuel</span>
           </div>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#1a2e4a', margin: '0 0 28px' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#1a2e4a', margin: '0 0 16px' }}>
             Publier un manuel
           </h1>
+
 
           <form onSubmit={handleSubmit}>
             <div style={{

@@ -120,7 +120,7 @@ export default function Edit() {
 
     setLoading(false)
     if (error) { alert('Erreur: ' + error.message); return }
-    router.push('/')
+    window.location.href = '/'
   }
 
   if (fetching) return (
