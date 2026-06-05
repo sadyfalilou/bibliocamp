@@ -1,36 +1,79 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📚 BiblioCamp
 
-## Getting Started
+> La marketplace de manuels scolaires pour les étudiants canadiens.
 
-First, run the development server:
+## ✨ Fonctionnalités
+
+- 🔐 Authentification email + réinitialisation mot de passe
+- 📖 Annonces de manuels avec photo, ISBN, auteurs, état
+- 🔍 Recherche et filtres (cours, institution, méthode)
+- 💬 Messagerie temps réel entre acheteurs et vendeurs
+- ❤️ Favoris et suivi de cours
+- 👤 Profil utilisateur avec photo
+- 📱 Vérification téléphone canadien (+1, anti-VoIP)
+- 🔔 Notifications sonores et badge en temps réel
+
+## 🛡️ Sécurité
+
+- RLS Supabase sur toutes les tables
+- Rate limiting (messages, annonces, API)
+- Validation des champs client et serveur
+- Blocage numéros VoIP via Twilio Lookup
+- Variables d'environnement sécurisées
+
+## 🛠️ Stack
+
+| Technologie | Usage |
+|---|---|
+| Next.js 16 | Framework React (App Router) |
+| Supabase | Base de données, Auth, Storage |
+| Twilio | Vérification SMS |
+
+## 🚀 Installation
 
 ```bash
+git clone https://github.com/TON_USERNAME/bibliocamp.git
+cd bibliocamp
+npm install
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ⚙️ Variables d'environnement
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+```env
+NEXT_PUBLIC_SUPABASE_URL=
+NEXT_PUBLIC_SUPABASE_ANON_KEY=
+TWILIO_ACCOUNT_SID=
+TWILIO_AUTH_TOKEN=
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 📁 Structure
 
-## Learn More
+```
+app/
+├── api/check-phone/  # Vérification Twilio
+├── create/           # Publier un manuel
+├── edit/[id]/        # Modifier
+├── inbox/            # Messagerie
+├── login/            # Auth
+├── profile/          # Profil
+├── reset-password/   # Reset mdp
+└── page.js           # Dashboard
+lib/supabase.js
+proxy.js              # Middleware auth
+```
 
-To learn more about Next.js, take a look at the following resources:
+## 🔄 Branches
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- `master` — Production stable
+- `develop` — Développement
+- `feature/*` — Nouvelles fonctionnalités
+- `fix/*` — Corrections
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## 📋 Roadmap
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- [ ] Déploiement Vercel
+- [ ] Notation des vendeurs
+- [ ] Recherche ISBN automatique (Google Books API)
+- [ ] Notifications push mobile
