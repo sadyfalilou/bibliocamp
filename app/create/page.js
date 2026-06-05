@@ -54,7 +54,18 @@ export default function Create() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!title || !price) { alert('Titre et prix sont obligatoires.'); return }
+
+    // Validations
+    if (!title.trim()) { alert('Le titre est obligatoire.'); return }
+    if (title.trim().length > 150) { alert('Le titre ne peut pas dépasser 150 caractères.'); return }
+    if (authors.length > 200) { alert('Le champ auteurs ne peut pas dépasser 200 caractères.'); return }
+    if (isbn && !/^\d{10,13}$/.test(isbn.replace(/[-\s]/g, ''))) { alert('ISBN invalide — doit contenir 10 ou 13 chiffres.'); return }
+    if (course && course.length > 20) { alert('Le code de cours ne peut pas dépasser 20 caractères.'); return }
+    if (!price || Number(price) <= 0 || Number(price) > 9999) { alert('Le prix doit être entre 1 $ et 9 999 $.'); return }
+    if (originalPrice && (Number(originalPrice) <= 0 || Number(originalPrice) > 9999)) { alert('Le prix neuf doit être entre 1 $ et 9 999 $.'); return }
+    if (originalPrice && Number(originalPrice) <= Number(price)) { alert('Le prix neuf doit être supérieur à ton prix de vente.'); return }
+    if (campus && campus.length > 100) { alert('Le nom du campus ne peut pas dépasser 100 caractères.'); return }
+
     setLoading(true)
 
     let imageUrl = null

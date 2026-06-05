@@ -58,8 +58,9 @@ export default function Profile() {
     init()
   }, [])
 
-  const completion = [firstName, lastName, campus, institution, program, avatarUrl]
-    .filter(v => v && v.toString().trim() !== '').length
+  const fields = [firstName, lastName, campus, institution, program, avatarUrl]
+  const completion = fields.filter(v => v && v.toString().trim() !== '').length
+  const completionPct = Math.round((completion / fields.length) * 100)
 
   const handleAvatarChange = async (e) => {
     const file = e.target.files[0]
@@ -139,12 +140,12 @@ export default function Profile() {
         <div style={{ background: 'white', borderRadius: 12, padding: '16px 20px', marginBottom: 20, border: '1px solid #e2e8f0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: '#1a2e4a' }}>Complétude du profil</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: completion === 5 ? '#00c9a7' : '#f59e0b' }}>{Math.round((completion / 5) * 100)}%</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: completionPct === 100 ? '#00c9a7' : '#f59e0b' }}>{completionPct}%</span>
           </div>
           <div style={{ background: '#e2e8f0', borderRadius: 20, height: 8, overflow: 'hidden' }}>
-            <div style={{ background: completion === 5 ? '#00c9a7' : '#f59e0b', height: '100%', width: `${(completion / 5) * 100}%`, borderRadius: 20, transition: 'width 0.3s' }} />
+            <div style={{ background: completionPct === 100 ? '#00c9a7' : '#f59e0b', height: '100%', width: `${completionPct}%`, borderRadius: 20, transition: 'width 0.3s' }} />
           </div>
-          {completion < 5 && (
+          {completionPct < 100 && (
             <p style={{ margin: '8px 0 0', fontSize: 12, color: '#718096' }}>
               Un profil complet aide les acheteurs à te faire confiance.
             </p>

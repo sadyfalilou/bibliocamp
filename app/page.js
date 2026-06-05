@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useRef } from 'react'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
 
@@ -46,12 +46,15 @@ export default function Home() {
   const [search, setSearch] = useState('')
   const [user, setUser] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
+  const [userSubjects, setUserSubjects] = useState([])
+  const [unreadMessages, setUnreadMessages] = useState(0)
+  const userIdRef = useRef(null)
   const [profilesMap, setProfilesMap] = useState({})
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState('acheter') // 'acheter' | 'vendre' | 'mes-annonces'
   const [selectedBook, setSelectedBook] = useState(null)
   const [relatedListings, setRelatedListings] = useState([])
-  const [filterMethod, setFilterMethod] = useState('all')
+  const [filterMethods, setFilterMethods] = useState(new Set()) // set vide = Tous
   // Filtres liste principale
   const [sortBy, setSortBy] = useState('recent')
   const [filterInstitution, setFilterInstitution] = useState('')
@@ -66,6 +69,7 @@ export default function Home() {
   const [phoneError, setPhoneError] = useState('')
   const [phoneSaved, setPhoneSaved] = useState(false)
   const [phoneStep, setPhoneStep] = useState('enter') // 'enter' | 'verify'
+  const [verifyRedirect, setVerifyRedirect] = useState('/create')
   const [otp, setOtp] = useState('')
   const [otpError, setOtpError] = useState('')
   const [sendingCode, setSendingCode] = useState(false)
@@ -109,8 +113,16 @@ export default function Home() {
           .select('*')
           .eq('id', data.user.id)
           .single()
-        if (profile) setUserProfile(profile)
+        userIdRef.current = data.user.id
+        if (profile) {
+          setUserProfile(profile)
+          setUserSubjects(profile.subjects || [])
+        }
         fetchWishlist(data.user.id)
+        fetchUnreadMessages(data.user.id)
+        requestNotifPermission()
+        // Init audio au premier clic (requis par les navigateurs)
+        document.addEventListener('click', initAudio, { once: true })
       } catch (e) {
         window.location.href = '/login'
         return
@@ -120,8 +132,80 @@ export default function Home() {
     }
     init()
     const { data: listener } = supabase.auth.onAuthStateChange(() => fetchListings())
-    return () => listener.subscription.unsubscribe()
+
+    // Polling de secours pour les notifs (toutes les 10s) — défini après init
+
+
+    return () => {
+      listener.subscription.unsubscribe()
+    }
   }, [])
+
+  // AudioContext créé une fois et réutilisé (évite le blocage navigateur)
+  const audioCtxRef = useRef(null)
+
+  const initAudio = () => {
+    if (!audioCtxRef.current) {
+      audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
+    }
+  }
+
+  const playNotifSound = async () => {
+    try {
+      initAudio()
+      const ctx = audioCtxRef.current
+      if (ctx.state === 'suspended') await ctx.resume()
+      const osc = ctx.createOscillator()
+      const gain = ctx.createGain()
+      osc.connect(gain)
+      gain.connect(ctx.destination)
+      osc.type = 'sine'
+      osc.frequency.setValueAtTime(880, ctx.currentTime)
+      osc.frequency.exponentialRampToValueAtTime(660, ctx.currentTime + 0.1)
+      gain.gain.setValueAtTime(0.5, ctx.currentTime)
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.35)
+      osc.start(ctx.currentTime)
+      osc.stop(ctx.currentTime + 0.35)
+    } catch (e) {}
+  }
+
+  const requestNotifPermission = () => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }
+
+  const showBrowserNotif = (senderName, content) => {
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification(`📚 BiblioCamp — ${senderName}`, {
+        body: content,
+        icon: '/favicon.ico',
+        badge: '/favicon.ico'
+      })
+    }
+  }
+
+  const fetchUnreadMessages = async (userId) => {
+    // Conversations où l'utilisateur est membre
+    const { data: convs } = await supabase
+      .from('conversations')
+      .select('id')
+      .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+    if (!convs || convs.length === 0) return
+
+    const convIds = convs.map(c => c.id)
+    const { count } = await supabase
+      .from('messages')
+      .select('*', { count: 'exact', head: true })
+      .in('conversation_id', convIds)
+      .eq('read', false)
+      .neq('sender_id', userId)
+
+    setUnreadMessages(count || 0)
+    // Mise à jour du titre de l'onglet
+    if (count > 0) document.title = `(${count}) BiblioCamp`
+    else document.title = 'BiblioCamp'
+  }
 
   const fetchWishlist = async (userId) => {
     const { data } = await supabase
@@ -143,6 +227,16 @@ export default function Home() {
     }
   }
 
+  const toggleSubject = async (courseCode) => {
+    if (!courseCode) return
+    const isFollowed = userSubjects.includes(courseCode)
+    const updated = isFollowed
+      ? userSubjects.filter(s => s !== courseCode)
+      : [...userSubjects, courseCode]
+    setUserSubjects(updated)
+    await supabase.from('profiles').upsert({ id: user.id, subjects: updated })
+  }
+
   const handleDelete = async (id) => {
     if (!confirm('Supprimer ce manuel ?')) return
     const { error } = await supabase.from('listings').delete().eq('id', id)
@@ -159,26 +253,56 @@ export default function Home() {
     setPhoneError('')
     const digits = phone.replace(/\D/g, '')
     if (!isValidPhone(phone)) {
-      setPhoneError('Numéro invalide. Entre un numéro valide sans indicatif.')
+      setPhoneError('Numéro invalide. Entre 10 chiffres sans tirets (ex: 5145551234).')
       return
     }
-    const dialCode = COUNTRIES.find(c => c.code === countryCode)?.dial || '+1'
-    const formatted = `${dialCode}${digits}`
+    if (digits.length !== 10) {
+      setPhoneError('Le numéro doit contenir exactement 10 chiffres.')
+      return
+    }
+    const formatted = `+1${digits}` // Toujours +1 (Canada/USA)
     setSendingCode(true)
+
+    // Vérifier que le numéro n'est pas VoIP
+    try {
+      const check = await fetch('/api/check-phone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: formatted })
+      })
+      const result = await check.json()
+      if (!result.valid) {
+        setPhoneError(result.error || 'Numéro non accepté.')
+        setSendingCode(false)
+        return
+      }
+    } catch (e) {
+      // Erreur réseau → on laisse passer
+    }
+
     let done = false
+
+    const translateError = (msg) => {
+      if (!msg) return 'Une erreur est survenue. Réessaie.'
+      if (msg.includes('Signups not allowed')) return 'Ce numéro ne peut pas être utilisé. Vérifie qu\'il est actif.'
+      if (msg.includes('Invalid phone')) return 'Numéro de téléphone invalide.'
+      if (msg.includes('rate limit') || msg.includes('too many')) return 'Trop de tentatives. Attends quelques minutes.'
+      if (msg.includes('User already registered')) return 'Ce numéro est déjà associé à un compte.'
+      return 'Erreur : ' + msg
+    }
 
     const advance = (error) => {
       if (done) return
       done = true
       setSendingCode(false)
-      if (error) setPhoneError('Erreur : ' + error.message)
+      if (error) setPhoneError(translateError(error.message))
       else setPhoneStep('verify')
     }
 
     // Backup : si Supabase ne répond pas en 10s, avance quand même
     const backup = setTimeout(() => advance(null), 10000)
 
-    supabase.auth.signInWithOtp({ phone: formatted, options: { shouldCreateUser: false } })
+    supabase.auth.signInWithOtp({ phone: formatted, options: { shouldCreateUser: true } })
       .then(({ error }) => {
         clearTimeout(backup)
         advance(error)
@@ -210,7 +334,7 @@ export default function Home() {
         new Promise(resolve => setTimeout(resolve, 3000))
       ])
       setPhoneSaved(true)
-      router.push('/create')
+      router.push(verifyRedirect)
     } catch (e) {
       setOtpError('Erreur inattendue. Réessaie.')
     } finally {
@@ -225,7 +349,9 @@ export default function Home() {
     if (filterTransaction === 'campus' && !item.meet_campus) return false
     if (filterTransaction === 'city' && !item.meet_city) return false
     if (filterTransaction === 'post' && !item.post) return false
-    if (filterInstitution) {
+    if (filterInstitution === '__mes_cours__') {
+      if (!item.course_code || !userSubjects.includes(item.course_code)) return false
+    } else if (filterInstitution) {
       const p = profilesMap[item.user_id]
       if ((item.campus || p?.institution) !== filterInstitution) return false
     }
@@ -247,6 +373,46 @@ export default function Home() {
   )].sort()
 
   const myListings = listings?.filter(item => item.user_id === user?.id)
+
+  // Polling notifications — toutes les 5s, détecte les nouveaux messages
+  const prevUnreadRef = useRef(0)
+  useEffect(() => {
+    if (!user?.id) return
+    const userId = user.id
+
+    const check = async () => {
+      const { data: convs } = await supabase
+        .from('conversations')
+        .select('id')
+        .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
+      if (!convs || convs.length === 0) return
+
+      const convIds = convs.map(c => c.id)
+      const { count } = await supabase
+        .from('messages')
+        .select('*', { count: 'exact', head: true })
+        .in('conversation_id', convIds)
+        .eq('read', false)
+        .neq('sender_id', userId)
+
+      const newCount = count || 0
+      setUnreadMessages(newCount)
+      document.title = newCount > 0 ? `(${newCount}) BiblioCamp` : 'BiblioCamp'
+
+      // Son + notif si nouveaux messages depuis la dernière vérification
+      if (newCount > prevUnreadRef.current) {
+        playNotifSound()
+        if (!window.location.pathname.startsWith('/inbox')) {
+          showBrowserNotif('BiblioCamp', `Tu as ${newCount} message${newCount > 1 ? 's' : ''} non lu${newCount > 1 ? 's' : ''}`)
+        }
+      }
+      prevUnreadRef.current = newCount
+    }
+
+    check() // immédiat
+    const interval = setInterval(check, 5000)
+    return () => clearInterval(interval)
+  }, [user?.id])
 
   useEffect(() => {
     if (!selectedBook) { setRelatedListings([]); return }
@@ -305,14 +471,28 @@ export default function Home() {
               <div style={{ width: 15, height: 1.5, background: '#a0aec0', borderRadius: 2 }} />
               <div style={{ width: 15, height: 1.5, background: '#a0aec0', borderRadius: 2 }} />
             </div>
-            {/* Avatar */}
-            {userProfile?.avatar_url ? (
-              <img src={userProfile.avatar_url} alt="avatar" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-            ) : (
-              <div style={{ width: 32, height: 32, background: '#00c9a7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14, flexShrink: 0 }}>
-                {(userProfile?.first_name || user?.email)?.[0]?.toUpperCase()}
-              </div>
-            )}
+            {/* Avatar avec badge messages non lus */}
+            <div style={{ position: 'relative', flexShrink: 0 }}>
+              {userProfile?.avatar_url ? (
+                <img src={userProfile.avatar_url} alt="avatar" style={{ width: 32, height: 32, borderRadius: '50%', objectFit: 'cover' }} />
+              ) : (
+                <div style={{ width: 32, height: 32, background: '#00c9a7', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>
+                  {(userProfile?.first_name || user?.email)?.[0]?.toUpperCase()}
+                </div>
+              )}
+              {unreadMessages > 0 && (
+                <div style={{
+                  position: 'absolute', top: -4, right: -4,
+                  background: '#e53e3e', color: 'white',
+                  borderRadius: '50%', width: 16, height: 16,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 9, fontWeight: 800,
+                  border: '2px solid #1a2e4a'
+                }}>
+                  {unreadMessages > 9 ? '9+' : unreadMessages}
+                </div>
+              )}
+            </div>
           </button>
 
           {/* Dropdown */}
@@ -351,7 +531,7 @@ export default function Home() {
                 {/* Items */}
                 {[
                   { icon: '❤️', label: 'Mes favoris', badge: wishlist.size > 0 ? wishlist.size : null, action: () => { setView('favoris'); setShowProfileMenu(false) } },
-                  { icon: '✉️', label: 'Messages', badge: null, action: () => { setShowProfileMenu(false) }, soon: true },
+                  { icon: '✉️', label: 'Messages', badge: unreadMessages > 0 ? unreadMessages : null, action: () => { router.push('/inbox'); setShowProfileMenu(false) } },
                   { icon: '📋', label: 'Mes annonces', badge: null, action: () => { setView('mes-annonces'); setShowProfileMenu(false) } },
                   { icon: '👤', label: 'Mon profil', badge: null, action: () => { router.push('/profile'); setShowProfileMenu(false) } },
                 ].map(item => (
@@ -416,6 +596,7 @@ export default function Home() {
             { key: 'vendre', icon: '🏷️', label: 'Vendre' },
             { key: 'mes-annonces', icon: '📋', label: 'Mes annonces' },
             { key: 'favoris', icon: '❤️', label: 'Mes favoris', badge: wishlist.size > 0 ? wishlist.size : null },
+            { key: 'mes-cours', icon: '📚', label: 'Mes cours', badge: userSubjects.length > 0 ? userSubjects.length : null },
           ].map(item => (
             <div key={item.key}
               onClick={() => setView(item.key)}
@@ -444,7 +625,7 @@ export default function Home() {
           <div style={{ height: 1, background: '#e2e8f0', margin: '16px 0' }} />
 
           <div style={{ padding: '0 14px' }}>
-            <button onClick={() => setView('vendre')} style={{
+            <button onClick={() => { setVerifyRedirect('/create'); setView('vendre') }} style={{
               width: '100%', padding: '11px',
               background: '#1a2e4a', color: 'white',
               border: 'none', borderRadius: 10,
@@ -577,6 +758,26 @@ export default function Home() {
                   <option value="post">📦 Postal</option>
                 </select>
 
+                {/* Mes cours */}
+                {userSubjects.length > 0 && (
+                  <button
+                    onClick={() => setFilterInstitution(filterInstitution === '__mes_cours__' ? '' : '__mes_cours__')}
+                    style={{
+                      padding: '8px 12px',
+                      border: `1px solid ${filterInstitution === '__mes_cours__' ? '#6c63ff' : '#e2e8f0'}`,
+                      borderRadius: 8, fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                      background: filterInstitution === '__mes_cours__' ? '#ede9fe' : 'white',
+                      color: filterInstitution === '__mes_cours__' ? '#6c63ff' : '#1a2e4a',
+                      display: 'flex', alignItems: 'center', gap: 5
+                    }}
+                  >
+                    📚 Mes cours
+                    <span style={{ background: filterInstitution === '__mes_cours__' ? '#6c63ff' : '#f0f4f8', color: filterInstitution === '__mes_cours__' ? 'white' : '#718096', borderRadius: 20, padding: '0 6px', fontSize: 10, fontWeight: 700 }}>
+                      {userSubjects.length}
+                    </span>
+                  </button>
+                )}
+
                 {/* Reset si filtres actifs */}
                 {(filterInstitution || filterEtat || filterTransaction || sortBy !== 'recent') && (
                   <button onClick={() => { setFilterInstitution(''); setFilterEtat(''); setFilterTransaction(''); setSortBy('recent') }} style={{
@@ -647,8 +848,23 @@ export default function Home() {
                           </div>
                         )}
                         {item.course_code && (
-                          <div style={{ fontSize: 13, color: '#718096' }}>
-                            Cours : <strong>{item.course_code}</strong>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                            <span style={{ fontSize: 13, color: '#718096' }}>
+                              Cours : <strong>{item.course_code}</strong>
+                            </span>
+                            <button
+                              onClick={e => { e.stopPropagation(); toggleSubject(item.course_code) }}
+                              title={userSubjects.includes(item.course_code) ? 'Ne plus suivre' : 'Suivre ce cours'}
+                              style={{
+                                background: userSubjects.includes(item.course_code) ? '#ede9fe' : 'transparent',
+                                color: userSubjects.includes(item.course_code) ? '#6c63ff' : '#a0aec0',
+                                border: `1px solid ${userSubjects.includes(item.course_code) ? '#c4b5fd' : '#e2e8f0'}`,
+                                borderRadius: 20, padding: '1px 8px', fontSize: 10,
+                                fontWeight: 700, cursor: 'pointer'
+                              }}
+                            >
+                              {userSubjects.includes(item.course_code) ? '✓ Suivi' : '+ Suivre'}
+                            </button>
                           </div>
                         )}
                         {item.description && (
@@ -767,31 +983,18 @@ export default function Home() {
                   <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a2e4a', margin: '0 0 8px' }}>
                     Vérifie ton numéro de téléphone
                   </h2>
-                  <p style={{ color: '#718096', fontSize: 14, margin: '0 0 28px' }}>
+                  <p style={{ color: '#718096', fontSize: 14, margin: '0 0 16px' }}>
                     Pour la sécurité des membres, nous demandons un numéro de téléphone vérifié.
                   </p>
 
-                  {/* PAYS */}
-                  <div style={{ marginBottom: 16 }}>
-                    <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 8 }}>
-                      Pays
-                    </label>
-                    <select
-                      value={countryCode}
-                      onChange={e => setCountryCode(e.target.value)}
-                      style={{
-                        width: '100%', padding: '12px 14px',
-                        border: '1px solid #cbd5e0', borderRadius: 8,
-                        fontSize: 15, outline: 'none', background: 'white',
-                        boxSizing: 'border-box', cursor: 'pointer'
-                      }}
-                    >
-                      {COUNTRIES.map(c => (
-                        <option key={c.code} value={c.code}>
-                          {c.label} ({c.dial})
-                        </option>
-                      ))}
-                    </select>
+                  {/* Restriction Canada/USA */}
+                  <div style={{
+                    background: '#f0f4f8', border: '1px solid #e2e8f0',
+                    borderRadius: 10, padding: '12px 16px', marginBottom: 20,
+                    display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#4a5568'
+                  }}>
+                    <span style={{ fontSize: 20 }}>🇨🇦</span>
+                    <span>La vente est réservée aux membres avec un <strong>numéro nord-américain (+1)</strong> — Canada et États-Unis.</span>
                   </div>
 
                   {/* TÉLÉPHONE */}
@@ -801,11 +1004,12 @@ export default function Home() {
                     </label>
                     <div style={{ display: 'flex', alignItems: 'center', border: `1px solid ${phoneError ? '#e53e3e' : '#cbd5e0'}`, borderRadius: 8, overflow: 'hidden' }}>
                       <span style={{
-                        padding: '12px 14px', background: '#f7fafc',
-                        borderRight: '1px solid #cbd5e0', color: '#4a5568',
-                        fontWeight: 700, fontSize: 15, whiteSpace: 'nowrap'
+                        padding: '12px 14px', background: '#f0f4f8',
+                        borderRight: '1px solid #cbd5e0', color: '#1a2e4a',
+                        fontWeight: 800, fontSize: 15, whiteSpace: 'nowrap',
+                        display: 'flex', alignItems: 'center', gap: 6
                       }}>
-                        {COUNTRIES.find(c => c.code === countryCode)?.dial || '+1'}
+                        🇨🇦 +1
                       </span>
                       <input
                         placeholder="ex: 5145551234"
@@ -825,7 +1029,7 @@ export default function Home() {
                   )}
 
                   <p style={{ fontSize: 12, color: '#a0aec0', margin: '0 0 24px' }}>
-                    Format : 10 chiffres sans tirets (ex: 5145551234). Le +1 sera ajouté automatiquement.
+                    10 chiffres sans espaces ni tirets · ex: 5145551234
                   </p>
 
                   <button
@@ -1004,6 +1208,91 @@ export default function Home() {
             </>
           )}
 
+          {/* ===== VUE MES COURS ===== */}
+          {view === 'mes-cours' && (
+            <>
+              <h1 style={{ fontSize: 26, fontWeight: 900, color: '#1a2e4a', margin: '0 0 6px' }}>Mes cours</h1>
+              <p style={{ color: '#718096', fontSize: 14, margin: '0 0 24px' }}>
+                {userSubjects.length} cours suivi{userSubjects.length !== 1 ? 's' : ''} · les manuels disponibles apparaissent en dessous
+              </p>
+
+              {/* Chips cours suivis */}
+              {userSubjects.length === 0 ? (
+                <div style={{ background: 'white', borderRadius: 14, padding: '40px', border: '1px solid #e2e8f0', textAlign: 'center', color: '#a0aec0' }}>
+                  <div style={{ fontSize: 40, marginBottom: 12 }}>📚</div>
+                  <p style={{ marginBottom: 16 }}>Tu ne suis encore aucun cours.</p>
+                  <p style={{ fontSize: 13, color: '#b0bec5' }}>Dans la vue <strong>Acheter</strong>, clique sur <strong>"+ Suivre"</strong> à côté d'un code de cours.</p>
+                  <button onClick={() => setView('acheter')} style={{ marginTop: 16, background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 10, padding: '12px 24px', fontWeight: 700, cursor: 'pointer' }}>
+                    Parcourir les manuels
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {/* Badges des cours */}
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 28 }}>
+                    {userSubjects.map(code => (
+                      <div key={code} style={{ display: 'flex', alignItems: 'center', gap: 6, background: '#ede9fe', border: '1px solid #c4b5fd', borderRadius: 20, padding: '6px 14px' }}>
+                        <span style={{ fontSize: 13, fontWeight: 700, color: '#6c63ff' }}>📚 {code}</span>
+                        <button onClick={() => toggleSubject(code)} style={{ background: 'none', border: 'none', color: '#9c8fef', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1 }} title="Ne plus suivre">×</button>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Manuels disponibles pour ces cours */}
+                  {(() => {
+                    const coursBooks = listings.filter(l => l.course_code && userSubjects.includes(l.course_code))
+                    return coursBooks.length === 0 ? (
+                      <div style={{ background: 'white', borderRadius: 12, padding: '30px', border: '1px solid #e2e8f0', textAlign: 'center', color: '#a0aec0', fontSize: 13 }}>
+                        Aucun manuel disponible pour tes cours pour l'instant.
+                      </div>
+                    ) : (
+                      <>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a', marginBottom: 12 }}>
+                          {coursBooks.length} manuel{coursBooks.length > 1 ? 's' : ''} disponible{coursBooks.length > 1 ? 's' : ''} pour tes cours
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                          {coursBooks.map(item => {
+                            const p = profilesMap[item.user_id]
+                            const sellerName = p?.first_name ? `${p.first_name} ${p.last_name || ''}`.trim() : (item.campus || null)
+                            return (
+                              <div key={item.id} style={{ background: 'white', borderRadius: 10, padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 14, border: '1px solid #e2e8f0', transition: 'box-shadow 0.15s', cursor: 'pointer' }}
+                                onClick={() => { setSelectedBook(item); setView('acheter') }}
+                                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'}
+                                onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
+                              >
+                                {item.image_url ? (
+                                  <img src={item.image_url} style={{ width: 44, height: 56, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
+                                ) : (
+                                  <div style={{ width: 44, height: 56, background: 'linear-gradient(135deg,#1a2e4a,#0d4f6b)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, flexShrink: 0 }}>📖</div>
+                                )}
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: 700, color: '#00a88a', fontSize: 14 }}>{item.title}</div>
+                                  <div style={{ display: 'flex', gap: 6, alignItems: 'center', marginTop: 2 }}>
+                                    <span style={{ background: '#ede9fe', color: '#6c63ff', fontSize: 11, fontWeight: 700, padding: '1px 8px', borderRadius: 20 }}>{item.course_code}</span>
+                                    {item.description && <span style={{ fontSize: 11, color: '#a0aec0' }}>{item.description}</span>}
+                                  </div>
+                                  {sellerName && <div style={{ fontSize: 11, color: '#718096', marginTop: 3 }}>👤 {sellerName}{item.campus ? ` · ${item.campus}` : ''}</div>}
+                                </div>
+                                <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                                  <div style={{ fontSize: 18, fontWeight: 900, color: '#1a2e4a' }}>{item.price} $</div>
+                                  {item.original_price > 0 && item.original_price > item.price && (
+                                    <span style={{ background: '#00c9a7', color: 'white', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 700 }}>
+                                      -{Math.round(((item.original_price - item.price) / item.original_price) * 100)}%
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      </>
+                    )
+                  })()}
+                </>
+              )}
+            </>
+          )}
+
           {/* ===== VUE MES ANNONCES ===== */}
           {view === 'mes-annonces' && (
             <>
@@ -1084,16 +1373,19 @@ export default function Home() {
       {selectedBook && (() => {
         const allSellers = [selectedBook, ...relatedListings].sort((a, b) => a.price - b.price)
         const filteredSellers = allSellers.filter(s => {
-          if (filterMethod === 'campus') return s.meet_campus
-          if (filterMethod === 'city') return s.meet_city
-          if (filterMethod === 'post') return s.post
+          if (filterMethods.size > 0) {
+            const match = (filterMethods.has('campus') && s.meet_campus) ||
+                          (filterMethods.has('city') && s.meet_city) ||
+                          (filterMethods.has('post') && s.post)
+            if (!match) return false
+          }
           return true
         })
         return (
         <>
           {/* Overlay */}
           <div
-            onClick={() => { setSelectedBook(null); setFilterMethod('all'); setExpandedSeller(null) }}
+            onClick={() => { setSelectedBook(null); setFilterMethods(new Set()); setExpandedSeller(null) }}
             style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200 }}
           />
 
@@ -1113,7 +1405,7 @@ export default function Home() {
               {/* Header */}
               <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #f0f4f8' }}>
                 <div style={{ fontSize: 12, color: '#a0aec0' }}>Manuels / <strong style={{ color: '#1a2e4a' }}>Détail</strong></div>
-                <button onClick={() => { setSelectedBook(null); setFilterMethod('all'); setExpandedSeller(null) }} style={{
+                <button onClick={() => { setSelectedBook(null); setFilterMethods(new Set()); setExpandedSeller(null) }} style={{
                   background: '#f0f4f8', border: 'none', borderRadius: '50%', width: 30, height: 30,
                   cursor: 'pointer', fontSize: 16, color: '#718096'
                 }}>×</button>
@@ -1199,24 +1491,37 @@ export default function Home() {
                       countCity > 0 && { key: 'city', label: '🏙️ Ville', count: countCity },
                       countPost > 0 && { key: 'post', label: '📦 Postal', count: countPost },
                     ].filter(Boolean)
-                    return methods.map(f => (
-                      <button key={f.key} onClick={() => setFilterMethod(f.key)} style={{
-                        padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
-                        cursor: 'pointer',
-                        border: filterMethod === f.key ? 'none' : '1px solid #e2e8f0',
-                        background: filterMethod === f.key ? '#1a2e4a' : 'white',
-                        color: filterMethod === f.key ? 'white' : '#4a5568',
-                        display: 'flex', alignItems: 'center', gap: 5,
-                        boxShadow: filterMethod === f.key ? '0 2px 6px rgba(0,0,0,0.15)' : 'none'
-                      }}>
-                        {f.label}
-                        <span style={{
-                          background: filterMethod === f.key ? 'rgba(255,255,255,0.25)' : '#f0f4f8',
-                          color: filterMethod === f.key ? 'white' : '#718096',
-                          borderRadius: 20, padding: '0 6px', fontSize: 10, fontWeight: 700
-                        }}>{f.count}</span>
-                      </button>
-                    ))
+                    return methods.map(f => {
+                      const isAll = f.key === 'all'
+                      const isActive = isAll
+                        ? filterMethods.size === 0
+                        : filterMethods.has(f.key)
+                      const toggle = () => {
+                        if (isAll) { setFilterMethods(new Set()); return }
+                        const next = new Set(filterMethods)
+                        if (next.has(f.key)) next.delete(f.key)
+                        else next.add(f.key)
+                        setFilterMethods(next)
+                      }
+                      return (
+                        <button key={f.key} onClick={toggle} style={{
+                          padding: '6px 12px', borderRadius: 20, fontSize: 12, fontWeight: 600,
+                          cursor: 'pointer',
+                          border: isActive ? 'none' : '1px solid #e2e8f0',
+                          background: isActive ? '#1a2e4a' : 'white',
+                          color: isActive ? 'white' : '#4a5568',
+                          display: 'flex', alignItems: 'center', gap: 5,
+                          boxShadow: isActive ? '0 2px 6px rgba(0,0,0,0.15)' : 'none'
+                        }}>
+                          {f.label}
+                          <span style={{
+                            background: isActive ? 'rgba(255,255,255,0.25)' : '#f0f4f8',
+                            color: isActive ? 'white' : '#718096',
+                            borderRadius: 20, padding: '0 6px', fontSize: 10, fontWeight: 700
+                          }}>{f.count}</span>
+                        </button>
+                      )
+                    })
                   })()}
                 </div>
               </div>
@@ -1373,16 +1678,53 @@ export default function Home() {
                               )
                             })()}
 
-                            <a href={`mailto:?subject=BiblioCamp - ${s.title}&body=Bonjour, je suis intéressé par votre manuel "${s.title}" à ${s.price}$.`} style={{ textDecoration: 'none' }}>
-                              <button style={{
-                                width: '100%', padding: '10px',
-                                background: '#1a2e4a', color: 'white', border: 'none',
-                                borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer'
-                              }}
+                            {s.user_id === user?.id ? (
+                              <div style={{ textAlign: 'center', padding: '8px', background: '#f0f4f8', borderRadius: 8, fontSize: 12, color: '#a0aec0' }}>
+                                C'est ton annonce
+                              </div>
+                            ) : !phoneSaved ? (
+                              <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8, padding: '12px 14px', fontSize: 13 }}>
+                                <div style={{ fontWeight: 700, color: '#7b5e00', marginBottom: 4 }}>🇨🇦 Numéro canadien requis</div>
+                                <div style={{ color: '#a07020', marginBottom: 10, fontSize: 12 }}>
+                                  Tu dois vérifier un numéro canadien (+1) pour contacter les vendeurs.
+                                </div>
+                                <button
+                                  onClick={() => {
+                                    setVerifyRedirect('/inbox')
+                                    setSelectedBook(null)
+                                    setView('vendre')
+                                  }}
+                                  style={{ width: '100%', padding: '8px', background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
+                                >
+                                  Vérifier mon numéro →
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={async () => {
+                                  if (!user || s.user_id === user.id) return
+                                  const { data: existing } = await supabase
+                                    .from('conversations')
+                                    .select('id')
+                                    .or(`and(user1_id.eq.${user.id},user2_id.eq.${s.user_id}),and(user1_id.eq.${s.user_id},user2_id.eq.${user.id})`)
+                                    .eq('listing_id', s.id)
+                                    .single()
+                                  let convId = existing?.id
+                                  if (!convId) {
+                                    const { data: newConv } = await supabase
+                                      .from('conversations')
+                                      .insert({ user1_id: user.id, user2_id: s.user_id, listing_id: s.id })
+                                      .select('id').single()
+                                    convId = newConv?.id
+                                  }
+                                  setSelectedBook(null)
+                                  router.push(`/inbox?conv=${convId}`)
+                                }}
+                                style={{ width: '100%', padding: '10px', background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 13, cursor: 'pointer' }}
                                 onMouseEnter={e => e.currentTarget.style.background = '#00c9a7'}
                                 onMouseLeave={e => e.currentTarget.style.background = '#1a2e4a'}
                               >✉️ Contacter ce vendeur</button>
-                            </a>
+                            )}
 
                             {user?.id === s.user_id && (
                               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
