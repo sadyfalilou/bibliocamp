@@ -1,4 +1,5 @@
 import { Geist, Geist_Mono } from "next/font/google";
+import Link from "next/link";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -18,8 +19,17 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable}`}>
-      <body>{children}</body>
+    <html lang="fr" className={`${geistSans.variable} ${geistMono.variable}`}>
+      <body>
+        {children}
+        <footer style={{ borderTop: '1px solid #e5e7eb', marginTop: '4rem', padding: '1.5rem', textAlign: 'center', fontSize: '0.85rem', color: '#6b7280' }}>
+          <span>© {new Date().getFullYear()} BiblioCamp</span>
+          {' · '}
+          <Link href="/confidentialite" style={{ color: '#6b7280' }}>Confidentialité</Link>
+          {' · '}
+          <Link href="/cgu" style={{ color: '#6b7280' }}>{"Conditions d'utilisation"}</Link>
+        </footer>
+      </body>
     </html>
   );
 }
