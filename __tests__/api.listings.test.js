@@ -1,0 +1,160 @@
+import { POST, PATCH } from '../app/api/listings/route'
+
+// ─── Mock Supabase ─────────────────────────────────────────────────────────────
+
+const mockInsert = jest.fn()
+const mockUpdate = jest.fn()
+const mockGetUser = jest.fn()
+const mockUpload = jest.fn()
+const mockGetPublicUrl = jest.fn()
+
+jest.mock('@supabase/supabase-js', () => ({
+  createClient: jest.fn(() => ({
+    auth: { getUser: mockGetUser },
+    from: jest.fn(() => ({
+      insert: jest.fn(() => ({
+        select: jest.fn(() => ({ single: mockInsert })),
+      })),
+      update: jest.fn(() => ({
+        eq: jest.fn().mockReturnThis(),
+        select: jest.fn(() => ({ single: mockUpdate })),
+      })),
+    })),
+    storage: {
+      from: jest.fn(() => ({
+        upload: mockUpload,
+        getPublicUrl: mockGetPublicUrl,
+      })),
+    },
+  })),
+}))
+
+// ─── Helpers ───────────────────────────────────────────────────────────────────
+
+function makeRequest(fields = {}, withAuth = true) {
+  const formData = new FormData()
+  Object.entries(fields).forEach(([k, v]) => formData.append(k, String(v)))
+
+  const headers = new Headers()
+  if (withAuth) headers.set('authorization', 'Bearer fake-token')
+
+  return { formData: () => Promise.resolve(formData), headers }
+}
+
+const validFields = {
+  title: 'Le Marketing',
+  authors: 'Philip Kotler',
+  isbn: '',
+  course_code: 'MKG3301',
+  price: '35',
+  original_price: '85',
+  campus: 'UQAM',
+  description: 'Bon état',
+  meet_campus: 'true',
+  meet_city: 'false',
+  post: 'false',
+}
+
+// ─── POST /api/listings ────────────────────────────────────────────────────────
+
+describe('POST /api/listings', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-123' } } })
+    mockInsert.mockResolvedValue({ data: { id: 'listing-1', ...validFields }, error: null })
+  })
+
+  test('sans auth → 401', async () => {
+    const req = makeRequest(validFields, false)
+    const res = await POST(req)
+    expect(res.status).toBe(401)
+    const body = await res.json()
+    expect(body.error).toMatch(/autorisé/i)
+  })
+
+  test('titre vide → 400', async () => {
+    const req = makeRequest({ ...validFields, title: '' })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toBeTruthy()
+  })
+
+  test('prix invalide → 400', async () => {
+    const req = makeRequest({ ...validFields, price: '0' })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
+  test('prix neuf ≤ prix de vente → 400', async () => {
+    const req = makeRequest({ ...validFields, price: '50', original_price: '30' })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
+  test('état invalide → 400', async () => {
+    const req = makeRequest({ ...validFields, description: 'Cassé' })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
+  test('données valides → 200 avec listing', async () => {
+    const req = makeRequest(validFields)
+    const res = await POST(req)
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.listing).toBeDefined()
+  })
+
+  test('erreur Supabase → 500', async () => {
+    mockInsert.mockResolvedValue({ data: null, error: { message: 'DB error' } })
+    const req = makeRequest(validFields)
+    const res = await POST(req)
+    expect(res.status).toBe(500)
+  })
+})
+
+// ─── PATCH /api/listings ───────────────────────────────────────────────────────
+
+describe('PATCH /api/listings', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-123' } } })
+    mockUpdate.mockResolvedValue({ data: { id: 'listing-1', ...validFields }, error: null })
+  })
+
+  test('sans auth → 401', async () => {
+    const req = makeRequest({ listing_id: '1', ...validFields }, false)
+    const res = await PATCH(req)
+    expect(res.status).toBe(401)
+  })
+
+  test('sans listing_id → 400', async () => {
+    const req = makeRequest(validFields)
+    const res = await PATCH(req)
+    expect(res.status).toBe(400)
+    const body = await res.json()
+    expect(body.error).toMatch(/id annonce/i)
+  })
+
+  test('champs invalides → 400', async () => {
+    const req = makeRequest({ listing_id: '1', ...validFields, price: '-1' })
+    const res = await PATCH(req)
+    expect(res.status).toBe(400)
+  })
+
+  test('annonce introuvable (Supabase null) → 403', async () => {
+    mockUpdate.mockResolvedValue({ data: null, error: null })
+    const req = makeRequest({ listing_id: '999', ...validFields })
+    const res = await PATCH(req)
+    expect(res.status).toBe(403)
+  })
+
+  test('mise à jour valide → 200 avec listing', async () => {
+    const req = makeRequest({ listing_id: '1', ...validFields })
+    const res = await PATCH(req)
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.listing).toBeDefined()
+  })
+})

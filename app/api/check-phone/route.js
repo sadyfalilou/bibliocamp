@@ -1,19 +1,54 @@
-// Cache simple en mémoire pour rate limiting
-const ipCallCount = new Map()
+import { createClient } from '@supabase/supabase-js'
 
-export async function POST(request) {
-  // Rate limit : max 5 vérifications par IP par heure
-  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+const RATE_LIMIT = 5
+const WINDOW_MS = 3_600_000 // 1h
+
+// Exporté pour les tests unitaires (fallback en mémoire quand Supabase indisponible)
+export const ipCallCount = new Map()
+
+async function checkRateLimit(ip) {
+  // En test ou sans Supabase service key, fallback mémoire
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!supabaseUrl || !serviceKey) return useFallback(ip)
+
+  const supabase = createClient(supabaseUrl, serviceKey)
+  const windowStart = new Date(Date.now() - WINDOW_MS).toISOString()
+
+  const { count, error } = await supabase
+    .from('rate_limits')
+    .select('*', { count: 'exact', head: true })
+    .eq('key', ip)
+    .gte('created_at', windowStart)
+
+  if (error) return useFallback(ip)
+
+  if (count >= RATE_LIMIT) return false
+
+  await supabase.from('rate_limits').insert({ key: ip })
+  return true
+}
+
+function useFallback(ip) {
   const now = Date.now()
   const calls = ipCallCount.get(ip) || []
-  const recentCalls = calls.filter(t => now - t < 3600000) // 1h
-  if (recentCalls.length >= 5) {
-    return Response.json({ valid: false, error: 'Trop de tentatives. Réessaie dans une heure.' }, { status: 429 })
+  const recent = calls.filter(t => now - t < WINDOW_MS)
+  if (recent.length >= RATE_LIMIT) return false
+  ipCallCount.set(ip, [...recent, now])
+  return true
+}
+
+export async function POST(request) {
+  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  const allowed = await checkRateLimit(ip)
+  if (!allowed) {
+    return Response.json(
+      { valid: false, error: 'Trop de tentatives. Réessaie dans une heure.' },
+      { status: 429 }
+    )
   }
-  ipCallCount.set(ip, [...recentCalls, now])
 
   const { phone } = await request.json()
-
   if (!phone) {
     return Response.json({ valid: false, error: 'Numéro manquant.' }, { status: 400 })
   }
@@ -22,7 +57,6 @@ export async function POST(request) {
   const authToken = process.env.TWILIO_AUTH_TOKEN
 
   if (!accountSid || !authToken) {
-    // Si pas de clés configurées, on laisse passer (mode dev)
     return Response.json({ valid: true })
   }
 
@@ -30,20 +64,16 @@ export async function POST(request) {
     const credentials = Buffer.from(`${accountSid}:${authToken}`).toString('base64')
     const res = await fetch(
       `https://lookups.twilio.com/v1/PhoneNumbers/${encodeURIComponent(phone)}?Type=carrier`,
-      {
-        headers: { Authorization: `Basic ${credentials}` }
-      }
+      { headers: { Authorization: `Basic ${credentials}` } }
     )
 
     if (!res.ok) {
-      // Numéro invalide ou inexistant
       return Response.json({ valid: false, error: 'Numéro de téléphone invalide ou inexistant.' })
     }
 
     const data = await res.json()
     const lineType = data?.carrier?.type
 
-    // Bloquer VoIP et numéros fictifs
     if (lineType === 'voip' || lineType === 'nonfix') {
       return Response.json({
         valid: false,
@@ -52,8 +82,7 @@ export async function POST(request) {
     }
 
     return Response.json({ valid: true, lineType })
-  } catch (e) {
-    // En cas d'erreur réseau, on laisse passer
+  } catch {
     return Response.json({ valid: true })
   }
 }
