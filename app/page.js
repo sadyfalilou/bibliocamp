@@ -58,6 +58,10 @@ export default function Home() {
   const [view, setView] = useState('acheter') // 'acheter' | 'vendre' | 'mes-annonces'
   const [selectedBook, setSelectedBook] = useState(null)
   const [relatedListings, setRelatedListings] = useState([])
+  const [reportModal, setReportModal] = useState(null) // listing_id à signaler
+  const [reportReason, setReportReason] = useState('')
+  const [reportSent, setReportSent] = useState(false)
+  const [reportLoading, setReportLoading] = useState(false)
   const [filterMethods, setFilterMethods] = useState(new Set()) // set vide = Tous
   // Filtres liste principale
   const [sortBy, setSortBy] = useState('recent')
@@ -253,6 +257,30 @@ export default function Home() {
     const { error } = await supabase.from('listings').delete().eq('id', id)
     if (error) alert('Erreur suppression')
     else fetchListings()
+  }
+
+  const handleReport = async () => {
+    if (!reportReason) return
+    setReportLoading(true)
+    const { error } = await supabase.from('reports').insert({
+      listing_id: reportModal,
+      reporter_id: user.id,
+      reason: reportReason
+    })
+    setReportLoading(false)
+    if (error?.code === '23505') {
+      setReportSent(true) // déjà signalé
+    } else if (error) {
+      alert('Erreur lors du signalement.')
+    } else {
+      setReportSent(true)
+    }
+  }
+
+  const closeReportModal = () => {
+    setReportModal(null)
+    setReportReason('')
+    setReportSent(false)
   }
 
   const handleLogout = () => {
@@ -1393,6 +1421,49 @@ export default function Home() {
       </div>
 
       {/* ===== SLIDE-OVER ===== */}
+      {/* MODAL SIGNALEMENT */}
+      {reportModal && (
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}
+          onClick={closeReportModal}>
+          <div style={{ background: 'white', borderRadius: 16, padding: 32, maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.3)' }}
+            onClick={e => e.stopPropagation()}>
+            {reportSent ? (
+              <div style={{ textAlign: 'center' }}>
+                <div style={{ fontSize: 48, marginBottom: 12 }}>✅</div>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a2e4a', margin: '0 0 8px' }}>Signalement envoyé</h3>
+                <p style={{ color: '#718096', fontSize: 14, margin: '0 0 24px' }}>Merci, nous allons examiner cette annonce.</p>
+                <button onClick={closeReportModal} style={{ background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 10, padding: '10px 28px', fontWeight: 700, cursor: 'pointer' }}>Fermer</button>
+              </div>
+            ) : (
+              <>
+                <h3 style={{ fontSize: 18, fontWeight: 800, color: '#1a2e4a', margin: '0 0 6px' }}>🚩 Signaler cette annonce</h3>
+                <p style={{ color: '#718096', fontSize: 13, margin: '0 0 20px' }}>Pourquoi signales-tu cette annonce ?</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 20 }}>
+                  {['Fausse annonce', 'Prix abusif', 'Contenu inapproprié', 'Vendeur frauduleux', 'Livre déjà vendu', 'Autre'].map(reason => (
+                    <button key={reason} type="button" onClick={() => setReportReason(reason)} style={{
+                      padding: '10px 16px', textAlign: 'left', borderRadius: 8, cursor: 'pointer', fontSize: 14,
+                      border: `2px solid ${reportReason === reason ? '#e53e3e' : '#e2e8f0'}`,
+                      background: reportReason === reason ? '#fff5f5' : 'white',
+                      color: reportReason === reason ? '#e53e3e' : '#4a5568',
+                      fontWeight: reportReason === reason ? 700 : 400,
+                      transition: 'all 0.15s'
+                    }}>
+                      {reportReason === reason ? '● ' : '○ '}{reason}
+                    </button>
+                  ))}
+                </div>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  <button onClick={closeReportModal} style={{ flex: 1, padding: '10px', background: 'white', color: '#718096', border: '1px solid #e2e8f0', borderRadius: 10, fontWeight: 600, cursor: 'pointer' }}>Annuler</button>
+                  <button onClick={handleReport} disabled={!reportReason || reportLoading} style={{ flex: 1, padding: '10px', background: !reportReason || reportLoading ? '#a0aec0' : '#e53e3e', color: 'white', border: 'none', borderRadius: 10, fontWeight: 700, cursor: !reportReason || reportLoading ? 'not-allowed' : 'pointer' }}>
+                    {reportLoading ? 'Envoi...' : 'Signaler'}
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
       {selectedBook && (() => {
         const allSellers = [selectedBook, ...relatedListings].sort((a, b) => a.price - b.price)
         const filteredSellers = allSellers.filter(s => {
@@ -1754,6 +1825,11 @@ export default function Home() {
                                 <button onClick={() => { setSelectedBook(null); router.push(`/edit/${s.id}`) }} style={{ flex: 1, padding: '8px', background: '#f0fdf9', color: '#00c9a7', border: '1px solid #00c9a7', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>✏️ Modifier</button>
                                 <button onClick={() => { handleDelete(s.id); setSelectedBook(null) }} style={{ flex: 1, padding: '8px', background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>🗑️ Supprimer</button>
                               </div>
+                            )}
+                            {user?.id !== s.user_id && (
+                              <button onClick={() => { setReportModal(s.id); setReportSent(false); setReportReason('') }} style={{ marginTop: 6, background: 'none', border: 'none', color: '#a0aec0', fontSize: 11, cursor: 'pointer', padding: 0, textDecoration: 'underline' }}>
+                                🚩 Signaler cette annonce
+                              </button>
                             )}
                           </div>
                         )}
