@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import imageCompression from 'browser-image-compression'
 import { supabase } from '../../../lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 
@@ -27,21 +28,69 @@ export default function Edit() {
   const [existingImageUrl, setExistingImageUrl] = useState(null)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
+  const [errors, setErrors] = useState({})
+  const [touched, setTouched] = useState({})
+  const [serverError, setServerError] = useState('')
+  const [imageInfo, setImageInfo] = useState(null)
+  const sessionTokenRef = useRef(null)
 
   const savingsPercent = price && originalPrice && Number(originalPrice) > 0
     ? Math.round(((Number(originalPrice) - Number(price)) / Number(originalPrice)) * 100)
     : null
 
+  const validateField = (name, val, extra = {}) => {
+    switch (name) {
+      case 'title':
+        if (!val.trim()) return 'Le titre est obligatoire.'
+        if (val.trim().length > 150) return `${val.trim().length}/150 — trop long.`
+        return ''
+      case 'authors': return val.length > 200 ? `${val.length}/200 — trop long.` : ''
+      case 'isbn': return val && !/^\d{10,13}$/.test(val.replace(/[-\s]/g, '')) ? 'Doit contenir 10 ou 13 chiffres.' : ''
+      case 'course': return val.length > 20 ? `${val.length}/20 — trop long.` : ''
+      case 'price':
+        if (!val || isNaN(Number(val)) || Number(val) <= 0 || Number(val) > 9999) return 'Entre 1 $ et 9 999 $.'
+        return ''
+      case 'originalPrice':
+        if (!val) return ''
+        if (isNaN(Number(val)) || Number(val) <= 0 || Number(val) > 9999) return 'Entre 1 $ et 9 999 $.'
+        if (extra.price && Number(val) <= Number(extra.price)) return 'Doit être supérieur au prix de vente.'
+        return ''
+      case 'campus': return val.length > 100 ? `${val.length}/100 — trop long.` : ''
+      default: return ''
+    }
+  }
+
+  const touch = (name, val, extra = {}) => {
+    setTouched(prev => ({ ...prev, [name]: true }))
+    setErrors(prev => ({ ...prev, [name]: validateField(name, val, extra) }))
+  }
+
+  const handleFieldChange = (name, val, setter, extra = {}) => {
+    setter(val)
+    if (touched[name]) setErrors(prev => ({ ...prev, [name]: validateField(name, val, extra) }))
+  }
+
+  const fieldStyle = (name) => ({
+    width: '100%', padding: '11px 14px',
+    border: `1.5px solid ${errors[name] ? '#e53e3e' : touched[name] && !errors[name] ? '#00c9a7' : '#cbd5e0'}`,
+    borderRadius: 8, fontSize: 15, outline: 'none', boxSizing: 'border-box',
+    transition: 'border-color 0.2s', background: errors[name] ? '#fff5f5' : 'white'
+  })
+
+  const ErrorMsg = ({ name }) => errors[name] ? (
+    <div style={{ color: '#e53e3e', fontSize: 12, fontWeight: 600, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
+      ⚠ {errors[name]}
+    </div>
+  ) : null
+
   useEffect(() => {
     const fetchData = async () => {
-      const timeout = setTimeout(() => {
-        setFetching(false)
-        alert('Impossible de charger le livre. Vérifie ta connexion.')
-        router.push('/')
-      }, 8000)
-
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session) { clearTimeout(timeout); router.push('/login'); return }
+      // Charger la session et la listing en parallèle pour aller plus vite
+      const [{ data: { session } }, ] = await Promise.all([
+        supabase.auth.getSession()
+      ])
+      if (!session) { router.push('/login'); return }
+      sessionTokenRef.current = session.access_token
 
       const { data, error } = await supabase
         .from('listings')
@@ -49,8 +98,6 @@ export default function Edit() {
         .eq('id', id)
         .eq('user_id', session.user.id)
         .single()
-
-      clearTimeout(timeout)
 
       if (error || !data) { router.push('/'); return }
 
@@ -73,69 +120,92 @@ export default function Edit() {
     if (id) fetchData()
   }, [id])
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const file = e.target.files[0]
     if (!file) return
-    setImage(file)
-    setImagePreview(URL.createObjectURL(file))
+    const allowed = ['image/jpeg', 'image/png', 'image/webp']
+    if (!allowed.includes(file.type)) {
+      setErrors(prev => ({ ...prev, image: 'Format non supporté. Utilise JPG, PNG ou WebP.' }))
+      return
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      setErrors(prev => ({ ...prev, image: "L'image ne peut pas dépasser 5 MB." }))
+      return
+    }
+    setErrors(prev => ({ ...prev, image: '' }))
+    const originalKB = Math.round(file.size / 1024)
+    const compressed = await imageCompression(file, {
+      maxSizeMB: 0.5,
+      maxWidthOrHeight: 800,
+      useWebWorker: true
+    })
+    const compressedKB = Math.round(compressed.size / 1024)
+    setImageInfo({ original: originalKB, compressed: compressedKB })
+    setImage(compressed)
+    setImagePreview(URL.createObjectURL(compressed))
   }
 
   const handleRemoveImage = () => {
     setImage(null)
     setImagePreview(null)
     setExistingImageUrl(null)
+    setImageInfo(null)
+    setErrors(prev => ({ ...prev, image: '' }))
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
   const handleUpdate = async (e) => {
     e.preventDefault()
-
-    // Validations
-    if (!title.trim()) { alert('Le titre est obligatoire.'); return }
-    if (title.trim().length > 150) { alert('Le titre ne peut pas dépasser 150 caractères.'); return }
-    if (authors.length > 200) { alert('Le champ auteurs ne peut pas dépasser 200 caractères.'); return }
-    if (isbn && !/^\d{10,13}$/.test(isbn.replace(/[-\s]/g, ''))) { alert('ISBN invalide — doit contenir 10 ou 13 chiffres.'); return }
-    if (course && course.length > 20) { alert('Le code de cours ne peut pas dépasser 20 caractères.'); return }
-    if (!price || Number(price) <= 0 || Number(price) > 9999) { alert('Le prix doit être entre 1 $ et 9 999 $.'); return }
-    if (originalPrice && (Number(originalPrice) <= 0 || Number(originalPrice) > 9999)) { alert('Le prix neuf doit être entre 1 $ et 9 999 $.'); return }
-    if (originalPrice && Number(originalPrice) <= Number(price)) { alert('Le prix neuf doit être supérieur à ton prix de vente.'); return }
-    if (campus && campus.length > 100) { alert('Le nom du campus ne peut pas dépasser 100 caractères.'); return }
+    // Valider tous les champs avant envoi
+    const allErrors = {
+      title: validateField('title', title),
+      authors: validateField('authors', authors),
+      isbn: validateField('isbn', isbn),
+      course: validateField('course', course),
+      price: validateField('price', price),
+      originalPrice: validateField('originalPrice', originalPrice, { price }),
+      campus: validateField('campus', campus),
+    }
+    setErrors(allErrors)
+    setTouched({ title: true, authors: true, isbn: true, course: true, price: true, originalPrice: true, campus: true })
+    allErrors.image = errors.image || ''
+    setErrors(allErrors)
+    if (Object.values(allErrors).some(e => e !== '')) return
 
     setLoading(true)
 
-    let imageUrl = existingImageUrl
+    const formData = new FormData()
+    formData.append('listing_id', id)
+    formData.append('title', title)
+    formData.append('authors', authors)
+    formData.append('isbn', isbn)
+    formData.append('course_code', course)
+    formData.append('price', price)
+    formData.append('original_price', originalPrice)
+    formData.append('description', etat)
+    formData.append('campus', campus)
+    formData.append('meet_campus', meetCampus)
+    formData.append('meet_city', meetCity)
+    formData.append('post', post)
+    formData.append('existing_image_url', existingImageUrl || '')
+    if (image) formData.append('image', image)
 
-    if (image) {
-      const fileName = Date.now() + '-' + image.name
-      const { error: uploadError } = await supabase.storage.from('images').upload(fileName, image)
-      if (uploadError) { alert('Erreur upload image'); setLoading(false); return }
-      const { data } = supabase.storage.from('images').getPublicUrl(fileName)
-      imageUrl = data.publicUrl
-    }
-
-    if (!existingImageUrl && !image) imageUrl = null
-
-    const { error } = await supabase
-      .from('listings')
-      .update({
-        title,
-        authors,
-        isbn,
-        course_code: course,
-        price: Number(price),
-        original_price: originalPrice ? Number(originalPrice) : null,
-        description: etat,
-        campus,
-        meet_campus: meetCampus,
-        meet_city: meetCity,
-        post,
-        image_url: imageUrl
-      })
-      .eq('id', id)
-      .eq('user_id', (await supabase.auth.getSession()).data.session?.user.id)
-
+    const res = await fetch('/api/listings', {
+      method: 'PATCH',
+      headers: { 'Authorization': `Bearer ${sessionTokenRef.current}` },
+      body: formData
+    })
+    const json = await res.json()
     setLoading(false)
-    if (error) { alert('Erreur: ' + error.message); return }
+    if (!res.ok) {
+      const msg = json.error || 'Erreur lors de la mise à jour.'
+      if (msg.toLowerCase().includes('image') || msg.toLowerCase().includes('format')) {
+        setErrors(prev => ({ ...prev, image: msg }))
+      } else {
+        setServerError(msg)
+      }
+      return
+    }
     window.location.href = '/'
   }
 
@@ -189,6 +259,16 @@ export default function Edit() {
             Modifier le manuel
           </h1>
 
+          {serverError && (
+            <div style={{
+              background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 10,
+              padding: '12px 16px', marginBottom: 16,
+              color: '#c53030', fontSize: 14, fontWeight: 600,
+              display: 'flex', alignItems: 'center', gap: 8
+            }}>
+              ⚠️ {serverError}
+            </div>
+          )}
           <form onSubmit={handleUpdate}>
 
             {/* INFOS */}
@@ -203,19 +283,15 @@ export default function Edit() {
               <div style={{ marginBottom: 18 }}>
                 <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
                   Titre du manuel <span style={{ color: '#e53e3e' }}>*</span>
+                  <span style={{ fontWeight: 400, color: '#a0aec0', fontSize: 12, marginLeft: 8 }}>{title.length}/150</span>
                 </label>
                 <input
                   value={title}
-                  onChange={e => setTitle(e.target.value)}
-                  required
-                  style={{
-                    width: '100%', padding: '11px 14px',
-                    border: '1px solid #cbd5e0', borderRadius: 8,
-                    fontSize: 15, outline: 'none', boxSizing: 'border-box'
-                  }}
-                  onFocus={e => e.target.style.borderColor = '#00c9a7'}
-                  onBlur={e => e.target.style.borderColor = '#cbd5e0'}
+                  onChange={e => handleFieldChange('title', e.target.value, setTitle)}
+                  onBlur={e => touch('title', e.target.value)}
+                  style={fieldStyle('title')}
                 />
+                <ErrorMsg name="title" />
               </div>
 
               <div style={{ marginBottom: 18 }}>
@@ -224,52 +300,36 @@ export default function Edit() {
                 </label>
                 <input
                   value={authors}
-                  onChange={e => setAuthors(e.target.value)}
+                  onChange={e => handleFieldChange('authors', e.target.value, setAuthors)}
+                  onBlur={e => touch('authors', e.target.value)}
                   placeholder="ex: Philip Kotler, Kevin Lane Keller"
-                  style={{
-                    width: '100%', padding: '11px 14px',
-                    border: '1px solid #cbd5e0', borderRadius: 8,
-                    fontSize: 15, outline: 'none', boxSizing: 'border-box'
-                  }}
-                  onFocus={e => e.target.style.borderColor = '#00c9a7'}
-                  onBlur={e => e.target.style.borderColor = '#cbd5e0'}
+                  style={fieldStyle('authors')}
                 />
+                <ErrorMsg name="authors" />
               </div>
 
               <div style={{ display: 'flex', gap: 16, marginBottom: 18 }}>
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
-                    ISBN
-                  </label>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>ISBN</label>
                   <input
                     value={isbn}
-                    onChange={e => setIsbn(e.target.value)}
+                    onChange={e => handleFieldChange('isbn', e.target.value, setIsbn)}
+                    onBlur={e => touch('isbn', e.target.value)}
                     placeholder="ex: 9782765141310"
-                    style={{
-                      width: '100%', padding: '11px 14px',
-                      border: '1px solid #cbd5e0', borderRadius: 8,
-                      fontSize: 15, outline: 'none', boxSizing: 'border-box'
-                    }}
-                    onFocus={e => e.target.style.borderColor = '#00c9a7'}
-                    onBlur={e => e.target.style.borderColor = '#cbd5e0'}
+                    style={fieldStyle('isbn')}
                   />
+                  <ErrorMsg name="isbn" />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
-                    Code de cours
-                  </label>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>Code de cours</label>
                   <input
                     value={course}
-                    onChange={e => setCourse(e.target.value)}
+                    onChange={e => handleFieldChange('course', e.target.value, setCourse)}
+                    onBlur={e => touch('course', e.target.value)}
                     placeholder="ex: MKG3301"
-                    style={{
-                      width: '100%', padding: '11px 14px',
-                      border: '1px solid #cbd5e0', borderRadius: 8,
-                      fontSize: 15, outline: 'none', boxSizing: 'border-box'
-                    }}
-                    onFocus={e => e.target.style.borderColor = '#00c9a7'}
-                    onBlur={e => e.target.style.borderColor = '#cbd5e0'}
+                    style={fieldStyle('course')}
                   />
+                  <ErrorMsg name="course" />
                 </div>
               </div>
 
@@ -302,15 +362,11 @@ export default function Edit() {
                 <input
                   placeholder="ex: UQAM, HEC Montréal, McGill, Concordia..."
                   value={campus}
-                  onChange={e => setCampus(e.target.value)}
-                  style={{
-                    width: '100%', padding: '11px 14px',
-                    border: '1px solid #cbd5e0', borderRadius: 8,
-                    fontSize: 15, outline: 'none', boxSizing: 'border-box'
-                  }}
-                  onFocus={e => e.target.style.borderColor = '#00c9a7'}
-                  onBlur={e => e.target.style.borderColor = '#cbd5e0'}
+                  onChange={e => handleFieldChange('campus', e.target.value, setCampus)}
+                  onBlur={e => touch('campus', e.target.value)}
+                  style={fieldStyle('campus')}
                 />
+                <ErrorMsg name="campus" />
               </div>
 
               {/* MÉTHODES */}
@@ -356,32 +412,25 @@ export default function Edit() {
                     Ton prix ($) <span style={{ color: '#e53e3e' }}>*</span>
                   </label>
                   <input
-                    type="number" value={price} onChange={e => setPrice(e.target.value)}
-                    required min="1"
-                    style={{
-                      width: '100%', padding: '11px 14px',
-                      border: '1px solid #cbd5e0', borderRadius: 8,
-                      fontSize: 15, outline: 'none', boxSizing: 'border-box'
-                    }}
-                    onFocus={e => e.target.style.borderColor = '#00c9a7'}
-                    onBlur={e => e.target.style.borderColor = '#cbd5e0'}
+                    type="number" value={price}
+                    onChange={e => handleFieldChange('price', e.target.value, setPrice)}
+                    onBlur={e => touch('price', e.target.value)}
+                    min="1" style={fieldStyle('price')}
                   />
+                  <ErrorMsg name="price" />
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
                     Prix neuf ($) <span style={{ color: '#a0aec0', fontWeight: 400 }}>(pour afficher l'économie)</span>
                   </label>
                   <input
-                    type="number" value={originalPrice} onChange={e => setOriginalPrice(e.target.value)}
+                    type="number" value={originalPrice}
+                    onChange={e => handleFieldChange('originalPrice', e.target.value, setOriginalPrice, { price })}
+                    onBlur={e => touch('originalPrice', e.target.value, { price })}
                     min="1" placeholder="ex: 85"
-                    style={{
-                      width: '100%', padding: '11px 14px',
-                      border: '1px solid #cbd5e0', borderRadius: 8,
-                      fontSize: 15, outline: 'none', boxSizing: 'border-box'
-                    }}
-                    onFocus={e => e.target.style.borderColor = '#00c9a7'}
-                    onBlur={e => e.target.style.borderColor = '#cbd5e0'}
+                    style={fieldStyle('originalPrice')}
                   />
+                  <ErrorMsg name="originalPrice" />
                 </div>
               </div>
               {savingsPercent > 0 && (
@@ -408,13 +457,13 @@ export default function Edit() {
               <label style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 justifyContent: 'center', gap: 10,
-                border: '2px dashed #cbd5e0', borderRadius: 10,
-                padding: '28px', cursor: 'pointer',
-                background: imagePreview ? 'transparent' : '#f7fafc',
-                transition: 'border-color 0.2s'
+                border: `2px dashed ${errors.image ? '#e53e3e' : '#cbd5e0'}`,
+                borderRadius: 10, padding: '28px', cursor: 'pointer',
+                background: errors.image ? '#fff5f5' : imagePreview ? 'transparent' : '#f7fafc',
+                transition: 'border-color 0.2s, background 0.2s'
               }}
-                onMouseEnter={e => e.currentTarget.style.borderColor = '#00c9a7'}
-                onMouseLeave={e => e.currentTarget.style.borderColor = '#cbd5e0'}
+                onMouseEnter={e => { if (!errors.image) e.currentTarget.style.borderColor = '#00c9a7' }}
+                onMouseLeave={e => { if (!errors.image) e.currentTarget.style.borderColor = '#cbd5e0' }}
               >
                 {imagePreview ? (
                   <img src={imagePreview} alt="preview" style={{
@@ -424,7 +473,7 @@ export default function Edit() {
                   <>
                     <span style={{ fontSize: 32 }}>📷</span>
                     <span style={{ color: '#718096', fontSize: 14 }}>Clique pour ajouter une photo</span>
-                    <span style={{ color: '#a0aec0', fontSize: 12 }}>JPG, PNG — max 5 MB</span>
+                    <span style={{ color: '#a0aec0', fontSize: 12 }}>JPG, PNG, WebP — compressée automatiquement</span>
                   </>
                 )}
                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
@@ -437,7 +486,23 @@ export default function Edit() {
                   × Supprimer la photo
                 </button>
               )}
+              {errors.image && (
+                <div style={{ color: '#e53e3e', fontSize: 12, fontWeight: 600, marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                  ⚠ {errors.image}
+                </div>
+              )}
             </div>
+
+            {serverError && (
+              <div style={{
+                background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 10,
+                padding: '12px 16px', marginBottom: 16,
+                color: '#c53030', fontSize: 14, fontWeight: 600,
+                display: 'flex', alignItems: 'center', gap: 8
+              }}>
+                ⚠️ {serverError}
+              </div>
+            )}
 
             <div style={{ display: 'flex', gap: 12 }}>
               <button type="submit" disabled={loading} style={{
