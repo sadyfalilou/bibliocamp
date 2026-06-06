@@ -36,5 +36,5 @@ export async function proxy(req) {
 
 // 🔥 appliquer partout sauf assets
 export const config = {
-  matcher: ['/((?!_next|favicon.ico).*)']
+  matcher: ['/((?!_next|favicon.ico|api).*)']
 }

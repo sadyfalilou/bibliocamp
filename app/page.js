@@ -41,8 +41,12 @@ function isValidPhone(phone) {
   return digits.length >= 10 && digits.length <= 15
 }
 
+const LISTINGS_PER_PAGE = 24
+
 export default function Home() {
   const [listings, setListings] = useState([])
+  const [hasMore, setHasMore] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [search, setSearch] = useState('')
   const [user, setUser] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
@@ -76,14 +80,15 @@ export default function Home() {
   const [verifyingCode, setVerifyingCode] = useState(false)
   const router = useRouter()
 
-  const fetchListings = async () => {
+  const fetchListings = async (offset = 0, append = false) => {
     const { data, error } = await supabase
       .from('listings')
       .select('*')
       .order('created_at', { ascending: false })
+      .range(offset, offset + LISTINGS_PER_PAGE - 1)
     if (!error && data) {
-      setListings(data)
-      // Charger les profils des vendeurs
+      setListings(prev => append ? [...prev, ...data] : data)
+      setHasMore(data.length === LISTINGS_PER_PAGE)
       const userIds = [...new Set(data.map(l => l.user_id).filter(Boolean))]
       if (userIds.length > 0) {
         const { data: profiles } = await supabase
@@ -93,10 +98,16 @@ export default function Home() {
         if (profiles) {
           const map = {}
           profiles.forEach(p => { map[p.id] = p })
-          setProfilesMap(map)
+          setProfilesMap(prev => ({ ...prev, ...map }))
         }
       }
     }
+  }
+
+  const loadMore = async () => {
+    setLoadingMore(true)
+    await fetchListings(listings.length, true)
+    setLoadingMore(false)
   }
 
   useEffect(() => {
@@ -936,6 +947,18 @@ export default function Home() {
                       </div>
                     </div>
                   ))}
+                </div>
+              )}
+
+              {view === 'acheter' && !search && !filterEtat && !filterTransaction && !filterInstitution && hasMore && (
+                <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
+                  <button onClick={loadMore} disabled={loadingMore} style={{
+                    padding: '12px 32px', background: loadingMore ? '#a0aec0' : '#1a2e4a',
+                    color: 'white', border: 'none', borderRadius: 10,
+                    fontWeight: 700, fontSize: 15, cursor: loadingMore ? 'not-allowed' : 'pointer'
+                  }}>
+                    {loadingMore ? 'Chargement...' : "Charger plus d'annonces"}
+                  </button>
                 </div>
               )}
             </>

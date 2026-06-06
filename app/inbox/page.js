@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 
@@ -15,7 +15,7 @@ function timeAgo(dateStr) {
   return 'maintenant'
 }
 
-export default function Inbox() {
+function InboxInner() {
   const [user, setUser] = useState(null)
   const [profiles, setProfiles] = useState({})
   const [conversations, setConversations] = useState([])
@@ -443,4 +443,8 @@ export default function Inbox() {
       </div>
     </div>
   )
+}
+
+export default function Inbox() {
+  return <Suspense><InboxInner /></Suspense>
 }

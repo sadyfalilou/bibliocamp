@@ -40,10 +40,14 @@ export default function Edit() {
         router.push('/')
       }, 8000)
 
+      const { data: { session } } = await supabase.auth.getSession()
+      if (!session) { clearTimeout(timeout); router.push('/login'); return }
+
       const { data, error } = await supabase
         .from('listings')
         .select('*')
         .eq('id', id)
+        .eq('user_id', session.user.id)
         .single()
 
       clearTimeout(timeout)
@@ -128,6 +132,7 @@ export default function Edit() {
         image_url: imageUrl
       })
       .eq('id', id)
+      .eq('user_id', (await supabase.auth.getSession()).data.session?.user.id)
 
     setLoading(false)
     if (error) { alert('Erreur: ' + error.message); return }

@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, Suspense } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 
 const ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
 
-export default function Create() {
+function CreateInner() {
   const [userId, setUserId] = useState(null)
   const [title, setTitle] = useState('')
   const [authors, setAuthors] = useState('')
@@ -479,4 +479,8 @@ export default function Create() {
       </div>
     </div>
   )
+}
+
+export default function Create() {
+  return <Suspense><CreateInner /></Suspense>
 }
