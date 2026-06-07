@@ -20,14 +20,22 @@ dashboard. **La responsabilité de la sauvegarde nous incombe entièrement.**
 
 ### Manuellement (recommandé : 1 fois par semaine minimum)
 
-```bash
-# Récupère la chaîne de connexion :
-# Supabase → Project Settings → Database → Connection string (URI, mode "Session")
+Récupère la chaîne de connexion : Supabase → Project Settings → Database →
+Connection string (URI, mode "Session").
 
+**macOS / Linux / Git Bash :**
+```bash
 DATABASE_URL="postgresql://postgres:[PASSWORD]@[HOST]:5432/postgres" ./scripts/backup-db.sh
 ```
 
-Le script génère un fichier compressé dans `backups/bibliocamp-AAAAMMJJ-HHMMSS.sql.gz`.
+**Windows (PowerShell) :**
+```powershell
+$env:DATABASE_URL = "postgresql://postgres.xxx:[PASSWORD]@[HOST]:5432/postgres"
+.\scripts\backup-db.ps1
+```
+
+Le script génère un fichier compressé dans `backups/bibliocamp-AAAAMMJJ-HHMMSS.sql.gz`
+(ou `.zip` sous PowerShell, si 7-Zip est installé — sinon le `.sql` brut est conservé).
 
 **Important : copie ensuite ce fichier hors de ta machine** (Google Drive,
 disque externe, etc.) — un backup qui reste sur le même disque que la prod
