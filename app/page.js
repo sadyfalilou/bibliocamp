@@ -254,8 +254,12 @@ export default function Home() {
 
   const handleDelete = async (id) => {
     if (!confirm('Supprimer ce manuel ?')) return
-    const { error } = await supabase.from('listings').delete().eq('id', id)
-    if (error) alert('Erreur suppression')
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(`/api/listings?id=${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session?.access_token}` }
+    })
+    if (!res.ok) alert('Erreur suppression')
     else fetchListings()
   }
 

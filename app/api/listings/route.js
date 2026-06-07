@@ -168,3 +168,36 @@ export async function PATCH(request) {
   if (error || !data) return Response.json({ error: 'Annonce introuvable ou accès refusé.' }, { status: 403 })
   return Response.json({ listing: data })
 }
+
+// DELETE /api/listings?id=xxx — supprimer une annonce et son image associée
+export async function DELETE(request) {
+  const user = await getUser(request)
+  if (!user) return Response.json({ error: 'Non autorisé.' }, { status: 401 })
+
+  const listingId = new URL(request.url).searchParams.get('id')
+  if (!listingId) return Response.json({ error: 'ID annonce manquant.' }, { status: 400 })
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+
+  const { data: listing, error: fetchErr } = await supabase
+    .from('listings')
+    .select('id, image_url, user_id')
+    .eq('id', listingId)
+    .eq('user_id', user.id)
+    .single()
+
+  if (fetchErr || !listing) return Response.json({ error: 'Annonce introuvable ou accès refusé.' }, { status: 403 })
+
+  if (listing.image_url) {
+    const fileName = listing.image_url.split('/').pop()
+    if (fileName) await supabase.storage.from('images').remove([fileName])
+  }
+
+  const { error: deleteErr } = await supabase.from('listings').delete().eq('id', listingId).eq('user_id', user.id)
+  if (deleteErr) return Response.json({ error: 'Erreur lors de la suppression.' }, { status: 500 })
+
+  return Response.json({ ok: true })
+}
