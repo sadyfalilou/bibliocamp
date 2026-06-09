@@ -66,38 +66,37 @@ export default function AdminReportsPage() {
 
       {!loading && !error && reports.map(r => (
         <div key={r.id} style={{
-          display: 'flex', gap: 16, alignItems: 'center',
           border: '1px solid #e2e8f0', borderRadius: 12, padding: 16, marginBottom: 12
         }}>
-          {r.listing?.image_url ? (
-            <img src={r.listing.image_url} alt="" style={{ width: 70, height: 70, objectFit: 'cover', borderRadius: 8 }} />
-          ) : (
-            <div style={{ width: 70, height: 70, background: '#f1f5f9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24 }}>📚</div>
-          )}
-
-          <div style={{ flex: 1 }}>
-            <div style={{ fontWeight: 700 }}>{r.listing?.title || 'Annonce introuvable (déjà supprimée ?)'}</div>
-            {r.listing?.price != null && <div style={{ color: '#6b7280', fontSize: 14 }}>{r.listing.price} $</div>}
-            <div style={{ marginTop: 6, fontSize: 14 }}>
-              <strong>Motif :</strong> {r.reason}
-            </div>
-            <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
-              Signalé le {new Date(r.created_at).toLocaleString('fr-CA')}
+          <div style={{ display: 'flex', gap: 14, alignItems: 'flex-start' }}>
+            {r.listing?.image_url ? (
+              <img src={r.listing.image_url} alt="" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />
+            ) : (
+              <div style={{ width: 60, height: 60, background: '#f1f5f9', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22, flexShrink: 0 }}>📚</div>
+            )}
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontWeight: 700 }}>{r.listing?.title || 'Annonce introuvable (déjà supprimée ?)'}</div>
+              {r.listing?.price != null && <div style={{ color: '#6b7280', fontSize: 14 }}>{r.listing.price} $</div>}
+              <div style={{ marginTop: 6, fontSize: 14 }}>
+                <strong>Motif :</strong> {r.reason}
+              </div>
+              <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>
+                Signalé le {new Date(r.created_at).toLocaleString('fr-CA')}
+              </div>
             </div>
           </div>
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
             <button
               disabled={actingId === r.id}
               onClick={() => handleAction(r.id, 'dismiss')}
-              style={{ padding: '8px 14px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}
+              style={{ flex: 1, padding: '8px 14px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}
             >
               Ignorer
             </button>
             <button
               disabled={actingId === r.id}
               onClick={() => handleAction(r.id, 'remove-listing', "Supprimer définitivement cette annonce et son image ?")}
-              style={{ padding: '8px 14px', background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}
+              style={{ flex: 1, padding: '8px 14px', background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}
             >
               🗑️ Retirer l'annonce
             </button>

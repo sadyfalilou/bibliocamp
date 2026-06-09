@@ -11,6 +11,7 @@ export default function Edit() {
   const { id } = useParams()
   const router = useRouter()
   const fileInputRef = useRef(null)
+  const [isMobile, setIsMobile] = useState(false)
 
   const [title, setTitle] = useState('')
   const [authors, setAuthors] = useState('')
@@ -119,6 +120,13 @@ export default function Edit() {
 
     if (id) fetchData()
   }, [id])
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   const handleImageChange = async (e) => {
     const file = e.target.files[0]
@@ -248,7 +256,7 @@ export default function Edit() {
         </button>
       </header>
 
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '36px 24px', display: 'flex', gap: 32, alignItems: 'flex-start' }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '20px 16px' : '36px 24px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 32, alignItems: 'flex-start' }}>
 
         {/* FORMULAIRE */}
         <div style={{ flex: 1 }}>
@@ -308,7 +316,7 @@ export default function Edit() {
                 <ErrorMsg name="authors" />
               </div>
 
-              <div style={{ display: 'flex', gap: 16, marginBottom: 18 }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 16, marginBottom: 18 }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>ISBN</label>
                   <input
@@ -406,7 +414,7 @@ export default function Edit() {
               <h2 style={{ fontSize: 12, fontWeight: 700, color: '#a0aec0', margin: '0 0 20px', textTransform: 'uppercase', letterSpacing: 1 }}>
                 Prix
               </h2>
-              <div style={{ display: 'flex', gap: 16 }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 16 }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
                     Ton prix ($) <span style={{ color: '#e53e3e' }}>*</span>
@@ -535,7 +543,7 @@ export default function Edit() {
         </div>
 
         {/* APERÇU LIVE */}
-        <div style={{ width: 300, flexShrink: 0, position: 'sticky', top: 80 }}>
+        <div style={{ width: isMobile ? '100%' : 300, flexShrink: 0, position: isMobile ? 'relative' : 'sticky', top: isMobile ? 'auto' : 80 }}>
           <h3 style={{ fontSize: 13, fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14 }}>
             Aperçu de ton annonce
           </h3>

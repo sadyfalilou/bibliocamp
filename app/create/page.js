@@ -283,7 +283,7 @@ function CreateInner() {
               </div>
 
               {/* ISBN + COURS */}
-              <div style={{ display: 'flex', gap: 16, marginBottom: 18 }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 16, marginBottom: 18 }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
                     ISBN
@@ -392,7 +392,7 @@ function CreateInner() {
               <h2 style={{ fontSize: 12, fontWeight: 700, color: '#a0aec0', margin: '0 0 20px', textTransform: 'uppercase', letterSpacing: 1 }}>
                 Prix
               </h2>
-              <div style={{ display: 'flex', gap: 16 }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 16 }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
                     Ton prix ($) <span style={{ color: '#e53e3e' }}>*</span>

@@ -17,6 +17,7 @@ const PROGRAMS = [
 ]
 
 export default function Profile() {
+  const [isMobile, setIsMobile] = useState(false)
   const [user, setUser] = useState(null)
   const [firstName, setFirstName] = useState('')
   const [lastName, setLastName] = useState('')
@@ -31,6 +32,13 @@ export default function Profile() {
   const [saved, setSaved] = useState(false)
   const avatarInputRef = useRef(null)
   const router = useRouter()
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     const init = async () => {
@@ -128,7 +136,7 @@ export default function Profile() {
         >← Retour</button>
       </header>
 
-      <div style={{ maxWidth: 640, margin: '0 auto', padding: '36px 24px' }}>
+      <div style={{ maxWidth: 640, margin: '0 auto', padding: isMobile ? '20px 16px' : '36px 24px' }}>
 
         {/* Breadcrumb */}
         <div style={{ fontSize: 13, color: '#a0aec0', marginBottom: 8 }}>
@@ -229,7 +237,7 @@ export default function Profile() {
           <div style={{ background: 'white', borderRadius: 14, padding: '24px', border: '1px solid #e2e8f0', marginBottom: 16 }}>
             <h2 style={{ fontSize: 12, fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 18px' }}>Identité</h2>
 
-            <div style={{ display: 'flex', gap: 16, marginBottom: 16 }}>
+            <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 16, marginBottom: 16 }}>
               <div style={{ flex: 1 }}>
                 <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>Prénom</label>
                 <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="ex: Mouhamadou"

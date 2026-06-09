@@ -51,12 +51,12 @@ export default function ResetPassword() {
       {/* HERO */}
       <div style={{
         background: 'linear-gradient(135deg, #1a2e4a 0%, #0d4f6b 60%, #00c9a7 100%)',
-        padding: '40px 40px 70px', textAlign: 'center', color: 'white'
+        padding: '32px 20px 70px', textAlign: 'center', color: 'white'
       }}>
-        <h1 style={{ fontSize: 32, fontWeight: 900, margin: '0 0 8px' }}>
+        <h1 style={{ fontSize: 26, fontWeight: 900, margin: '0 0 8px' }}>
           Réinitialiser le mot de passe
         </h1>
-        <p style={{ fontSize: 16, opacity: 0.85, margin: 0 }}>
+        <p style={{ fontSize: 15, opacity: 0.85, margin: 0 }}>
           Entre ton nouveau mot de passe ci-dessous
         </p>
       </div>
@@ -64,9 +64,10 @@ export default function ResetPassword() {
       {/* FORM */}
       <div style={{
         maxWidth: 420, margin: '-30px auto 60px',
-        background: 'white', borderRadius: 16, padding: '36px 40px',
+        background: 'white', borderRadius: 16, padding: '28px 24px',
         boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
-        position: 'relative', zIndex: 10
+        position: 'relative', zIndex: 10,
+        width: 'calc(100% - 32px)', boxSizing: 'border-box'
       }}>
         {!ready ? (
           <div style={{ textAlign: 'center', color: '#718096', padding: '20px 0' }}>
