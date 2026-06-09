@@ -1397,44 +1397,32 @@ export default function Home() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {myListings.map(item => (
                     <div key={item.id} style={{
-                      background: 'white', borderRadius: 10, padding: '16px 20px',
-                      display: 'flex', alignItems: 'center', gap: 16,
-                      border: '1px solid #e2e8f0'
+                      background: 'white', borderRadius: 10, padding: '14px',
+                      display: 'flex', flexDirection: isMobile ? 'column' : 'row',
+                      alignItems: isMobile ? 'flex-start' : 'center',
+                      gap: isMobile ? 10 : 16, border: '1px solid #e2e8f0'
                     }}>
-                      <div style={{ flexShrink: 0 }}>
-                        {item.image_url ? (
-                          <img src={item.image_url} alt={item.title} style={{
-                            width: 54, height: 68, objectFit: 'cover', borderRadius: 6
-                          }} />
-                        ) : (
-                          <div style={{
-                            width: 54, height: 68,
-                            background: 'linear-gradient(135deg, #1a2e4a, #0d4f6b)',
-                            borderRadius: 6, display: 'flex', alignItems: 'center',
-                            justifyContent: 'center', fontSize: 24
-                          }}>📖</div>
-                        )}
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ fontWeight: 700, color: '#00a88a', fontSize: 15 }}>{item.title}</div>
-                        {item.course_code && (
-                          <div style={{ fontSize: 13, color: '#718096' }}>Cours : <strong>{item.course_code}</strong></div>
-                        )}
-                        <div style={{ fontSize: 12, color: '#b0bec5', marginTop: 4 }}>{timeAgo(item.created_at)}</div>
-                      </div>
-                      <div style={{ textAlign: 'right' }}>
-                        <div style={{ fontSize: 20, fontWeight: 900, color: '#1a2e4a', marginBottom: 8 }}>
-                          {item.price} $
+                      <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1, minWidth: 0 }}>
+                        <div style={{ flexShrink: 0 }}>
+                          {item.image_url ? (
+                            <img src={item.image_url} alt={item.title} style={{ width: 48, height: 60, objectFit: 'cover', borderRadius: 6 }} />
+                          ) : (
+                            <div style={{ width: 48, height: 60, background: 'linear-gradient(135deg, #1a2e4a, #0d4f6b)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>📖</div>
+                          )}
                         </div>
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, color: '#00a88a', fontSize: 14 }}>{item.title}</div>
+                          {item.course_code && (
+                            <div style={{ fontSize: 12, color: '#718096' }}>Cours : <strong>{item.course_code}</strong></div>
+                          )}
+                          <div style={{ fontSize: 11, color: '#b0bec5', marginTop: 2 }}>{timeAgo(item.created_at)}</div>
+                        </div>
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: isMobile ? '100%' : 'auto', gap: 8 }}>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: '#1a2e4a' }}>{item.price} $</div>
                         <div style={{ display: 'flex', gap: 6 }}>
-                          <button onClick={() => router.push(`/edit/${item.id}`)} style={{
-                            background: '#f0fdf9', color: '#00c9a7', border: '1px solid #00c9a7',
-                            padding: '5px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600
-                          }}>Modifier</button>
-                          <button onClick={() => handleDelete(item.id)} style={{
-                            background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7',
-                            padding: '5px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600
-                          }}>Supprimer</button>
+                          <button onClick={() => router.push(`/edit/${item.id}`)} style={{ background: '#f0fdf9', color: '#00c9a7', border: '1px solid #00c9a7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Modifier</button>
+                          <button onClick={() => handleDelete(item.id)} style={{ background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Supprimer</button>
                         </div>
                       </div>
                     </div>

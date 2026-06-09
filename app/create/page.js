@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 const ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
 
 function CreateInner() {
+  const [isMobile, setIsMobile] = useState(false)
   const [userId, setUserId] = useState(null)
   const [title, setTitle] = useState('')
   const [authors, setAuthors] = useState('')
@@ -31,6 +32,13 @@ function CreateInner() {
   const sessionTokenRef = useRef(null)
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -222,7 +230,7 @@ function CreateInner() {
         </button>
       </header>
 
-      <div style={{ maxWidth: 1000, margin: '0 auto', padding: '36px 24px', display: 'flex', gap: 32, alignItems: 'flex-start' }}>
+      <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '20px 16px' : '36px 24px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 32, alignItems: 'flex-start' }}>
 
         {/* FORMULAIRE */}
         <div style={{ flex: 1 }}>
@@ -504,7 +512,7 @@ function CreateInner() {
         </div>
 
         {/* APERÇU LIVE */}
-        <div style={{ width: 300, flexShrink: 0, position: 'sticky', top: 80 }}>
+        <div style={{ width: isMobile ? '100%' : 300, flexShrink: 0, position: isMobile ? 'relative' : 'sticky', top: isMobile ? 'auto' : 80 }}>
           <h3 style={{ fontSize: 13, fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14 }}>
             Aperçu de ton annonce
           </h3>
