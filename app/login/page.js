@@ -50,38 +50,38 @@ export default function Login() {
       {/* HEADER */}
       <header style={{
         background: '#1a2e4a',
-        padding: '0 40px',
+        padding: '0 16px',
         height: 64,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
         boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{
-            background: '#00c9a7',
-            color: 'white',
-            fontWeight: 900,
-            fontSize: 18,
-            padding: '6px 14px',
-            borderRadius: 8,
-            letterSpacing: 1
-          }}>
-            📚 BIBLIOCAMP
-          </div>
+        <div style={{
+          background: '#00c9a7',
+          color: 'white',
+          fontWeight: 900,
+          fontSize: 15,
+          padding: '5px 10px',
+          borderRadius: 8,
+          letterSpacing: 1,
+          flexShrink: 0
+        }}>
+          📚 BIBLIOCAMP
         </div>
-        <div style={{ display: 'flex', gap: 12 }}>
+        <div style={{ display: 'flex', gap: 8 }}>
           <button
             onClick={() => setMode('login')}
             style={{
               background: mode === 'login' ? '#00c9a7' : 'transparent',
               color: 'white',
               border: '2px solid #00c9a7',
-              padding: '8px 20px',
+              padding: '6px 12px',
               borderRadius: 8,
               cursor: 'pointer',
               fontWeight: 600,
-              fontSize: 14
+              fontSize: 13,
+              whiteSpace: 'nowrap'
             }}
           >
             Connexion
@@ -92,11 +92,12 @@ export default function Login() {
               background: mode === 'signup' ? '#00c9a7' : 'transparent',
               color: 'white',
               border: '2px solid #00c9a7',
-              padding: '8px 20px',
+              padding: '6px 12px',
               borderRadius: 8,
               cursor: 'pointer',
               fontWeight: 600,
-              fontSize: 14
+              fontSize: 13,
+              whiteSpace: 'nowrap'
             }}
           >
             Créer un compte

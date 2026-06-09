@@ -25,11 +25,19 @@ function InboxInner() {
   const [sending, setSending] = useState(false)
   const [loading, setLoading] = useState(true)
   const [unreadByConv, setUnreadByConv] = useState({})
+  const [isMobile, setIsMobile] = useState(false)
   const prevUnreadRef = useRef(0)
   const audioCtxRef = useRef(null)
   const messagesEndRef = useRef(null)
   const router = useRouter()
   const searchParams = useSearchParams()
+
+  useEffect(() => {
+    const check = () => setIsMobile(window.innerWidth < 768)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   useEffect(() => {
     const init = async () => {
@@ -272,7 +280,13 @@ function InboxInner() {
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden', height: 'calc(100vh - 60px)' }}>
 
         {/* LISTE DES CONVERSATIONS */}
-        <div style={{ width: 320, background: 'white', borderRight: '1px solid #e2e8f0', display: 'flex', flexDirection: 'column', flexShrink: 0, overflow: 'hidden' }}>
+        <div style={{
+          width: isMobile ? '100%' : 320,
+          background: 'white',
+          borderRight: '1px solid #e2e8f0',
+          display: isMobile && selectedConv ? 'none' : 'flex',
+          flexDirection: 'column', flexShrink: 0, overflow: 'hidden'
+        }}>
           <div style={{ padding: '20px 20px 14px', borderBottom: '1px solid #f0f4f8' }}>
             <h1 style={{ fontSize: 20, fontWeight: 900, color: '#1a2e4a', margin: 0 }}>Messages</h1>
           </div>
@@ -341,7 +355,11 @@ function InboxInner() {
         </div>
 
         {/* ZONE DE MESSAGES */}
-        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <div style={{
+          flex: 1, display: isMobile && !selectedConv ? 'none' : 'flex',
+          flexDirection: 'column', overflow: 'hidden',
+          width: isMobile ? '100%' : 'auto'
+        }}>
           {!selectedConv ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a0aec0', flexDirection: 'column', gap: 12 }}>
               <div style={{ fontSize: 48 }}>💬</div>
@@ -355,6 +373,9 @@ function InboxInner() {
             <>
               {/* Header conversation */}
               <div style={{ padding: '14px 24px', background: 'white', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 14, flexShrink: 0 }}>
+                {isMobile && (
+                  <button onClick={() => setSelectedConv(null)} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 20, color: '#1a2e4a', padding: '0 4px', flexShrink: 0 }}>←</button>
+                )}
                 {otherUser?.avatar_url ? (
                   <img src={otherUser.avatar_url} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
                 ) : (
