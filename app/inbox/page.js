@@ -264,7 +264,7 @@ function InboxInner() {
   )
 
   return (
-    <div style={{ fontFamily: "'Segoe UI', sans-serif", height: '100vh', background: '#f5f7fa', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ fontFamily: "'Segoe UI', sans-serif", position: 'fixed', inset: 0, background: '#f5f7fa', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {/* HEADER */}
       <header style={{ background: '#1a2e4a', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', flexShrink: 0, boxShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
