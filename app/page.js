@@ -47,6 +47,8 @@ export default function Home() {
   const [listings, setListings] = useState([])
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [user, setUser] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
@@ -113,6 +115,13 @@ export default function Home() {
     await fetchListings(listings.length, true)
     setLoadingMore(false)
   }
+
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768)
+    checkMobile()
+    window.addEventListener('resize', checkMobile)
+    return () => window.removeEventListener('resize', checkMobile)
+  }, [])
 
   useEffect(() => {
     const init = async () => {
@@ -477,11 +486,23 @@ export default function Home() {
         padding: '0 28px', position: 'sticky', top: 0, zIndex: 100,
         boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
       }}>
-        <div style={{
-          background: '#00c9a7', color: 'white', fontWeight: 900,
-          fontSize: 16, padding: '5px 14px', borderRadius: 8, letterSpacing: 1
-        }}>
-          📚 BIBLIOCAMP
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {isMobile && (
+            <button onClick={() => setSidebarOpen(!sidebarOpen)} style={{
+              background: 'transparent', border: 'none', cursor: 'pointer',
+              display: 'flex', flexDirection: 'column', gap: 4, padding: 6
+            }}>
+              <div style={{ width: 20, height: 2, background: 'white', borderRadius: 2 }} />
+              <div style={{ width: 20, height: 2, background: 'white', borderRadius: 2 }} />
+              <div style={{ width: 20, height: 2, background: 'white', borderRadius: 2 }} />
+            </button>
+          )}
+          <div style={{
+            background: '#00c9a7', color: 'white', fontWeight: 900,
+            fontSize: 16, padding: '5px 14px', borderRadius: 8, letterSpacing: 1
+          }}>
+            📚 BIBLIOCAMP
+          </div>
         </div>
         {/* Menu profil style Airbnb */}
         <div style={{ position: 'relative' }}>
@@ -604,13 +625,25 @@ export default function Home() {
         </div>
       </header>
 
-      <div style={{ display: 'flex', minHeight: 'calc(100vh - 60px)' }}>
+      <div style={{ display: 'flex', minHeight: 'calc(100vh - 60px)', position: 'relative' }}>
+
+        {/* OVERLAY mobile */}
+        {isMobile && sidebarOpen && (
+          <div onClick={() => setSidebarOpen(false)} style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 99
+          }} />
+        )}
 
         {/* SIDEBAR */}
         <aside style={{
           width: 210, background: 'white',
           borderRight: '1px solid #e2e8f0',
-          padding: '20px 0', flexShrink: 0
+          padding: '20px 0', flexShrink: 0,
+          ...(isMobile ? {
+            position: 'fixed', top: 60, left: 0, bottom: 0,
+            zIndex: 100, transform: sidebarOpen ? 'translateX(0)' : 'translateX(-100%)',
+            transition: 'transform 0.25s ease', overflowY: 'auto'
+          } : {})
         }}>
           {/* Manuels — parent toujours ouvert */}
           <div style={{
@@ -632,7 +665,7 @@ export default function Home() {
             { key: 'mes-cours', icon: '📚', label: 'Mes cours', badge: userSubjects.length > 0 ? userSubjects.length : null },
           ].map(item => (
             <div key={item.key}
-              onClick={() => setView(item.key)}
+              onClick={() => { setView(item.key); if (isMobile) setSidebarOpen(false) }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '10px 22px 10px 36px',
@@ -690,7 +723,7 @@ export default function Home() {
         </aside>
 
         {/* MAIN */}
-        <main style={{ flex: 1, padding: '28px 36px', maxWidth: 900 }}>
+        <main style={{ flex: 1, padding: isMobile ? '16px 14px' : '28px 36px', maxWidth: 900, width: '100%' }}>
 
           <div style={{ fontSize: 13, color: '#a0aec0', marginBottom: 8 }}>
             Accueil / Manuels / <span style={{ color: '#1a2e4a', fontWeight: 600 }}>
