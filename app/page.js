@@ -323,37 +323,25 @@ export default function Home() {
       // Erreur réseau → on laisse passer
     }
 
-    let done = false
-
-    const translateError = (msg) => {
-      if (!msg) return 'Une erreur est survenue. Réessaie.'
-      if (msg.includes('Signups not allowed')) return 'Ce numéro ne peut pas être utilisé. Vérifie qu\'il est actif.'
-      if (msg.includes('Invalid phone')) return 'Numéro de téléphone invalide.'
-      if (msg.includes('rate limit') || msg.includes('too many')) return 'Trop de tentatives. Attends quelques minutes.'
-      if (msg.includes('User already registered')) return 'Ce numéro est déjà associé à un compte.'
-      return 'Erreur : ' + msg
-    }
-
-    const advance = (error) => {
-      if (done) return
-      done = true
+    // Envoyer le code via Twilio Verify (sans toucher à la session Supabase)
+    try {
+      const res = await fetch('/api/send-otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: formatted })
+      })
+      const result = await res.json()
+      if (!res.ok) {
+        setPhoneError(result.error || 'Erreur lors de l\'envoi du SMS.')
+        setSendingCode(false)
+        return
+      }
+      setPhoneStep('verify')
+    } catch {
+      setPhoneError('Erreur réseau. Réessaie.')
+    } finally {
       setSendingCode(false)
-      if (error) setPhoneError(translateError(error.message))
-      else setPhoneStep('verify')
     }
-
-    // Backup : si Supabase ne répond pas en 10s, avance quand même
-    const backup = setTimeout(() => advance(null), 10000)
-
-    supabase.auth.signInWithOtp({ phone: formatted, options: { shouldCreateUser: true } })
-      .then(({ error }) => {
-        clearTimeout(backup)
-        advance(error)
-      })
-      .catch(() => {
-        clearTimeout(backup)
-        advance(null)
-      })
   }
 
   const handleVerifyOtp = async () => {
@@ -364,21 +352,23 @@ export default function Home() {
     const dialCode = COUNTRIES.find(c => c.code === countryCode)?.dial || '+1'
     const formatted = `${dialCode}${digits}`
     try {
-      const result = await Promise.race([
-        supabase.auth.verifyOtp({ phone: formatted, token: otp, type: 'sms' }),
-        new Promise(resolve => setTimeout(() => resolve({ error: null }), 6000))
-      ])
-      if (result?.error) {
-        setOtpError('Code incorrect ou expiré. Réessaie.')
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/verify-otp', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session ? { Authorization: `Bearer ${session.access_token}` } : {})
+        },
+        body: JSON.stringify({ phone: formatted, code: otp })
+      })
+      const result = await res.json()
+      if (!res.ok) {
+        setOtpError(result.error || 'Code incorrect ou expiré. Réessaie.')
         return
       }
-      await Promise.race([
-        supabase.auth.updateUser({ data: { phone_verified: true } }),
-        new Promise(resolve => setTimeout(resolve, 3000))
-      ])
       setPhoneSaved(true)
       router.push(verifyRedirect)
-    } catch (e) {
+    } catch {
       setOtpError('Erreur inattendue. Réessaie.')
     } finally {
       setVerifyingCode(false)
