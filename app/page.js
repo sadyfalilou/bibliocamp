@@ -875,13 +875,16 @@ export default function Home() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
                   {filtered.map(item => (
                     <div key={item.id} style={{
-                      background: 'white', borderRadius: 10, padding: '16px 20px',
-                      display: 'flex', alignItems: 'center', gap: 16,
+                      background: 'white', borderRadius: 10, padding: isMobile ? '12px 14px' : '16px 20px',
+                      display: 'flex', flexDirection: isMobile ? 'column' : 'row',
+                      alignItems: isMobile ? 'flex-start' : 'center', gap: isMobile ? 10 : 16,
                       border: '1px solid #e2e8f0', transition: 'box-shadow 0.15s'
                     }}
                       onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'}
                       onMouseLeave={e => e.currentTarget.style.boxShadow = 'none'}
                     >
+                      {/* Ligne du haut sur mobile : image + infos */}
+                      <div style={{ display: 'flex', gap: 12, flex: 1, minWidth: 0, width: '100%' }}>
                       <div style={{ flexShrink: 0 }}>
                         {item.image_url ? (
                           <img src={item.image_url} alt={item.title} style={{
@@ -896,7 +899,7 @@ export default function Home() {
                           }}>📖</div>
                         )}
                       </div>
-                      <div style={{ flex: 1 }}>
+                      <div style={{ flex: 1, minWidth: 0 }}>
                         <div
                           onClick={() => setSelectedBook(item)}
                           style={{ fontWeight: 700, color: '#00a88a', fontSize: 15, marginBottom: 2, cursor: 'pointer' }}
@@ -960,21 +963,31 @@ export default function Home() {
                           <span style={{ fontSize: 11, color: '#b0bec5' }}>{timeAgo(item.created_at)}</span>
                         </div>
                       </div>
-                      <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                        <div style={{ fontSize: 20, fontWeight: 900, color: '#1a2e4a', marginBottom: 4 }}>
-                          {item.price} $
-                        </div>
-                        {item.original_price > 0 && item.original_price > item.price && (
-                          <div style={{
-                            background: '#00c9a7', color: 'white',
-                            borderRadius: 20, padding: '3px 8px',
-                            fontSize: 11, fontWeight: 700, marginBottom: 6,
-                            display: 'inline-block', width: 'fit-content'
-                          }}>
-                            -{Math.round(((item.original_price - item.price) / item.original_price) * 100)}%
+                      </div>{/* fin ligne du haut */}
+
+                      {/* Ligne du bas sur mobile : prix + cœur + boutons */}
+                      <div style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        width: isMobile ? '100%' : 'auto',
+                        flexShrink: 0, textAlign: 'right', flexDirection: isMobile ? 'row' : 'column',
+                        alignSelf: isMobile ? 'auto' : 'center', gap: isMobile ? 8 : 0
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ fontSize: isMobile ? 17 : 20, fontWeight: 900, color: '#1a2e4a' }}>
+                            {item.price} $
                           </div>
-                        )}
-                        <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end', marginBottom: 4 }}>
+                          {item.original_price > 0 && item.original_price > item.price && (
+                            <div style={{
+                              background: '#00c9a7', color: 'white',
+                              borderRadius: 20, padding: '2px 8px',
+                              fontSize: 11, fontWeight: 700,
+                              display: 'inline-block'
+                            }}>
+                              -{Math.round(((item.original_price - item.price) / item.original_price) * 100)}%
+                            </div>
+                          )}
+                        </div>
+                        <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                           <button
                             onClick={e => { e.stopPropagation(); toggleWishlist(item.id) }}
                             title={wishlist.has(item.id) ? 'Retirer des favoris' : 'Ajouter aux favoris'}
@@ -988,19 +1001,17 @@ export default function Home() {
                           >
                             {wishlist.has(item.id) ? '❤️' : '🤍'}
                           </button>
-                        </div>
-                        {item.user_id === user?.id && (
-                          <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>
+                          {item.user_id === user?.id && (<>
                             <button onClick={() => router.push(`/edit/${item.id}`)} style={{
                               background: '#f0fdf9', color: '#00c9a7', border: '1px solid #00c9a7',
-                              padding: '5px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600
-                            }}>Modifier</button>
+                              padding: '5px 10px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600
+                            }}>✏️</button>
                             <button onClick={() => handleDelete(item.id)} style={{
                               background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7',
-                              padding: '5px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600
-                            }}>Supprimer</button>
-                          </div>
-                        )}
+                              padding: '5px 10px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600
+                            }}>🗑️</button>
+                          </>)}
+                        </div>
                       </div>
                     </div>
                   ))}
