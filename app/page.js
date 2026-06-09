@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState, useRef } from 'react'
+import * as Sentry from '@sentry/nextjs'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
 
@@ -129,6 +130,7 @@ export default function Home() {
         const { data } = await supabase.auth.getUser()
         if (!data.user) { window.location.href = '/login'; return }
         setUser(data.user)
+        Sentry.setUser({ id: data.user.id, email: data.user.email })
         const savedPhone = data.user?.user_metadata?.phone_verified
         if (savedPhone) setPhoneSaved(true)
         // Charger le profil de l'utilisateur connecté

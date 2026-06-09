@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import * as Sentry from '@sentry/nextjs'
 
 export async function POST(request) {
   const { phone, code } = await request.json()
@@ -30,7 +31,8 @@ export async function POST(request) {
     if (!res.ok || data.status !== 'approved') {
       return Response.json({ error: 'Code incorrect ou expiré. Réessaie.' }, { status: 400 })
     }
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err, { extra: { route: 'POST /api/verify-otp', phone } })
     return Response.json({ error: 'Erreur réseau. Réessaie.' }, { status: 500 })
   }
 
@@ -60,6 +62,7 @@ export async function POST(request) {
     user_metadata: { ...user.user_metadata, phone_verified: true }
   })
   if (updateErr) {
+    Sentry.captureException(updateErr, { extra: { route: 'POST /api/verify-otp', action: 'updateUserById', userId: user.id } })
     return Response.json({ error: 'Erreur lors de la mise à jour du profil.' }, { status: 500 })
   }
 

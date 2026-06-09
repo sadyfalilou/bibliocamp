@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js'
+import * as Sentry from '@sentry/nextjs'
 
 const VALID_ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -70,7 +71,10 @@ export async function POST(request) {
     const fileName = `${Date.now()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
     const bytes = await imageFile.arrayBuffer()
     const { error: uploadErr } = await supabase.storage.from('images').upload(fileName, bytes, { contentType: imageFile.type })
-    if (uploadErr) return Response.json({ error: "Erreur lors de l'upload de l'image." }, { status: 500 })
+    if (uploadErr) {
+      Sentry.captureException(uploadErr, { extra: { route: 'POST /api/listings', action: 'image-upload', userId: user.id } })
+      return Response.json({ error: "Erreur lors de l'upload de l'image." }, { status: 500 })
+    }
     const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName)
     imageUrl = urlData.publicUrl
   }
@@ -91,7 +95,10 @@ export async function POST(request) {
     user_id: user.id
   }]).select().single()
 
-  if (error) return Response.json({ error: 'Erreur lors de la création.' }, { status: 500 })
+  if (error) {
+    Sentry.captureException(error, { extra: { route: 'POST /api/listings', action: 'insert', userId: user.id } })
+    return Response.json({ error: 'Erreur lors de la création.' }, { status: 500 })
+  }
   return Response.json({ listing: data })
 }
 
@@ -139,7 +146,10 @@ export async function PATCH(request) {
     const fileName = `${Date.now()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
     const bytes = await imageFile.arrayBuffer()
     const { error: uploadErr } = await supabase.storage.from('images').upload(fileName, bytes, { contentType: imageFile.type })
-    if (uploadErr) return Response.json({ error: "Erreur lors de l'upload de l'image." }, { status: 500 })
+    if (uploadErr) {
+      Sentry.captureException(uploadErr, { extra: { route: 'PATCH /api/listings', action: 'image-upload', userId: user.id } })
+      return Response.json({ error: "Erreur lors de l'upload de l'image." }, { status: 500 })
+    }
     const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName)
     imageUrl = urlData.publicUrl
   }
@@ -165,7 +175,10 @@ export async function PATCH(request) {
     .select()
     .single()
 
-  if (error || !data) return Response.json({ error: 'Annonce introuvable ou accès refusé.' }, { status: 403 })
+  if (error || !data) {
+    if (error) Sentry.captureException(error, { extra: { route: 'PATCH /api/listings', action: 'update', userId: user.id, listingId } })
+    return Response.json({ error: 'Annonce introuvable ou accès refusé.' }, { status: 403 })
+  }
   return Response.json({ listing: data })
 }
 
@@ -197,7 +210,10 @@ export async function DELETE(request) {
   }
 
   const { error: deleteErr } = await supabase.from('listings').delete().eq('id', listingId).eq('user_id', user.id)
-  if (deleteErr) return Response.json({ error: 'Erreur lors de la suppression.' }, { status: 500 })
+  if (deleteErr) {
+    Sentry.captureException(deleteErr, { extra: { route: 'DELETE /api/listings', action: 'delete', userId: user.id, listingId } })
+    return Response.json({ error: 'Erreur lors de la suppression.' }, { status: 500 })
+  }
 
   return Response.json({ ok: true })
 }

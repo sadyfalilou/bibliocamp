@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import * as Sentry from '@sentry/nextjs'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
 
@@ -14,12 +15,28 @@ export default function Login() {
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
 
+  // Messages d'erreur normaux côté utilisateur — pas des bugs à signaler
+  const USER_ERRORS = [
+    'invalid login credentials',
+    'email not confirmed',
+    'user already registered',
+    'password should be at least',
+    'invalid email',
+  ]
+  const isUserError = (msg) => USER_ERRORS.some(e => msg.toLowerCase().includes(e))
+
   const handleLogin = async (e) => {
     e.preventDefault()
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
-    if (error) { alert(error.message); return }
+    if (error) {
+      if (!isUserError(error.message)) {
+        Sentry.captureException(error, { extra: { context: 'login', email } })
+      }
+      alert(error.message)
+      return
+    }
     router.push('/')
   }
 
@@ -30,7 +47,13 @@ export default function Login() {
       redirectTo: `${window.location.origin}/reset-password`
     })
     setLoading(false)
-    if (error) { alert(error.message); return }
+    if (error) {
+      if (!isUserError(error.message)) {
+        Sentry.captureException(error, { extra: { context: 'reset-password', email } })
+      }
+      alert(error.message)
+      return
+    }
     setResetDone(true)
   }
 
@@ -39,7 +62,13 @@ export default function Login() {
     setLoading(true)
     const { error } = await supabase.auth.signUp({ email, password })
     setLoading(false)
-    if (error) { alert(error.message); return }
+    if (error) {
+      if (!isUserError(error.message)) {
+        Sentry.captureException(error, { extra: { context: 'signup', email } })
+      }
+      alert(error.message)
+      return
+    }
     setSignupDone(true)
     setMode('login')
   }

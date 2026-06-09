@@ -1,3 +1,5 @@
+import * as Sentry from '@sentry/nextjs'
+
 export async function POST(request) {
   const { phone } = await request.json()
   if (!phone) return Response.json({ error: 'Numéro manquant.' }, { status: 400 })
@@ -28,7 +30,8 @@ export async function POST(request) {
       return Response.json({ error: data.message || 'Erreur lors de l\'envoi du SMS.' }, { status: 400 })
     }
     return Response.json({ ok: true })
-  } catch {
+  } catch (err) {
+    Sentry.captureException(err, { extra: { route: 'POST /api/send-otp', phone } })
     return Response.json({ error: 'Erreur réseau. Réessaie.' }, { status: 500 })
   }
 }
