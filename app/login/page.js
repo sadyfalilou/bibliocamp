@@ -50,118 +50,78 @@ export default function Login() {
       {/* HEADER */}
       <header style={{
         background: '#1a2e4a',
-        padding: '0 16px',
-        height: 64,
+        padding: '0 20px',
+        height: 60,
         display: 'flex',
         alignItems: 'center',
-        justifyContent: 'space-between',
+        justifyContent: 'center',
         boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
       }}>
         <div style={{
-          background: '#00c9a7',
-          color: 'white',
-          fontWeight: 900,
-          fontSize: 15,
-          padding: '5px 10px',
-          borderRadius: 8,
-          letterSpacing: 1,
-          flexShrink: 0
+          background: '#00c9a7', color: 'white', fontWeight: 900,
+          fontSize: 16, padding: '6px 14px', borderRadius: 8, letterSpacing: 1
         }}>
           📚 BIBLIOCAMP
-        </div>
-        <div style={{ display: 'flex', gap: 8 }}>
-          <button
-            onClick={() => setMode('login')}
-            style={{
-              background: mode === 'login' ? '#00c9a7' : 'transparent',
-              color: 'white',
-              border: '2px solid #00c9a7',
-              padding: '6px 12px',
-              borderRadius: 8,
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: 13,
-              whiteSpace: 'nowrap'
-            }}
-          >
-            Connexion
-          </button>
-          <button
-            onClick={() => setMode('signup')}
-            style={{
-              background: mode === 'signup' ? '#00c9a7' : 'transparent',
-              color: 'white',
-              border: '2px solid #00c9a7',
-              padding: '6px 12px',
-              borderRadius: 8,
-              cursor: 'pointer',
-              fontWeight: 600,
-              fontSize: 13,
-              whiteSpace: 'nowrap'
-            }}
-          >
-            Créer un compte
-          </button>
         </div>
       </header>
 
       {/* HERO */}
       <div style={{
         background: 'linear-gradient(135deg, #1a2e4a 0%, #0d4f6b 60%, #00c9a7 100%)',
-        padding: '60px 40px 80px',
+        padding: '32px 20px 70px',
         textAlign: 'center',
         color: 'white'
       }}>
-        <h1 style={{ fontSize: 42, fontWeight: 900, margin: '0 0 12px', letterSpacing: -1 }}>
+        <h1 style={{ fontSize: 28, fontWeight: 900, margin: '0 0 8px', letterSpacing: -0.5 }}>
           La marketplace des étudiants
         </h1>
-        <p style={{ fontSize: 18, opacity: 0.85, margin: '0 0 48px' }}>
-          Achète et vends tes manuels de cours entre étudiants
+        <p style={{ fontSize: 15, opacity: 0.85, margin: 0 }}>
+          Achète et vends tes manuels entre étudiants
         </p>
-
-        {/* STAT CARD */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 24, flexWrap: 'wrap' }}>
-          <div style={{
-            background: '#00c9a7',
-            borderRadius: 16,
-            padding: '28px 40px',
-            minWidth: 220,
-            cursor: 'pointer',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.2)',
-            transition: 'transform 0.2s',
-            textAlign: 'left',
-            position: 'relative',
-            overflow: 'hidden'
-          }}
-            onMouseEnter={e => e.currentTarget.style.transform = 'translateY(-4px)'}
-            onMouseLeave={e => e.currentTarget.style.transform = 'translateY(0)'}
-          >
-            <div style={{ fontSize: 42, fontWeight: 900, color: 'white' }}>📖</div>
-            <div style={{ fontSize: 28, fontWeight: 900, color: 'white', marginTop: 4 }}>Manuels pas chers</div>
-            <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.85)', marginTop: 6, lineHeight: 1.5 }}>
-              La plus grande marketplace<br />de manuels étudiants.
-            </div>
-            <div style={{
-              position: 'absolute', bottom: 16, right: 16,
-              color: 'rgba(255,255,255,0.7)', fontSize: 22
-            }}>›</div>
-          </div>
-        </div>
       </div>
 
       {/* FORM SECTION */}
       <div style={{
         maxWidth: 440,
-        margin: '-30px auto 60px',
+        margin: '-40px auto 60px',
         background: 'white',
         borderRadius: 16,
-        padding: '36px 40px',
         boxShadow: '0 12px 40px rgba(0,0,0,0.12)',
         position: 'relative',
-        zIndex: 10
+        zIndex: 10,
+        overflow: 'hidden',
+        marginLeft: 'auto',
+        marginRight: 'auto',
+        width: 'calc(100% - 32px)'
       }}>
-        <h2 style={{ margin: '0 0 24px', color: '#1a2e4a', fontSize: 22, fontWeight: 800 }}>
-          {mode === 'login' ? 'Se connecter' : 'Créer un compte'}
+
+        {/* TABS connexion / inscription */}
+        {mode !== 'reset' && (
+          <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0' }}>
+            <button onClick={() => setMode('login')} style={{
+              flex: 1, padding: '16px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15,
+              background: mode === 'login' ? 'white' : '#f7fafc',
+              color: mode === 'login' ? '#00c9a7' : '#718096',
+              borderBottom: mode === 'login' ? '2px solid #00c9a7' : '2px solid transparent',
+              marginBottom: -2, transition: 'all 0.2s'
+            }}>
+              Connexion
+            </button>
+            <button onClick={() => setMode('signup')} style={{
+              flex: 1, padding: '16px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15,
+              background: mode === 'signup' ? 'white' : '#f7fafc',
+              color: mode === 'signup' ? '#00c9a7' : '#718096',
+              borderBottom: mode === 'signup' ? '2px solid #00c9a7' : '2px solid transparent',
+              marginBottom: -2, transition: 'all 0.2s'
+            }}>
+              Créer un compte
+            </button>
+          </div>
+        )}
+
+        <div style={{ padding: '28px 24px' }}>
+        <h2 style={{ margin: '0 0 20px', color: '#1a2e4a', fontSize: 20, fontWeight: 800 }}>
+          {mode === 'reset' ? 'Réinitialiser le mot de passe' : mode === 'login' ? 'Bon retour 👋' : 'Rejoins BiblioCamp'}
         </h2>
 
         {signupDone && (
@@ -283,15 +243,14 @@ export default function Login() {
           </p>
         )}
 
-        <p style={{ textAlign: 'center', marginTop: 8, color: '#666', fontSize: 14 }}>
-          {mode === 'login' ? "Pas encore de compte ? " : "Déjà un compte ? "}
-          <span
-            onClick={() => setMode(mode === 'login' ? 'signup' : 'login')}
-            style={{ color: '#00c9a7', fontWeight: 700, cursor: 'pointer' }}
-          >
-            {mode === 'login' ? 'Créer un compte' : 'Se connecter'}
-          </span>
-        </p>
+        {mode === 'reset' && (
+          <p style={{ textAlign: 'center', marginTop: 8, color: '#666', fontSize: 14 }}>
+            <span onClick={() => setMode('login')} style={{ color: '#00c9a7', fontWeight: 700, cursor: 'pointer' }}>
+              ← Retour à la connexion
+            </span>
+          </p>
+        )}
+        </div>
       </div>
 
       {/* FOOTER */}
