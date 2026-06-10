@@ -4,29 +4,39 @@ import { NextResponse } from 'next/server'
 const PUBLIC_ROUTES = ['/login', '/reset-password', '/confidentialite', '/cgu']
 
 export async function proxy(req) {
-  const res = NextResponse.next()
+  let supabaseResponse = NextResponse.next({ request: req })
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     {
       cookies: {
-        get: (name) => req.cookies.get(name)?.value,
-        set: (name, value, options) => res.cookies.set({ name, value, ...options }),
-        remove: (name, options) => res.cookies.set({ name, value: '', ...options }),
+        getAll() {
+          return req.cookies.getAll()
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value }) =>
+            req.cookies.set(name, value)
+          )
+          supabaseResponse = NextResponse.next({ request: req })
+          cookiesToSet.forEach(({ name, value, options }) =>
+            supabaseResponse.cookies.set(name, value, options)
+          )
+        },
       },
     }
   )
 
+  // Rafraîchit le token de session si expiré (requis pour PKCE OAuth)
   const { data: { user } } = await supabase.auth.getUser()
 
   if (!user && !PUBLIC_ROUTES.includes(req.nextUrl.pathname)) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
-  return res
+  return supabaseResponse
 }
 
 export const config = {
-  matcher: ['/((?!_next|favicon.ico|api).*)'],
+  matcher: ['/((?!_next|favicon.ico|api|auth).*)'],
 }
