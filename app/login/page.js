@@ -210,22 +210,6 @@ export default function Login() {
                 Continuer avec Google
               </button>
 
-              <button
-                type="button"
-                onClick={() => handleOAuth('azure')}
-                style={{
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-                  width: '100%', padding: '12px',
-                  background: 'white', border: '1.5px solid #e2e8f0',
-                  borderRadius: 10, cursor: 'pointer', fontSize: 15, fontWeight: 600,
-                  color: '#1a2e4a', transition: 'border-color 0.2s, box-shadow 0.2s'
-                }}
-                onMouseEnter={e => { e.currentTarget.style.borderColor = '#0078d4'; e.currentTarget.style.boxShadow = '0 2px 8px rgba(0,120,212,0.15)' }}
-                onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = 'none' }}
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24"><path fill="#f25022" d="M1 1h10v10H1z"/><path fill="#00a4ef" d="M13 1h10v10H13z"/><path fill="#7fba00" d="M1 13h10v10H1z"/><path fill="#ffb900" d="M13 13h10v10H13z"/></svg>
-                Continuer avec Microsoft
-              </button>
             </div>
 
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0 0' }}>
