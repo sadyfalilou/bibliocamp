@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import * as Sentry from '@sentry/nextjs'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
@@ -14,6 +14,14 @@ export default function Login() {
   const [resetDone, setResetDone] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const router = useRouter()
+
+  // Si déjà connecté (ex: retour OAuth), rediriger vers l'accueil
+  useEffect(() => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (session?.user) router.push('/')
+    })
+    return () => listener.subscription.unsubscribe()
+  }, [])
 
   // Messages d'erreur normaux côté utilisateur — pas des bugs à signaler
   const USER_ERRORS = [
