@@ -125,10 +125,11 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    const init = async () => {
+    const init = async (currentUser) => {
       try {
-        const { data } = await supabase.auth.getUser()
-        if (!data.user) { window.location.href = '/login'; return }
+        const user = currentUser || (await supabase.auth.getUser()).data.user
+        if (!user) { window.location.href = '/login'; return }
+        const data = { user }
         setUser(data.user)
         Sentry.setUser({ id: data.user.id, email: data.user.email })
         const savedPhone = data.user?.user_metadata?.phone_verified
@@ -156,11 +157,18 @@ export default function Home() {
       setLoading(false)
       fetchListings()
     }
+    // Écouter les changements d'état auth — crucial pour le redirect OAuth
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        init(session.user)
+      } else if (event === 'SIGNED_OUT') {
+        window.location.href = '/login'
+      } else {
+        fetchListings()
+      }
+    })
+
     init()
-    const { data: listener } = supabase.auth.onAuthStateChange(() => fetchListings())
-
-    // Polling de secours pour les notifs (toutes les 10s) — défini après init
-
 
     return () => {
       listener.subscription.unsubscribe()
