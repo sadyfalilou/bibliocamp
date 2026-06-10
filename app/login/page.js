@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import * as Sentry from '@sentry/nextjs'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
+import Logo from '../../components/Logo'
 
 export default function Login() {
   const [email, setEmail] = useState('')
@@ -130,10 +131,7 @@ export default function Login() {
 
             {/* Logo */}
             <div style={{ marginBottom: 48 }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, background: 'rgba(0,201,167,0.15)', border: '1px solid rgba(0,201,167,0.3)', borderRadius: 12, padding: '8px 18px' }}>
-                <span style={{ fontSize: 22 }}>📚</span>
-                <span style={{ color: '#00c9a7', fontWeight: 900, fontSize: 18, letterSpacing: 1 }}>BIBLIOCAMP</span>
-              </div>
+              <Logo variant="light" size="lg" />
             </div>
 
             {/* Tagline */}
@@ -174,9 +172,8 @@ export default function Login() {
 
           {/* Logo mobile seulement */}
           {isMobile && (
-            <div style={{ marginBottom: 28, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontSize: 22 }}>📚</span>
-              <span style={{ color: '#1a2e4a', fontWeight: 900, fontSize: 20, letterSpacing: 1 }}>BIBLIOCAMP</span>
+            <div style={{ marginBottom: 28 }}>
+              <Logo variant="dark" size="md" />
             </div>
           )}
 
