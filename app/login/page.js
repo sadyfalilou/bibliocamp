@@ -32,7 +32,7 @@ export default function Login() {
 
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) router.push('/')
+      if (session?.user) router.push('/app')
     })
     return () => listener.subscription.unsubscribe()
   }, [])
@@ -58,7 +58,7 @@ export default function Login() {
       if (!isUserError(error.message)) Sentry.captureException(error, { extra: { context: 'login', email } })
       setErrorMsg(friendlyError(error.message)); return
     }
-    router.push('/')
+    router.push('/app')
   }
 
   const handleReset = async (e) => {

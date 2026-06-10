@@ -101,7 +101,7 @@ export default function Edit() {
         .eq('user_id', session.user.id)
         .single()
 
-      if (error || !data) { router.push('/'); return }
+      if (error || !data) { router.push('/app'); return }
 
       setTitle(data.title || '')
       setAuthors(data.authors || '')
@@ -238,8 +238,8 @@ export default function Edit() {
         padding: '0 28px', position: 'sticky', top: 0, zIndex: 100,
         boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
       }}>
-        <Logo variant="light" size="sm" onClick={() => router.push('/')} style={{ cursor: 'pointer' }} />
-        <button onClick={() => router.push('/')} style={{
+        <Logo variant="light" size="sm" onClick={() => router.push('/app')} style={{ cursor: 'pointer' }} />
+        <button onClick={() => router.push('/app')} style={{
           background: 'transparent', color: '#a0aec0',
           border: '1px solid #2d4a6b', padding: '6px 14px',
           borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600
@@ -520,7 +520,7 @@ export default function Edit() {
               >
                 {loading ? 'Mise à jour en cours...' : 'Enregistrer les modifications'}
               </button>
-              <button type="button" onClick={() => router.push('/')} style={{
+              <button type="button" onClick={() => router.push('/app')} style={{
                 padding: '15px 28px',
                 background: 'white', color: '#718096',
                 border: '1px solid #cbd5e0', borderRadius: 10,

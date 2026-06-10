@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useRef, useEffect, Suspense } from 'react'
 import imageCompression from 'browser-image-compression'
@@ -6,7 +6,7 @@ import { supabase } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Logo from '../../components/Logo'
 
-const ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
+const ETATS = ['Neuf', 'TrÃ¨s bon Ã©tat', 'Bon Ã©tat', 'Acceptable']
 
 function CreateInner() {
   const [isMobile, setIsMobile] = useState(false)
@@ -62,16 +62,16 @@ function CreateInner() {
     switch (name) {
       case 'title':
         if (!val.trim()) return 'Le titre est obligatoire.'
-        if (val.trim().length > 150) return `${val.trim().length}/150 — trop long.`
+        if (val.trim().length > 150) return `${val.trim().length}/150 â€” trop long.`
         return ''
       case 'authors':
-        if (val.length > 200) return `${val.length}/200 — trop long.`
+        if (val.length > 200) return `${val.length}/200 â€” trop long.`
         return ''
       case 'isbn':
         if (val && !/^\d{10,13}$/.test(val.replace(/[-\s]/g, ''))) return 'Doit contenir 10 ou 13 chiffres.'
         return ''
       case 'course':
-        if (val.length > 20) return `${val.length}/20 — trop long.`
+        if (val.length > 20) return `${val.length}/20 â€” trop long.`
         return ''
       case 'price':
         if (!val || isNaN(Number(val)) || Number(val) <= 0 || Number(val) > 9999) return 'Entre 1 $ et 9 999 $.'
@@ -79,10 +79,10 @@ function CreateInner() {
       case 'originalPrice':
         if (!val) return ''
         if (isNaN(Number(val)) || Number(val) <= 0 || Number(val) > 9999) return 'Entre 1 $ et 9 999 $.'
-        if (extra.price && Number(val) <= Number(extra.price)) return 'Doit être supérieur au prix de vente.'
+        if (extra.price && Number(val) <= Number(extra.price)) return 'Doit Ãªtre supÃ©rieur au prix de vente.'
         return ''
       case 'campus':
-        if (val.length > 100) return `${val.length}/100 — trop long.`
+        if (val.length > 100) return `${val.length}/100 â€” trop long.`
         return ''
       default: return ''
     }
@@ -110,7 +110,7 @@ function CreateInner() {
 
   const ErrorMsg = ({ name }) => errors[name] ? (
     <div style={{ color: '#e53e3e', fontSize: 12, fontWeight: 600, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-      <span>⚠</span> {errors[name]}
+      <span>âš </span> {errors[name]}
     </div>
   ) : null
 
@@ -123,11 +123,11 @@ function CreateInner() {
     if (!file) return
     const allowed = ['image/jpeg', 'image/png', 'image/webp']
     if (!allowed.includes(file.type)) {
-      setErrors(prev => ({ ...prev, image: 'Format non supporté. Utilise JPG, PNG ou WebP.' }))
+      setErrors(prev => ({ ...prev, image: 'Format non supportÃ©. Utilise JPG, PNG ou WebP.' }))
       return
     }
     if (file.size > 5 * 1024 * 1024) {
-      setErrors(prev => ({ ...prev, image: "L'image ne peut pas dépasser 5 MB." }))
+      setErrors(prev => ({ ...prev, image: "L'image ne peut pas dÃ©passer 5 MB." }))
       return
     }
     setErrors(prev => ({ ...prev, image: '' }))
@@ -188,8 +188,8 @@ function CreateInner() {
     const json = await res.json()
     setLoading(false)
     if (!res.ok) {
-      const msg = json.error || 'Erreur lors de la création.'
-      // Erreur image → afficher dans la section photo
+      const msg = json.error || 'Erreur lors de la crÃ©ation.'
+      // Erreur image â†’ afficher dans la section photo
       if (msg.toLowerCase().includes('image') || msg.toLowerCase().includes('format')) {
         setErrors(prev => ({ ...prev, image: msg }))
       } else {
@@ -210,8 +210,8 @@ function CreateInner() {
         padding: '0 28px', position: 'sticky', top: 0, zIndex: 100,
         boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
       }}>
-        <Logo variant="light" size="sm" onClick={() => router.push('/')} style={{ cursor: 'pointer' }} />
-        <button onClick={() => router.push('/')} style={{
+        <Logo variant="light" size="sm" onClick={() => router.push('/app')} style={{ cursor: 'pointer' }} />
+        <button onClick={() => router.push('/app')} style={{
           background: 'transparent', color: '#a0aec0',
           border: '1px solid #2d4a6b', padding: '6px 14px',
           borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600
@@ -219,7 +219,7 @@ function CreateInner() {
           onMouseEnter={e => { e.target.style.color = 'white'; e.target.style.borderColor = '#00c9a7' }}
           onMouseLeave={e => { e.target.style.color = '#a0aec0'; e.target.style.borderColor = '#2d4a6b' }}
         >
-          ← Retour
+          â† Retour
         </button>
       </header>
 
@@ -251,7 +251,7 @@ function CreateInner() {
                   <span style={{ fontWeight: 400, color: '#a0aec0', fontSize: 12, marginLeft: 8 }}>{title.length}/150</span>
                 </label>
                 <input
-                  placeholder="ex: Le Marketing – 4e édition"
+                  placeholder="ex: Le Marketing â€“ 4e Ã©dition"
                   value={title}
                   onChange={e => handleFieldChange('title', e.target.value, setTitle)}
                   onBlur={e => touch('title', e.target.value)}
@@ -305,10 +305,10 @@ function CreateInner() {
                 </div>
               </div>
 
-              {/* ÉTAT */}
+              {/* Ã‰TAT */}
               <div style={{ marginBottom: 0 }}>
                 <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
-                  État du livre
+                  Ã‰tat du livre
                 </label>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {ETATS.map(e => (
@@ -336,10 +336,10 @@ function CreateInner() {
               {/* CAMPUS */}
               <div style={{ marginTop: 18 }}>
                 <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
-                  Campus / Université
+                  Campus / UniversitÃ©
                 </label>
                 <input
-                  placeholder="ex: UQAM, HEC Montréal, McGill, Concordia..."
+                  placeholder="ex: UQAM, HEC MontrÃ©al, McGill, Concordia..."
                   value={campus}
                   onChange={e => handleFieldChange('campus', e.target.value, setCampus)}
                   onBlur={e => touch('campus', e.target.value)}
@@ -348,16 +348,16 @@ function CreateInner() {
                 <ErrorMsg name="campus" />
               </div>
 
-              {/* MÉTHODES DE TRANSACTION */}
+              {/* MÃ‰THODES DE TRANSACTION */}
               <div style={{ marginTop: 18 }}>
                 <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 10 }}>
-                  Méthodes de transaction
+                  MÃ©thodes de transaction
                 </label>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   {[
-                    { key: 'campus', label: '🏫 Rencontre sur campus', state: meetCampus, set: setMeetCampus, color: '#6c63ff' },
-                    { key: 'city', label: '🏙️ Rencontre en ville', state: meetCity, set: setMeetCity, color: '#f59e0b' },
-                    { key: 'post', label: '📦 Envoi postal', state: post, set: setPost, color: '#3b82f6' },
+                    { key: 'campus', label: 'ðŸ« Rencontre sur campus', state: meetCampus, set: setMeetCampus, color: '#6c63ff' },
+                    { key: 'city', label: 'ðŸ™ï¸ Rencontre en ville', state: meetCity, set: setMeetCity, color: '#f59e0b' },
+                    { key: 'post', label: 'ðŸ“¦ Envoi postal', state: post, set: setPost, color: '#3b82f6' },
                   ].map(m => (
                     <button key={m.key} type="button" onClick={() => m.set(!m.state)} style={{
                       padding: '10px 18px',
@@ -369,7 +369,7 @@ function CreateInner() {
                       fontSize: 13, cursor: 'pointer', transition: 'all 0.15s',
                       display: 'flex', alignItems: 'center', gap: 6
                     }}>
-                      {m.state && <span>✓</span>}
+                      {m.state && <span>âœ“</span>}
                       {m.label}
                     </button>
                   ))}
@@ -403,7 +403,7 @@ function CreateInner() {
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
-                    Prix neuf ($) <span style={{ color: '#a0aec0', fontWeight: 400 }}>(pour afficher l'économie)</span>
+                    Prix neuf ($) <span style={{ color: '#a0aec0', fontWeight: 400 }}>(pour afficher l'Ã©conomie)</span>
                   </label>
                   <input
                     type="number"
@@ -424,7 +424,7 @@ function CreateInner() {
                   borderRadius: 8, padding: '8px 14px'
                 }}>
                   <span style={{ color: '#00a88a', fontWeight: 700, fontSize: 14 }}>
-                    ✅ Badge "Économise {savingsPercent}%" affiché sur ton annonce
+                    âœ… Badge "Ã‰conomise {savingsPercent}%" affichÃ© sur ton annonce
                   </span>
                 </div>
               )}
@@ -456,9 +456,9 @@ function CreateInner() {
                   }} />
                 ) : (
                   <>
-                    <span style={{ fontSize: 32 }}>📷</span>
+                    <span style={{ fontSize: 32 }}>ðŸ“·</span>
                     <span style={{ color: '#718096', fontSize: 14 }}>Clique pour ajouter une photo</span>
-                    <span style={{ color: '#a0aec0', fontSize: 12 }}>JPG, PNG, WebP — compressée automatiquement</span>
+                    <span style={{ color: '#a0aec0', fontSize: 12 }}>JPG, PNG, WebP â€” compressÃ©e automatiquement</span>
                   </>
                 )}
                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
@@ -468,12 +468,12 @@ function CreateInner() {
                   marginTop: 10, background: 'none', border: 'none',
                   color: '#e53e3e', cursor: 'pointer', fontSize: 13
                 }}>
-                  × Supprimer la photo
+                  Ã— Supprimer la photo
                 </button>
               )}
               {errors.image && (
                 <div style={{ color: '#e53e3e', fontSize: 12, fontWeight: 600, marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
-                  ⚠ {errors.image}
+                  âš  {errors.image}
                 </div>
               )}
             </div>
@@ -485,7 +485,7 @@ function CreateInner() {
                 color: '#c53030', fontSize: 14, fontWeight: 600,
                 display: 'flex', alignItems: 'center', gap: 8
               }}>
-                ⚠️ {serverError}
+                âš ï¸ {serverError}
               </div>
             )}
 
@@ -504,10 +504,10 @@ function CreateInner() {
           </form>
         </div>
 
-        {/* APERÇU LIVE */}
+        {/* APERÃ‡U LIVE */}
         <div style={{ width: isMobile ? '100%' : 300, flexShrink: 0, position: isMobile ? 'relative' : 'sticky', top: isMobile ? 'auto' : 80 }}>
           <h3 style={{ fontSize: 13, fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 14 }}>
-            Aperçu de ton annonce
+            AperÃ§u de ton annonce
           </h3>
           <div style={{
             background: 'white', borderRadius: 10, padding: '16px 20px',
@@ -523,7 +523,7 @@ function CreateInner() {
                   background: 'linear-gradient(135deg, #1a2e4a, #0d4f6b)',
                   borderRadius: 6, display: 'flex', alignItems: 'center',
                   justifyContent: 'center', fontSize: 24
-                }}>📖</div>
+                }}>ðŸ“–</div>
               )}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
@@ -534,7 +534,7 @@ function CreateInner() {
               {authors && <div style={{ fontSize: 12, color: '#718096' }}>Auteurs : {authors}</div>}
               {course && <div style={{ fontSize: 12, color: '#718096', marginTop: 2 }}>Cours : <strong>{course}</strong></div>}
               {etat && <div style={{ fontSize: 11, color: '#a0aec0', marginTop: 2 }}>{etat}</div>}
-              <div style={{ fontSize: 11, color: '#b0bec5', marginTop: 4 }}>à l'instant</div>
+              <div style={{ fontSize: 11, color: '#b0bec5', marginTop: 4 }}>Ã  l'instant</div>
             </div>
             <div style={{ textAlign: 'right', flexShrink: 0 }}>
               <div style={{ fontSize: 18, fontWeight: 900, color: '#1a2e4a' }}>
@@ -546,14 +546,14 @@ function CreateInner() {
                   borderRadius: 20, padding: '3px 10px',
                   fontSize: 11, fontWeight: 700, marginTop: 4, whiteSpace: 'nowrap'
                 }}>
-                  Économise {savingsPercent}%
+                  Ã‰conomise {savingsPercent}%
                 </div>
               )}
             </div>
           </div>
 
           <div style={{ marginTop: 16, background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 10, padding: '12px 14px', fontSize: 13, color: '#7b5e00' }}>
-            💡 L'aperçu se met à jour en temps réel pendant que tu remplis le formulaire.
+            ðŸ’¡ L'aperÃ§u se met Ã  jour en temps rÃ©el pendant que tu remplis le formulaire.
           </div>
         </div>
 

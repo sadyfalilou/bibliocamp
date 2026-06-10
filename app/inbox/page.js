@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { supabase } from '../../lib/supabase'
@@ -48,7 +48,7 @@ function InboxInner() {
       await fetchConversations(session.user.id)
       setLoading(false)
 
-      // Ouvrir une conv spécifique depuis l'URL
+      // Ouvrir une conv spÃ©cifique depuis l'URL
       const convId = searchParams.get('conv')
       if (convId) setSelectedConv(Number(convId))
     }
@@ -162,14 +162,14 @@ function InboxInner() {
     e.preventDefault()
     if (!newMessage.trim() || !selectedConv || sending) return
     if (newMessage.trim().length > 1000) {
-      alert('Le message ne peut pas dépasser 1 000 caractères.')
+      alert('Le message ne peut pas dÃ©passer 1 000 caractÃ¨res.')
       return
     }
     setSending(true)
     const content = newMessage.trim()
     setNewMessage('')
 
-    // Ajout optimiste — affiche immédiatement sans attendre Supabase
+    // Ajout optimiste â€” affiche immÃ©diatement sans attendre Supabase
     const tempMsg = {
       id: `temp-${Date.now()}`,
       conversation_id: selectedConv,
@@ -207,7 +207,7 @@ function InboxInner() {
   }
 
   const getUnread = (conv) => {
-    // Simplifié — à améliorer avec comptage réel
+    // SimplifiÃ© â€” Ã  amÃ©liorer avec comptage rÃ©el
     return false
   }
 
@@ -240,7 +240,7 @@ function InboxInner() {
 
       const newCount = count || 0
 
-      // Rafraîchir la liste des convs pour les badges
+      // RafraÃ®chir la liste des convs pour les badges
       fetchConversations(user.id)
 
       // Son si nouveaux messages non lus
@@ -269,11 +269,11 @@ function InboxInner() {
 
       {/* HEADER */}
       <header style={{ background: '#1a2e4a', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', flexShrink: 0, boxShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
-        <Logo variant="light" size="sm" onClick={() => router.push('/')} style={{ cursor: 'pointer' }} />
-        <button onClick={() => router.push('/')} style={{ background: 'transparent', color: '#a0aec0', border: '1px solid #2d4a6b', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+        <Logo variant="light" size="sm" onClick={() => router.push('/app')} style={{ cursor: 'pointer' }} />
+        <button onClick={() => router.push('/app')} style={{ background: 'transparent', color: '#a0aec0', border: '1px solid #2d4a6b', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
           onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#00c9a7' }}
           onMouseLeave={e => { e.currentTarget.style.color = '#a0aec0'; e.currentTarget.style.borderColor = '#2d4a6b' }}
-        >← Retour</button>
+        >â† Retour</button>
       </header>
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden', height: 'calc(100vh - 60px)' }}>
@@ -293,7 +293,7 @@ function InboxInner() {
           <div style={{ flex: 1, overflowY: 'auto' }}>
             {conversations.length === 0 ? (
               <div style={{ padding: '40px 20px', textAlign: 'center', color: '#a0aec0' }}>
-                <div style={{ fontSize: 36, marginBottom: 10 }}>✉️</div>
+                <div style={{ fontSize: 36, marginBottom: 10 }}>âœ‰ï¸</div>
                 <div style={{ fontSize: 14 }}>Aucune conversation</div>
                 <div style={{ fontSize: 12, marginTop: 6 }}>Contacte un vendeur depuis un livre</div>
               </div>
@@ -327,11 +327,11 @@ function InboxInner() {
                     </div>
                     {conv.listings && (
                       <div style={{ fontSize: 11, color: '#a0aec0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        📖 {conv.listings.title}
+                        ðŸ“– {conv.listings.title}
                       </div>
                     )}
                     {other?.institution && (
-                      <div style={{ fontSize: 11, color: '#718096' }}>🏫 {other.institution}</div>
+                      <div style={{ fontSize: 11, color: '#718096' }}>ðŸ« {other.institution}</div>
                     )}
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
@@ -361,11 +361,11 @@ function InboxInner() {
         }}>
           {!selectedConv ? (
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#a0aec0', flexDirection: 'column', gap: 12 }}>
-              <div style={{ fontSize: 48 }}>💬</div>
-              <div style={{ fontSize: 16, fontWeight: 600, color: '#718096' }}>Sélectionne une conversation</div>
+              <div style={{ fontSize: 48 }}>ðŸ’¬</div>
+              <div style={{ fontSize: 16, fontWeight: 600, color: '#718096' }}>SÃ©lectionne une conversation</div>
               <div style={{ fontSize: 13, color: '#b0bec5' }}>ou contacte un vendeur depuis un livre</div>
-              <button onClick={() => router.push('/')} style={{ marginTop: 8, background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
-                Parcourir les manuels →
+              <button onClick={() => router.push('/app')} style={{ marginTop: 8, background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
+                Parcourir les manuels â†’
               </button>
             </div>
           ) : (
@@ -377,7 +377,7 @@ function InboxInner() {
                     background: '#f1f5f9', border: 'none', cursor: 'pointer',
                     fontSize: 16, color: '#1a2e4a', padding: '8px 12px',
                     borderRadius: 8, fontWeight: 700, flexShrink: 0
-                  }}>← Retour</button>
+                  }}>â† Retour</button>
                 )}
                 {otherUser?.avatar_url ? (
                   <img src={otherUser.avatar_url} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
@@ -391,7 +391,7 @@ function InboxInner() {
                     {otherUser?.first_name ? `${otherUser.first_name} ${otherUser.last_name || ''}`.trim() : 'Utilisateur'}
                   </div>
                   {selectedConvData?.listings && (
-                    <div style={{ fontSize: 12, color: '#a0aec0' }}>📖 {selectedConvData.listings.title} · {selectedConvData.listings.price} $</div>
+                    <div style={{ fontSize: 12, color: '#a0aec0' }}>ðŸ“– {selectedConvData.listings.title} Â· {selectedConvData.listings.price} $</div>
                   )}
                 </div>
               </div>
@@ -400,7 +400,7 @@ function InboxInner() {
               <div style={{ flex: 1, overflowY: 'auto', padding: '20px 24px', display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {messages.length === 0 ? (
                   <div style={{ textAlign: 'center', color: '#b0bec5', marginTop: 40, fontSize: 13 }}>
-                    Début de la conversation · dis bonjour 👋
+                    DÃ©but de la conversation Â· dis bonjour ðŸ‘‹
                   </div>
                 ) : messages.map(msg => {
                   const isMe = msg.sender_id === user?.id
@@ -429,7 +429,7 @@ function InboxInner() {
               <form onSubmit={sendMessage} style={{ padding: '12px 24px', background: 'white', borderTop: '1px solid #e2e8f0' }}>
                 {newMessage.length > 800 && (
                   <div style={{ fontSize: 11, color: newMessage.length > 950 ? '#e53e3e' : '#f59e0b', textAlign: 'right', marginBottom: 4 }}>
-                    {newMessage.length}/1000 caractères
+                    {newMessage.length}/1000 caractÃ¨res
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 10 }}>
@@ -437,7 +437,7 @@ function InboxInner() {
                   value={newMessage}
                   onChange={e => setNewMessage(e.target.value)}
                   maxLength={1000}
-                  placeholder="Écris ton message..."
+                  placeholder="Ã‰cris ton message..."
                   style={{
                     flex: 1, padding: '12px 16px',
                     border: `1px solid ${newMessage.length > 950 ? '#e53e3e' : '#e2e8f0'}`,
@@ -457,7 +457,7 @@ function InboxInner() {
                   onMouseEnter={e => { if (newMessage.trim()) e.currentTarget.style.background = '#00c9a7' }}
                   onMouseLeave={e => { if (newMessage.trim()) e.currentTarget.style.background = '#1a2e4a' }}
                 >
-                  ➤
+                  âž¤
                 </button>
                 </div>
               </form>
