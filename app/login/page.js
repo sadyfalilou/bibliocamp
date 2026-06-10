@@ -16,6 +16,8 @@ export default function Login() {
   const [signupDone, setSignupDone] = useState(false)
   const [resetDone, setResetDone] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [confirmPassword, setConfirmPassword] = useState('')
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [isMobile, setIsMobile] = useState(false)
 
@@ -73,6 +75,8 @@ export default function Login() {
   const handleSignup = async (e) => {
     e.preventDefault(); setErrorMsg('')
     if (!firstName.trim() || !lastName.trim()) { setErrorMsg('Prénom et nom sont requis.'); return }
+    if (password !== confirmPassword) { setErrorMsg('Les mots de passe ne correspondent pas.'); return }
+    if (password.length < 8) { setErrorMsg('Le mot de passe doit contenir au moins 8 caractères.'); return }
     setLoading(true)
     const { data, error } = await supabase.auth.signUp({ email, password })
     if (error) {
@@ -323,6 +327,38 @@ export default function Login() {
                         Mot de passe oublié ?
                       </span>
                     </div>
+                  )}
+                </div>
+              )}
+
+              {/* CONFIRMER MOT DE PASSE — signup seulement */}
+              {mode === 'signup' && (
+                <div style={{ marginBottom: 24 }}>
+                  <label style={{ display: 'block', marginBottom: 7, fontWeight: 600, color: '#374151', fontSize: 13, letterSpacing: 0.1 }}>Confirmer le mot de passe</label>
+                  <div style={{ position: 'relative' }}>
+                    <input type={showConfirmPassword ? 'text' : 'password'} placeholder="••••••••" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} required
+                      style={{
+                        ...inputStyle({ paddingRight: 44 }),
+                        borderColor: confirmPassword && confirmPassword !== password ? '#fca5a5' : confirmPassword && confirmPassword === password ? '#6ee7b7' : '#e8edf2'
+                      }}
+                      onFocus={e => { e.target.style.boxShadow = '0 0 0 3px rgba(0,201,167,0.1)'; e.target.style.background = 'white' }}
+                      onBlur={e => { e.target.style.boxShadow = 'none'; e.target.style.background = '#fafbfc' }}
+                    />
+                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      style={{ position: 'absolute', right: 14, top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: 17, color: '#94a3b8', padding: 0, lineHeight: 1 }}>
+                      {showConfirmPassword ? '🙈' : '👁️'}
+                    </button>
+                    {/* Indicateur match */}
+                    {confirmPassword && (
+                      <div style={{ position: 'absolute', right: 44, top: '50%', transform: 'translateY(-50%)', fontSize: 16 }}>
+                        {confirmPassword === password ? '✅' : '❌'}
+                      </div>
+                    )}
+                  </div>
+                  {confirmPassword && confirmPassword !== password && (
+                    <p style={{ margin: '6px 0 0', fontSize: 12, color: '#dc2626', fontWeight: 500 }}>
+                      Les mots de passe ne correspondent pas.
+                    </p>
                   )}
                 </div>
               )}
