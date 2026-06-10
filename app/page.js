@@ -307,8 +307,8 @@ export default function Home() {
     setReportSent(false)
   }
 
-  const handleLogout = () => {
-    supabase.auth.signOut()
+  const handleLogout = async () => {
+    await supabase.auth.signOut()
     window.location.replace('/login')
   }
 
