@@ -256,7 +256,7 @@ export default function Login() {
             borderRadius: 10, padding: '12px 16px', marginBottom: 20,
             fontSize: 14, color: '#00a88a', fontWeight: 600,
           }}>
-            ✅ Compte créé ! Vérifie ta boîte courriel et clique sur le lien de confirmation avant de te connecter.
+            ✅ Compte créé ! Connexion en cours...
           </div>
         )}
 
