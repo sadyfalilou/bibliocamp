@@ -125,30 +125,31 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
+    let initialized = false
+
     const init = async (currentUser) => {
+      if (initialized) return
+      initialized = true
       try {
-        const user = currentUser || (await supabase.auth.getUser()).data.user
+        const user = currentUser || (await supabase.auth.getSession()).data.session?.user
         if (!user) { window.location.href = '/login'; return }
-        const data = { user }
-        setUser(data.user)
-        Sentry.setUser({ id: data.user.id, email: data.user.email })
-        const savedPhone = data.user?.user_metadata?.phone_verified
+        setUser(user)
+        Sentry.setUser({ id: user.id, email: user.email })
+        const savedPhone = user?.user_metadata?.phone_verified
         if (savedPhone) setPhoneSaved(true)
-        // Charger le profil de l'utilisateur connecté
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
-          .eq('id', data.user.id)
+          .eq('id', user.id)
           .single()
-        userIdRef.current = data.user.id
+        userIdRef.current = user.id
         if (profile) {
           setUserProfile(profile)
           setUserSubjects(profile.subjects || [])
         }
-        fetchWishlist(data.user.id)
-        fetchUnreadMessages(data.user.id)
+        fetchWishlist(user.id)
+        fetchUnreadMessages(user.id)
         requestNotifPermission()
-        // Init audio au premier clic (requis par les navigateurs)
         document.addEventListener('click', initAudio, { once: true })
       } catch (e) {
         window.location.href = '/login'
@@ -157,18 +158,18 @@ export default function Home() {
       setLoading(false)
       fetchListings()
     }
-    // Écouter les changements d'état auth — crucial pour le redirect OAuth
+
+    // onAuthStateChange fire immédiatement avec la session existante (y compris après OAuth)
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        init(session.user)
-      } else if (event === 'SIGNED_OUT') {
+      if (event === 'SIGNED_OUT') {
         window.location.href = '/login'
-      } else {
-        fetchListings()
+      } else if (session?.user) {
+        init(session.user)
+      } else if (event === 'INITIAL_SESSION' && !session) {
+        // Pas de session — rediriger vers login
+        window.location.href = '/login'
       }
     })
-
-    init()
 
     return () => {
       listener.subscription.unsubscribe()
