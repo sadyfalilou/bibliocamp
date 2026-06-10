@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Logo from '../../components/Logo'
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -268,9 +269,7 @@ function InboxInner() {
 
       {/* HEADER */}
       <header style={{ background: '#1a2e4a', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', flexShrink: 0, boxShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
-        <div onClick={() => router.push('/')} style={{ background: '#00c9a7', color: 'white', fontWeight: 900, fontSize: 16, padding: '5px 14px', borderRadius: 8, letterSpacing: 1, cursor: 'pointer' }}>
-          📚 BIBLIOCAMP
-        </div>
+        <Logo variant="light" size="sm" onClick={() => router.push('/')} style={{ cursor: 'pointer' }} />
         <button onClick={() => router.push('/')} style={{ background: 'transparent', color: '#a0aec0', border: '1px solid #2d4a6b', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
           onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#00c9a7' }}
           onMouseLeave={e => { e.currentTarget.style.color = '#a0aec0'; e.currentTarget.style.borderColor = '#2d4a6b' }}

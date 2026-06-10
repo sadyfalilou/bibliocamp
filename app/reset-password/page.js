@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
+import Logo from '../../components/Logo'
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('')
@@ -40,12 +41,7 @@ export default function ResetPassword() {
         display: 'flex', alignItems: 'center', padding: '0 40px',
         boxShadow: '0 2px 8px rgba(0,0,0,0.3)'
       }}>
-        <div style={{
-          background: '#00c9a7', color: 'white', fontWeight: 900,
-          fontSize: 18, padding: '6px 14px', borderRadius: 8, letterSpacing: 1
-        }}>
-          📚 BIBLIOCAMP
-        </div>
+        <Logo variant="light" size="sm" onClick={() => router.push('/')} style={{ cursor: 'pointer' }} />
       </header>
 
       {/* HERO */}

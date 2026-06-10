@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import * as Sentry from '@sentry/nextjs'
 import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
+import Logo from '../components/Logo'
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -508,12 +509,7 @@ export default function Home() {
               <div style={{ width: 20, height: 2, background: 'white', borderRadius: 2 }} />
             </button>
           )}
-          <div style={{
-            background: '#00c9a7', color: 'white', fontWeight: 900,
-            fontSize: 16, padding: '5px 14px', borderRadius: 8, letterSpacing: 1
-          }}>
-            📚 BIBLIOCAMP
-          </div>
+          <Logo variant="light" size="sm" />
         </div>
         {/* Menu profil style Airbnb */}
         <div style={{ position: 'relative' }}>

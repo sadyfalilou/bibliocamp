@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react'
 import imageCompression from 'browser-image-compression'
 import { supabase } from '../../../lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
+import Logo from '../../../components/Logo'
 
 const ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
 
@@ -237,13 +238,7 @@ export default function Edit() {
         padding: '0 28px', position: 'sticky', top: 0, zIndex: 100,
         boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
       }}>
-        <div onClick={() => router.push('/')} style={{
-          background: '#00c9a7', color: 'white', fontWeight: 900,
-          fontSize: 16, padding: '5px 14px', borderRadius: 8,
-          letterSpacing: 1, cursor: 'pointer'
-        }}>
-          📚 BIBLIOCAMP
-        </div>
+        <Logo variant="light" size="sm" onClick={() => router.push('/')} style={{ cursor: 'pointer' }} />
         <button onClick={() => router.push('/')} style={{
           background: 'transparent', color: '#a0aec0',
           border: '1px solid #2d4a6b', padding: '6px 14px',

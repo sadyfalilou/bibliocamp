@@ -5,7 +5,7 @@
  *          'color' (texte teal, pour fonds blancs)
  * size: 'sm' | 'md' | 'lg'
  */
-export default function Logo({ variant = 'light', size = 'md', style = {} }) {
+export default function Logo({ variant = 'light', size = 'md', style = {}, onClick }) {
   const sizes = {
     sm: { icon: 28, fontSize: 14, gap: 8 },
     md: { icon: 34, fontSize: 17, gap: 10 },
@@ -18,7 +18,7 @@ export default function Logo({ variant = 'light', size = 'md', style = {} }) {
     : '#00c9a7'
 
   return (
-    <div style={{ display: 'inline-flex', alignItems: 'center', gap: s.gap, ...style }}>
+    <div onClick={onClick} style={{ display: 'inline-flex', alignItems: 'center', gap: s.gap, ...style }}>
       {/* Icône SVG — livre ouvert stylisé */}
       <svg width={s.icon} height={s.icon} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
         {/* Fond arrondi */}
