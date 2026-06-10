@@ -13,6 +13,7 @@ export default function Login() {
   const [signupDone, setSignupDone] = useState(false)
   const [resetDone, setResetDone] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
   const router = useRouter()
 
   // Si déjà connecté (ex: retour OAuth), rediriger vers l'accueil
@@ -33,8 +34,19 @@ export default function Login() {
   ]
   const isUserError = (msg) => USER_ERRORS.some(e => msg.toLowerCase().includes(e))
 
+  const friendlyError = (msg) => {
+    const m = msg.toLowerCase()
+    if (m.includes('invalid login credentials')) return 'Adresse courriel ou mot de passe incorrect.'
+    if (m.includes('email not confirmed')) return 'Confirme ton adresse courriel avant de te connecter. Vérifie ta boîte mail.'
+    if (m.includes('user already registered')) return 'Un compte existe déjà avec cette adresse courriel.'
+    if (m.includes('password should be at least')) return 'Le mot de passe doit contenir au moins 6 caractères.'
+    if (m.includes('invalid email')) return 'Adresse courriel invalide.'
+    return msg
+  }
+
   const handleLogin = async (e) => {
     e.preventDefault()
+    setErrorMsg('')
     setLoading(true)
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     setLoading(false)
@@ -42,7 +54,7 @@ export default function Login() {
       if (!isUserError(error.message)) {
         Sentry.captureException(error, { extra: { context: 'login', email } })
       }
-      alert(error.message)
+      setErrorMsg(friendlyError(error.message))
       return
     }
     router.push('/')
@@ -50,6 +62,7 @@ export default function Login() {
 
   const handleReset = async (e) => {
     e.preventDefault()
+    setErrorMsg('')
     setLoading(true)
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
       redirectTo: `${window.location.origin}/reset-password`
@@ -59,7 +72,7 @@ export default function Login() {
       if (!isUserError(error.message)) {
         Sentry.captureException(error, { extra: { context: 'reset-password', email } })
       }
-      alert(error.message)
+      setErrorMsg(friendlyError(error.message))
       return
     }
     setResetDone(true)
@@ -67,6 +80,7 @@ export default function Login() {
 
   const handleSignup = async (e) => {
     e.preventDefault()
+    setErrorMsg('')
     setLoading(true)
     const { error } = await supabase.auth.signUp({ email, password })
     setLoading(false)
@@ -74,7 +88,7 @@ export default function Login() {
       if (!isUserError(error.message)) {
         Sentry.captureException(error, { extra: { context: 'signup', email } })
       }
-      alert(error.message)
+      setErrorMsg(friendlyError(error.message))
       return
     }
     setSignupDone(true)
@@ -82,6 +96,7 @@ export default function Login() {
   }
 
   const handleOAuth = async (provider) => {
+    setErrorMsg('')
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -90,7 +105,7 @@ export default function Login() {
     })
     if (error) {
       Sentry.captureException(error, { extra: { context: `oauth-${provider}` } })
-      alert(error.message)
+      setErrorMsg(error.message)
     }
   }
 
@@ -148,7 +163,7 @@ export default function Login() {
         {/* TABS connexion / inscription */}
         {mode !== 'reset' && (
           <div style={{ display: 'flex', borderBottom: '2px solid #e2e8f0' }}>
-            <button onClick={() => setMode('login')} style={{
+            <button onClick={() => { setMode('login'); setErrorMsg('') }} style={{
               flex: 1, padding: '16px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15,
               background: mode === 'login' ? 'white' : '#f7fafc',
               color: mode === 'login' ? '#00c9a7' : '#718096',
@@ -157,7 +172,7 @@ export default function Login() {
             }}>
               Connexion
             </button>
-            <button onClick={() => setMode('signup')} style={{
+            <button onClick={() => { setMode('signup'); setErrorMsg('') }} style={{
               flex: 1, padding: '16px', border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 15,
               background: mode === 'signup' ? 'white' : '#f7fafc',
               color: mode === 'signup' ? '#00c9a7' : '#718096',
@@ -221,14 +236,27 @@ export default function Login() {
           </div>
         )}
 
+        {/* MESSAGE ERREUR INLINE */}
+        {errorMsg && (
+          <div style={{
+            background: '#fff5f5', border: '1px solid #fc8181',
+            borderRadius: 10, padding: '12px 16px', marginBottom: 20,
+            fontSize: 14, color: '#c53030', fontWeight: 600,
+            display: 'flex', alignItems: 'flex-start', gap: 8
+          }}>
+            <span style={{ flexShrink: 0 }}>⚠️</span>
+            <span>{errorMsg}</span>
+          </div>
+        )}
+
+        {/* MESSAGE SUCCÈS INSCRIPTION */}
         {signupDone && (
           <div style={{
             background: '#f0fdf9', border: '1px solid #00c9a7',
             borderRadius: 10, padding: '12px 16px', marginBottom: 20,
             fontSize: 14, color: '#00a88a', fontWeight: 600,
-            display: 'flex', alignItems: 'center', gap: 8
           }}>
-            ✅ Compte créé ! Tu peux maintenant te connecter.
+            ✅ Compte créé ! Vérifie ta boîte courriel et clique sur le lien de confirmation avant de te connecter.
           </div>
         )}
 
@@ -332,7 +360,7 @@ export default function Login() {
         {mode === 'login' && (
           <p style={{ textAlign: 'center', marginTop: 12, fontSize: 13 }}>
             <span
-              onClick={() => { setMode('reset'); setResetDone(false) }}
+              onClick={() => { setMode('reset'); setResetDone(false); setErrorMsg('') }}
               style={{ color: '#a0aec0', cursor: 'pointer', textDecoration: 'underline' }}
             >
               Mot de passe oublié ?
@@ -342,7 +370,7 @@ export default function Login() {
 
         {mode === 'reset' && (
           <p style={{ textAlign: 'center', marginTop: 8, color: '#666', fontSize: 14 }}>
-            <span onClick={() => setMode('login')} style={{ color: '#00c9a7', fontWeight: 700, cursor: 'pointer' }}>
+            <span onClick={() => { setMode('login'); setErrorMsg('') }} style={{ color: '#00c9a7', fontWeight: 700, cursor: 'pointer' }}>
               ← Retour à la connexion
             </span>
           </p>
