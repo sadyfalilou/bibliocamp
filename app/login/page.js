@@ -39,7 +39,7 @@ export default function Login() {
     if (m.includes('invalid login credentials')) return 'Adresse courriel ou mot de passe incorrect.'
     if (m.includes('email not confirmed')) return 'Confirme ton adresse courriel avant de te connecter. Vérifie ta boîte mail.'
     if (m.includes('user already registered')) return 'Un compte existe déjà avec cette adresse courriel.'
-    if (m.includes('password should be at least')) return 'Le mot de passe doit contenir au moins 6 caractères.'
+    if (m.includes('password should be at least')) return 'Le mot de passe doit contenir au moins 8 caractères.'
     if (m.includes('invalid email')) return 'Adresse courriel invalide.'
     return msg
   }
