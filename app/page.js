@@ -509,7 +509,7 @@ export default function Home() {
               <div style={{ width: 20, height: 2, background: 'white', borderRadius: 2 }} />
             </button>
           )}
-          <Logo variant="light" size="sm" />
+          <Logo variant="light" size="sm" onClick={() => setView('acheter')} style={{ cursor: 'pointer' }} />
         </div>
         {/* Menu profil style Airbnb */}
         <div style={{ position: 'relative' }}>
