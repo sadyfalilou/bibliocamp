@@ -240,6 +240,15 @@ function InboxInner() {
     if (updated?.deleted_by_user1 && updated?.deleted_by_user2) {
       await supabase.from('messages').delete().eq('conversation_id', convId)
       await supabase.from('conversations').delete().eq('id', convId)
+    } else {
+      // Insérer un message système pour avertir l'autre user
+      const senderName = user.user_metadata?.first_name || 'Un utilisateur'
+      await supabase.from('messages').insert({
+        conversation_id: convId,
+        sender_id: user.id,
+        content: `${senderName} a quitté la conversation.`,
+        type: 'system',
+      })
     }
 
     setConversations(prev => prev.filter(c => c.id !== convId))
@@ -469,6 +478,21 @@ function InboxInner() {
                     Début de la conversation · dis bonjour 👋
                   </div>
                 ) : messages.map(msg => {
+                  // Message système (ex: "X a quitté la conversation")
+                  if (msg.type === 'system') {
+                    return (
+                      <div key={msg.id} style={{ display: 'flex', justifyContent: 'center', margin: '6px 0' }}>
+                        <div style={{
+                          fontSize: 12, color: '#9ca3af', fontStyle: 'italic',
+                          background: '#f3f4f6', borderRadius: 20,
+                          padding: '5px 14px', maxWidth: '80%', textAlign: 'center'
+                        }}>
+                          {msg.content}
+                        </div>
+                      </div>
+                    )
+                  }
+
                   const isMe = msg.sender_id === user?.id
                   return (
                     <div key={msg.id} style={{ display: 'flex', justifyContent: isMe ? 'flex-end' : 'flex-start' }}>
