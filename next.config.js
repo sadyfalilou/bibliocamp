@@ -12,7 +12,7 @@ const securityHeaders = [
       "default-src 'self'",
       "script-src 'self' 'unsafe-eval' 'unsafe-inline'", // unsafe-eval requis par Next.js dev
       "style-src 'self' 'unsafe-inline'",
-      "img-src 'self' blob: data: https://*.supabase.co https://books.google.com https://covers.openlibrary.org",
+      "img-src 'self' blob: data: https://*.supabase.co https://books.google.com https://*.google.com https://*.gstatic.com https://*.googleusercontent.com https://covers.openlibrary.org",
       "media-src 'self' https://*.supabase.co",
       "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://*.sentry.io",
       "font-src 'self'",

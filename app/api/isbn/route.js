@@ -32,13 +32,19 @@ export async function GET(request) {
           authors: (book.authors || []).map(a => a.name).join(', '),
           publisher: (book.publishers || [])[0]?.name || '',
           publishedDate: book.publish_date || '',
-          cover: cover || null,
+          cover: proxyUrl(cover),
         }
       })
     }
   } catch { /* échec total */ }
 
   return NextResponse.json({ found: false })
+}
+
+function proxyUrl(url) {
+  if (!url) return null
+  const https = url.replace('http://', 'https://').replace('&edge=curl', '')
+  return `/api/cover?url=${encodeURIComponent(https)}`
 }
 
 function extractGoogle(v) {
@@ -52,6 +58,6 @@ function extractGoogle(v) {
     authors: (v.authors || []).join(', '),
     publisher: v.publisher || '',
     publishedDate: v.publishedDate || '',
-    cover: cover ? cover.replace('http://', 'https://').replace('&edge=curl', '') : null,
+    cover: proxyUrl(cover),
   }
 }
