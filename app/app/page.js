@@ -1531,59 +1531,47 @@ export default function Home() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {myListings.map(item => {
-                    const isSold = item.status === 'sold'
-                    return (
+                  {myListings.map(item => (
                     <div key={item.id} style={{
-                      background: isSold ? '#f8fafc' : 'white', borderRadius: 10, padding: '14px',
+                      background: item.status === 'sold' ? '#f8fafc' : 'white', borderRadius: 10, padding: '14px',
                       display: 'flex', flexDirection: isMobile ? 'column' : 'row',
                       alignItems: isMobile ? 'flex-start' : 'center',
-                      gap: isMobile ? 10 : 16,
-                      border: `1px solid ${isSold ? '#e2e8f0' : '#e2e8f0'}`,
-                      opacity: isSold ? 0.75 : 1
+                      gap: isMobile ? 10 : 16, border: '1px solid #e2e8f0',
+                      opacity: item.status === 'sold' ? 0.75 : 1
                     }}>
                       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1, minWidth: 0 }}>
-                        {/* Image avec stamp VENDU */}
                         <div style={{ flexShrink: 0, position: 'relative' }}>
                           {item.image_url ? (
-                            <img src={item.image_url} alt={item.title} style={{ width: 48, height: 60, objectFit: 'cover', borderRadius: 6, filter: isSold ? 'grayscale(50%)' : 'none' }} />
+                            <img src={item.image_url} alt={item.title} style={{ width: 48, height: 60, objectFit: 'cover', borderRadius: 6, filter: item.status === 'sold' ? 'grayscale(50%)' : 'none' }} />
                           ) : (
                             <div style={{ width: 48, height: 60, background: 'linear-gradient(135deg, #1a2e4a, #0d4f6b)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>📖</div>
                           )}
-                          {isSold && (
-                            <div style={{
-                              position: 'absolute', inset: 0, borderRadius: 6,
-                              background: 'rgba(0,0,0,0.45)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center'
-                            }}>
-                              <span style={{ fontSize: 9, fontWeight: 900, color: 'white', textTransform: 'uppercase', letterSpacing: 0.5, background: '#00c9a7', padding: '2px 4px', borderRadius: 3 }}>VENDU</span>
+                          {item.status === 'sold' && (
+                            <div style={{ position: 'absolute', inset: 0, borderRadius: 6, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                              <span style={{ fontSize: 9, fontWeight: 900, color: 'white', textTransform: 'uppercase', background: '#00c9a7', padding: '2px 4px', borderRadius: 3 }}>VENDU</span>
                             </div>
                           )}
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
-                            <div style={{ fontWeight: 700, color: isSold ? '#94a3b8' : '#00a88a', fontSize: 14 }}>{item.title}</div>
-                            {isSold && <span style={{ fontSize: 10, fontWeight: 700, background: '#dcfce7', color: '#16a34a', padding: '1px 6px', borderRadius: 10 }}>Vendu</span>}
+                            <div style={{ fontWeight: 700, color: item.status === 'sold' ? '#94a3b8' : '#00a88a', fontSize: 14 }}>{item.title}</div>
+                            {item.status === 'sold' && <span style={{ fontSize: 10, fontWeight: 700, background: '#dcfce7', color: '#16a34a', padding: '1px 6px', borderRadius: 10 }}>Vendu</span>}
                           </div>
-                          {item.course_code && (
-                            <div style={{ fontSize: 12, color: '#718096' }}>Cours : <strong>{item.course_code}</strong></div>
-                          )}
+                          {item.course_code && <div style={{ fontSize: 12, color: '#718096' }}>Cours : <strong>{item.course_code}</strong></div>}
                           <div style={{ fontSize: 11, color: '#b0bec5', marginTop: 2 }}>{timeAgo(item.created_at)}</div>
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: isMobile ? '100%' : 'auto', gap: 8 }}>
-                        <div style={{ fontSize: 18, fontWeight: 900, color: isSold ? '#94a3b8' : '#1a2e4a' }}>{item.price} $</div>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: item.status === 'sold' ? '#94a3b8' : '#1a2e4a' }}>{item.price} $</div>
                         <div style={{ display: 'flex', gap: 6 }}>
-                          {isSold ? (
+                          {item.status === 'sold' ? (
                             <>
-                              <button onClick={() => handleMarkActive(item.id)} style={{ background: '#f0fdf9', color: '#00a88a', border: '1px solid #00c9a7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
-                                ↩ Remettre en ligne
-                              </button>
+                              <button onClick={() => handleMarkActive(item.id)} style={{ background: '#f0fdf9', color: '#00a88a', border: '1px solid #00c9a7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Remettre en ligne</button>
                               <button onClick={() => setDeleteConfirmId(item.id)} style={{ background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Supprimer</button>
                             </>
                           ) : (
                             <>
-                              <button onClick={() => setSoldConfirmId(item.id)} style={{ background: '#f0fdf9', color: '#00a88a', border: '1px solid #00c9a7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>✓ Vendu</button>
+                              <button onClick={() => setSoldConfirmId(item.id)} style={{ background: '#f0fdf9', color: '#00a88a', border: '1px solid #00c9a7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Vendu</button>
                               <button onClick={() => router.push(`/edit/${item.id}`)} style={{ background: 'white', color: '#64748b', border: '1px solid #e2e8f0', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Modifier</button>
                               <button onClick={() => setDeleteConfirmId(item.id)} style={{ background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Supprimer</button>
                             </>
@@ -1591,7 +1579,7 @@ export default function Home() {
                         </div>
                       </div>
                     </div>
-                  )})
+                  ))}
                 </div>
               )}
             </>
