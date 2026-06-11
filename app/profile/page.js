@@ -38,7 +38,7 @@ function InviteSection({ userId }) {
   }
 
   const handleEmail = () => {
-    const subject = encodeURIComponent('Je t'invite sur BiblioCamp 📚')
+    const subject = encodeURIComponent("Je t'invite sur BiblioCamp 📚")
     const body = encodeURIComponent(`Salut !\n\nJe t'invite à rejoindre BiblioCamp, la marketplace pour acheter et vendre des manuels universitaires entre étudiants.\n\nC'est gratuit et tu peux économiser jusqu'à 70% sur tes manuels !\n\nInscris-toi ici : ${inviteUrl}\n\nÀ bientôt !`)
     window.location.href = `mailto:?subject=${subject}&body=${body}`
   }
