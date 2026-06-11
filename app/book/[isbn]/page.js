@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import { createClient } from '@supabase/supabase-js'
 import Logo from '../../../components/Logo'
 
 export default function BookPage() {
@@ -11,6 +12,7 @@ export default function BookPage() {
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const [userId, setUserId] = useState(null)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -18,6 +20,27 @@ export default function BookPage() {
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
   }, [])
+
+  useEffect(() => {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) setUserId(data.user.id)
+    })
+  }, [])
+
+  const handleContact = (e) => {
+    if (e) e.stopPropagation()
+    if (userId) router.push('/inbox')
+    else router.push('/login')
+  }
+
+  const handleSell = () => {
+    if (userId) router.push(`/create?isbn=${isbn}`)
+    else router.push(`/login?redirect=/create&isbn=${isbn}`)
+  }
 
   useEffect(() => {
     if (!isbn) return
@@ -151,7 +174,7 @@ export default function BookPage() {
                 {/* Boutons */}
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <button
-                    onClick={() => router.push(`/login?redirect=/create&isbn=${isbn}`)}
+                    onClick={handleSell}
                     style={{
                       background: '#1a2e4a', border: 'none', borderRadius: 9,
                       padding: '10px 20px', fontSize: 14, fontWeight: 700,
@@ -187,7 +210,7 @@ export default function BookPage() {
                     Tu as ce manuel ? Sois le premier à le vendre !
                   </p>
                   <button
-                    onClick={() => router.push(`/login?redirect=/create&isbn=${isbn}`)}
+                    onClick={handleSell}
                     style={{
                       background: '#00c9a7', border: 'none', borderRadius: 10,
                       padding: '12px 28px', fontSize: 15, fontWeight: 800,
@@ -208,7 +231,7 @@ export default function BookPage() {
                       display: 'flex', alignItems: 'center', gap: 16,
                       transition: 'background 0.15s', cursor: 'pointer'
                     }}
-                    onClick={() => router.push('/login')}
+                    onClick={handleContact}
                     onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                     onMouseLeave={e => e.currentTarget.style.background = 'white'}
                   >
@@ -265,7 +288,7 @@ export default function BookPage() {
                         </div>
                       )}
                       <button
-                        onClick={e => { e.stopPropagation(); router.push('/login') }}
+                        onClick={handleContact}
                         style={{
                           marginTop: 8, background: '#1a2e4a', border: 'none',
                           borderRadius: 7, padding: '6px 14px', fontSize: 12,

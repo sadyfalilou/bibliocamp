@@ -136,33 +136,9 @@ export default function SellerPage() {
                     <div style={{ fontSize: 22, fontWeight: 900, color: '#1a2e4a' }}>{listings.length}</div>
                     <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>annonce{listings.length !== 1 ? 's' : ''}</div>
                   </div>
-                  {listings.length > 0 && (
-                    <div style={{ textAlign: 'center' }}>
-                      <div style={{ fontSize: 22, fontWeight: 900, color: '#00c9a7' }}>
-                        {Math.min(...listings.map(l => l.price))} $
-                      </div>
-                      <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 600 }}>à partir de</div>
-                    </div>
-                  )}
                 </div>
               </div>
 
-              {/* Bouton contacter */}
-              <div style={{ flexShrink: 0, width: isMobile ? '100%' : 'auto' }}>
-                <button
-                  onClick={() => router.push('/login')}
-                  style={{
-                    background: '#1a2e4a', border: 'none', borderRadius: 10,
-                    padding: '12px 24px', fontSize: 14, fontWeight: 700,
-                    color: 'white', cursor: 'pointer', width: isMobile ? '100%' : 'auto',
-                    transition: 'background 0.2s'
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#00c9a7'}
-                  onMouseLeave={e => e.currentTarget.style.background = '#1a2e4a'}
-                >
-                  Contacter ce vendeur →
-                </button>
-              </div>
             </div>
 
             {/* ANNONCES */}
