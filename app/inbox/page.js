@@ -223,15 +223,23 @@ function InboxInner() {
 
     // Suppression douce : on marque la conv comme cachée pour cet utilisateur uniquement
     const field = conv.user1_id === user.id ? 'deleted_by_user1' : 'deleted_by_user2'
-    const { error } = await supabase
+    const { data: updated, error } = await supabase
       .from('conversations')
       .update({ [field]: true })
       .eq('id', convId)
+      .select('deleted_by_user1, deleted_by_user2')
+      .single()
 
     if (error) {
       alert(`Erreur : ${error.message}`)
       setDeletingConv(null)
       return
+    }
+
+    // Si les deux users ont supprimé → suppression définitive
+    if (updated?.deleted_by_user1 && updated?.deleted_by_user2) {
+      await supabase.from('messages').delete().eq('conversation_id', convId)
+      await supabase.from('conversations').delete().eq('id', convId)
     }
 
     setConversations(prev => prev.filter(c => c.id !== convId))
