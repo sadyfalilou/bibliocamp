@@ -359,7 +359,7 @@ export default function Profile() {
               <div style={{ color: '#718096', fontSize: 13 }}>{user?.email}</div>
               {institution && <div style={{ color: '#00c9a7', fontSize: 12, fontWeight: 600, marginTop: 2 }}>🏫 {institution}</div>}
               <div style={{ marginTop: 10 }}>
-                <BadgeList userId={user?.id} size="sm" showLocked={true} />
+                <BadgeList userId={user?.id} mode="profile" />
               </div>
               <button type="button" onClick={() => avatarInputRef.current?.click()} style={{
                 marginTop: 8, background: 'none', border: '1px solid #e2e8f0',
