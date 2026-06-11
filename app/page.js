@@ -220,17 +220,17 @@ export default function Landing() {
               >
                 {/* Image */}
                 <div style={{ height: 120, background: '#f0f4f8', position: 'relative', overflow: 'hidden' }}>
-                  {listing.images?.[0]
-                    ? <img src={listing.images[0]} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  {listing.image_url
+                    ? <img src={listing.image_url} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                     : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>📚</div>
                   }
-                  {/* Badge transaction */}
+                  {/* Badge mode de transaction */}
                   <div style={{
                     position: 'absolute', top: 8, left: 8,
-                    background: listing.transaction_type === 'Don' ? '#10b981' : listing.transaction_type === 'Prêt' ? '#6366f1' : '#1a2e4a',
+                    background: listing.meet_campus ? '#6366f1' : listing.post ? '#2563eb' : '#1a2e4a',
                     color: 'white', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700
                   }}>
-                    {listing.transaction_type || 'Vente'}
+                    {listing.meet_campus ? '🏫 Campus' : listing.post ? '📦 Envoi' : '🏙️ Ville'}
                   </div>
                 </div>
                 {/* Infos */}
@@ -241,9 +241,9 @@ export default function Landing() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                     <span style={{ fontSize: 15, fontWeight: 900, color: '#00c9a7' }}>
-                      {listing.transaction_type === 'Don' ? 'Gratuit' : listing.transaction_type === 'Prêt' ? 'Prêt' : `${listing.price ?? '—'}$`}
+                      {listing.price ? `${listing.price} $` : '—'}
                     </span>
-                    <span style={{ fontSize: 11, color: '#94a3b8' }}>{listing.etat}</span>
+                    <span style={{ fontSize: 11, color: '#94a3b8' }}>{listing.description}</span>
                   </div>
                 </div>
               </div>
