@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
@@ -6,14 +6,14 @@ import { useRouter } from 'next/navigation'
 import Logo from '../../components/Logo'
 
 const INSTITUTIONS = [
-  'UQAM', 'HEC MontrÃ©al', 'UniversitÃ© de MontrÃ©al', 'McGill', 'Concordia',
-  'UniversitÃ© Laval', 'UniversitÃ© de Sherbrooke', 'UQTR', 'UQAC', 'UQAR',
-  'Polytechnique MontrÃ©al', 'Ã‰TS', 'Autre'
+  'UQAM', 'HEC Montréal', 'Université de Montréal', 'McGill', 'Concordia',
+  'Université Laval', 'Université de Sherbrooke', 'UQTR', 'UQAC', 'UQAR',
+  'Polytechnique Montréal', 'ÉTS', 'Autre'
 ]
 
 const PROGRAMS = [
-  'Administration', 'Commerce', 'ComptabilitÃ©', 'Droit', 'Finance',
-  'GÃ©nie', 'Informatique', 'Marketing', 'MÃ©decine', 'Nursing',
+  'Administration', 'Commerce', 'Comptabilité', 'Droit', 'Finance',
+  'Génie', 'Informatique', 'Marketing', 'Médecine', 'Nursing',
   'Psychologie', 'Sciences', 'Autre'
 ]
 
@@ -132,7 +132,7 @@ export default function Profile() {
         <button onClick={() => router.push('/app')} style={{ background: 'transparent', color: '#a0aec0', border: '1px solid #2d4a6b', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
           onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#00c9a7' }}
           onMouseLeave={e => { e.currentTarget.style.color = '#a0aec0'; e.currentTarget.style.borderColor = '#2d4a6b' }}
-        >â† Retour</button>
+        >← Retour</button>
       </header>
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: isMobile ? '20px 16px' : '36px 24px' }}>
@@ -143,10 +143,10 @@ export default function Profile() {
         </div>
         <h1 style={{ fontSize: 26, fontWeight: 900, color: '#1a2e4a', margin: '0 0 24px' }}>Mon profil</h1>
 
-        {/* Barre de complÃ©tion */}
+        {/* Barre de complétion */}
         <div style={{ background: 'white', borderRadius: 12, padding: '16px 20px', marginBottom: 20, border: '1px solid #e2e8f0' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 8 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#1a2e4a' }}>ComplÃ©tude du profil</span>
+            <span style={{ fontSize: 13, fontWeight: 600, color: '#1a2e4a' }}>Complétude du profil</span>
             <span style={{ fontSize: 13, fontWeight: 700, color: completionPct === 100 ? '#00c9a7' : '#f59e0b' }}>{completionPct}%</span>
           </div>
           <div style={{ background: '#e2e8f0', borderRadius: 20, height: 8, overflow: 'hidden' }}>
@@ -154,7 +154,7 @@ export default function Profile() {
           </div>
           {completionPct < 100 && (
             <p style={{ margin: '8px 0 0', fontSize: 12, color: '#718096' }}>
-              Un profil complet aide les acheteurs Ã  te faire confiance.
+              Un profil complet aide les acheteurs à te faire confiance.
             </p>
           )}
         </div>
@@ -198,7 +198,7 @@ export default function Profile() {
                   onMouseEnter={e => e.currentTarget.style.opacity = 1}
                   onMouseLeave={e => e.currentTarget.style.opacity = 0}
                 >
-                  <span style={{ fontSize: 18 }}>ðŸ“·</span>
+                  <span style={{ fontSize: 18 }}>📷</span>
                   Modifier
                 </div>
               </div>
@@ -208,7 +208,7 @@ export default function Profile() {
                   background: 'rgba(0,201,167,0.7)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   color: 'white', fontSize: 11, fontWeight: 700
-                }}>â³</div>
+                }}>⏳</div>
               )}
               <input ref={avatarInputRef} type="file" accept="image/*" onChange={handleAvatarChange} style={{ display: 'none' }} />
             </div>
@@ -218,7 +218,7 @@ export default function Profile() {
                 {firstName && lastName ? `${firstName} ${lastName}` : 'Ton nom'}
               </div>
               <div style={{ color: '#718096', fontSize: 13 }}>{user?.email}</div>
-              {institution && <div style={{ color: '#00c9a7', fontSize: 12, fontWeight: 600, marginTop: 2 }}>ðŸ« {institution}</div>}
+              {institution && <div style={{ color: '#00c9a7', fontSize: 12, fontWeight: 600, marginTop: 2 }}>🏫 {institution}</div>}
               <button type="button" onClick={() => avatarInputRef.current?.click()} style={{
                 marginTop: 8, background: 'none', border: '1px solid #e2e8f0',
                 borderRadius: 8, padding: '5px 12px', fontSize: 12,
@@ -227,18 +227,18 @@ export default function Profile() {
                 onMouseEnter={e => { e.currentTarget.style.borderColor = '#00c9a7'; e.currentTarget.style.color = '#00c9a7' }}
                 onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#718096' }}
               >
-                ðŸ“· {avatarUrl ? 'Changer la photo' : 'Ajouter une photo'}
+                📷 {avatarUrl ? 'Changer la photo' : 'Ajouter une photo'}
               </button>
             </div>
           </div>
 
-          {/* Nom + prÃ©nom */}
+          {/* Nom + prénom */}
           <div style={{ background: 'white', borderRadius: 14, padding: '24px', border: '1px solid #e2e8f0', marginBottom: 16 }}>
-            <h2 style={{ fontSize: 12, fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 18px' }}>IdentitÃ©</h2>
+            <h2 style={{ fontSize: 12, fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 18px' }}>Identité</h2>
 
             <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 16, marginBottom: 16 }}>
               <div style={{ flex: 1 }}>
-                <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>PrÃ©nom</label>
+                <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>Prénom</label>
                 <input value={firstName} onChange={e => setFirstName(e.target.value)} placeholder="ex: Mouhamadou"
                   style={{ width: '100%', padding: '11px 14px', border: '1px solid #cbd5e0', borderRadius: 8, fontSize: 15, outline: 'none', boxSizing: 'border-box' }}
                   onFocus={e => e.target.style.borderColor = '#00c9a7'}
@@ -256,9 +256,9 @@ export default function Profile() {
             </div>
           </div>
 
-          {/* Ã‰tudes */}
+          {/* Études */}
           <div style={{ background: 'white', borderRadius: 14, padding: '24px', border: '1px solid #e2e8f0', marginBottom: 24 }}>
-            <h2 style={{ fontSize: 12, fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 18px' }}>Ã‰tudes</h2>
+            <h2 style={{ fontSize: 12, fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 18px' }}>Études</h2>
 
             <div style={{ marginBottom: 16 }}>
               <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>Institution</label>
@@ -267,7 +267,7 @@ export default function Profile() {
                 onFocus={e => e.target.style.borderColor = '#00c9a7'}
                 onBlur={e => e.target.style.borderColor = '#cbd5e0'}
               >
-                <option value="">SÃ©lectionne ton universitÃ©...</option>
+                <option value="">Sélectionne ton université...</option>
                 {INSTITUTIONS.map(i => <option key={i} value={i}>{i}</option>)}
               </select>
             </div>
@@ -288,7 +288,7 @@ export default function Profile() {
                 onFocus={e => e.target.style.borderColor = '#00c9a7'}
                 onBlur={e => e.target.style.borderColor = '#cbd5e0'}
               >
-                <option value="">SÃ©lectionne ton programme...</option>
+                <option value="">Sélectionne ton programme...</option>
                 {PROGRAMS.map(p => <option key={p} value={p}>{p}</option>)}
               </select>
             </div>
@@ -296,7 +296,7 @@ export default function Profile() {
 
           {saved && (
             <div style={{ background: '#f0fdf9', border: '1px solid #00c9a7', borderRadius: 10, padding: '12px 16px', marginBottom: 16, color: '#00a88a', fontWeight: 600, fontSize: 14 }}>
-              âœ… Profil sauvegardÃ© avec succÃ¨s !
+              ✅ Profil sauvegardé avec succès !
             </div>
           )}
 
@@ -309,7 +309,7 @@ export default function Profile() {
             onMouseEnter={e => { if (!saving) e.currentTarget.style.background = '#00c9a7' }}
             onMouseLeave={e => { if (!saving) e.currentTarget.style.background = '#1a2e4a' }}
           >
-            {saving ? 'Sauvegarde...' : 'âœ“ Sauvegarder le profil'}
+            {saving ? 'Sauvegarde...' : '✓ Sauvegarder le profil'}
           </button>
         </form>
       </div>
