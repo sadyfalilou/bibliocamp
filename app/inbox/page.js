@@ -83,13 +83,21 @@ function InboxInner() {
   }, [selectedConv])
 
   const fetchConversations = async (userId) => {
-    const { data: convs } = await supabase
+    const { data: allConvs } = await supabase
       .from('conversations')
       .select('*, listings(title, price, image_url)')
       .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
       .order('last_message_at', { ascending: false })
 
-    if (!convs) return
+    if (!allConvs) return
+
+    // Filtrer les convs que l'utilisateur courant a supprimées (soft delete)
+    const convs = allConvs.filter(c => {
+      if (c.user1_id === userId) return !c.deleted_by_user1
+      if (c.user2_id === userId) return !c.deleted_by_user2
+      return true
+    })
+
     setConversations(convs)
 
     // Compter les non lus par conversation
@@ -194,8 +202,14 @@ function InboxInner() {
     }
 
     if (!error) {
+      // Réinitialise les flags de suppression douce pour les deux users
+      // → si l'un avait supprimé la conv, elle réapparaît quand un nouveau message arrive
       await supabase.from('conversations')
-        .update({ last_message_at: new Date().toISOString() })
+        .update({
+          last_message_at: new Date().toISOString(),
+          deleted_by_user1: false,
+          deleted_by_user2: false,
+        })
         .eq('id', selectedConv)
       fetchConversations(user.id)
     }
@@ -204,18 +218,22 @@ function InboxInner() {
 
   const deleteConversation = async (convId) => {
     setDeletingConv(convId)
-    const { error: msgError } = await supabase.from('messages').delete().eq('conversation_id', convId)
-    if (msgError) {
-      alert(`Erreur lors de la suppression des messages : ${msgError.message}\n\nVérifie les règles RLS sur la table "messages" dans Supabase.`)
+    const conv = conversations.find(c => c.id === convId)
+    if (!conv) { setDeletingConv(null); return }
+
+    // Suppression douce : on marque la conv comme cachée pour cet utilisateur uniquement
+    const field = conv.user1_id === user.id ? 'deleted_by_user1' : 'deleted_by_user2'
+    const { error } = await supabase
+      .from('conversations')
+      .update({ [field]: true })
+      .eq('id', convId)
+
+    if (error) {
+      alert(`Erreur : ${error.message}`)
       setDeletingConv(null)
       return
     }
-    const { error: convError } = await supabase.from('conversations').delete().eq('id', convId)
-    if (convError) {
-      alert(`Erreur lors de la suppression de la conversation : ${convError.message}\n\nVérifie les règles RLS sur la table "conversations" dans Supabase.`)
-      setDeletingConv(null)
-      return
-    }
+
     setConversations(prev => prev.filter(c => c.id !== convId))
     if (selectedConv === convId) setSelectedConv(null)
     setConfirmDelete(null)
