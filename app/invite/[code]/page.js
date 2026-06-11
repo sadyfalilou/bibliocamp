@@ -133,8 +133,8 @@ export default function InvitePage() {
           maxWidth: 700
         }}>
           {[
-            { emoji: '💰', title: 'Économise jusqu'à 70%', desc: 'Des manuels d'occasion à prix d'ami' },
-            { emoji: '🏫', title: 'Sur ton campus', desc: 'Rencontre-toi avec l'acheteur/vendeur facilement' },
+            { emoji: '💰', title: "Économise jusqu'à 70%", desc: "Des manuels d'occasion à prix d'ami" },
+            { emoji: '🏫', title: 'Sur ton campus', desc: "Rencontre-toi avec l'acheteur/vendeur facilement" },
             { emoji: '✅', title: 'Sécurisé & gratuit', desc: 'Aucuns frais, aucune commission' }
           ].map(({ emoji, title, desc }) => (
             <div key={title} style={{
