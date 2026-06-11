@@ -225,7 +225,14 @@ export default function BookPage() {
                     {/* Infos vendeur */}
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
-                        Étudiant BiblioCamp
+                        <span
+                          onClick={e => { e.stopPropagation(); router.push(`/seller/${listing.user_id}`) }}
+                          style={{ cursor: 'pointer', color: '#1a2e4a' }}
+                          onMouseEnter={e => e.currentTarget.style.color = '#00c9a7'}
+                          onMouseLeave={e => e.currentTarget.style.color = '#1a2e4a'}
+                        >
+                          {listing.seller_name || 'Étudiant BiblioCamp'}
+                        </span>
                         {listing.campus && <span style={{ color: '#64748b', fontWeight: 500 }}> · {listing.campus}</span>}
                       </div>
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>

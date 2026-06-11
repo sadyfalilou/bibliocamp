@@ -12,7 +12,7 @@ export async function GET(request) {
 
   const { data: listings } = await supabase
     .from('listings')
-    .select('id, title, authors, price, original_price, description, image_url, meet_campus, meet_city, post, campus, created_at')
+    .select('id, title, authors, price, original_price, description, image_url, meet_campus, meet_city, post, campus, created_at, user_id')
     .eq('isbn', isbn)
     .eq('status', 'active')
     .order('price', { ascending: true })
