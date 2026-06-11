@@ -109,7 +109,7 @@ function InviteSection({ userId }) {
         }}>
           {inviteUrl}
         </div>
-        <button onClick={handleCopy} style={{
+        <button type="button" onClick={handleCopy} style={{
           background: copied ? '#00c9a7' : '#1a2e4a',
           color: 'white', border: 'none', borderRadius: 8,
           padding: '10px 16px', fontSize: 13, fontWeight: 700,
@@ -122,7 +122,7 @@ function InviteSection({ userId }) {
 
       {/* Boutons de partage */}
       <div style={{ display: 'flex', gap: 10 }}>
-        <button onClick={handleWhatsapp} style={{
+        <button type="button" onClick={handleWhatsapp} style={{
           flex: 1, padding: '10px', borderRadius: 9,
           background: '#25d366', border: 'none',
           color: 'white', fontWeight: 700, fontSize: 13,
@@ -130,7 +130,7 @@ function InviteSection({ userId }) {
         }}>
           💬 WhatsApp
         </button>
-        <button onClick={handleEmail} style={{
+        <button type="button" onClick={handleEmail} style={{
           flex: 1, padding: '10px', borderRadius: 9,
           background: '#f1f5f9', border: '1px solid #e2e8f0',
           color: '#1a2e4a', fontWeight: 700, fontSize: 13,
