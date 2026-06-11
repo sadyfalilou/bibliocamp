@@ -193,7 +193,7 @@ export default function Landing() {
             Manuels disponibles maintenant
           </h2>
           <p style={{ color: '#64748b', fontSize: 16, margin: 0 }}>
-            Découvre les dernières annonces sans créer de compte
+            Parcours, contacte, économise. C'est aussi simple que ça.
           </p>
         </div>
 
