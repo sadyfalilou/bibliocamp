@@ -127,27 +127,26 @@ export default function Landing() {
       }}>
         <Logo variant="dark" size="md" style={{ cursor: 'pointer' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
 
-        {/* Desktop buttons */}
-        <div className="nav-cta" style={{ gap: 10, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button onClick={() => router.push('/login')} style={{
             background: 'transparent', border: '1.5px solid #e8edf2',
-            borderRadius: 8, padding: '8px 14px', fontSize: 14, fontWeight: 600,
+            borderRadius: 8, padding: '8px 12px', fontSize: 13, fontWeight: 600,
             color: '#1a2e4a', cursor: 'pointer', whiteSpace: 'nowrap'
           }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = '#00c9a7'; e.currentTarget.style.color = '#00c9a7' }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = '#e8edf2'; e.currentTarget.style.color = '#1a2e4a' }}
           >
-            Se connecter
+            Connexion
           </button>
           <button onClick={() => router.push('/login?tab=signup')} style={{
             background: '#1a2e4a', border: 'none', borderRadius: 8,
-            padding: '8px 14px', fontSize: 14, fontWeight: 700,
+            padding: '8px 12px', fontSize: 13, fontWeight: 700,
             color: 'white', cursor: 'pointer', whiteSpace: 'nowrap'
           }}
             onMouseEnter={e => e.currentTarget.style.background = '#00c9a7'}
             onMouseLeave={e => e.currentTarget.style.background = '#1a2e4a'}
           >
-            <span className="nav-btn-text">Rejoindre </span>gratuitement
+            Rejoindre
           </button>
         </div>
       </nav>

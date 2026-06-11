@@ -285,12 +285,19 @@ function InboxInner() {
     <div style={{ fontFamily: "'Segoe UI', sans-serif", position: 'fixed', inset: 0, background: '#f5f7fa', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
       {/* HEADER */}
-      <header style={{ background: '#1a2e4a', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', flexShrink: 0, boxShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
-        <Logo variant="light" size="sm" onClick={() => router.push('/app')} style={{ cursor: 'pointer' }} />
-        <button onClick={() => router.push('/app')} style={{ background: 'transparent', color: '#a0aec0', border: '1px solid #2d4a6b', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+      <header style={{ background: '#1a2e4a', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 16px', flexShrink: 0, boxShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
+        {/* Mobile : bouton retour liste si conv ouverte, sinon logo */}
+        {isMobile && selectedConv ? (
+          <button onClick={() => setSelectedConv(null)} style={{ background: 'transparent', color: 'white', border: 'none', padding: '6px 4px', cursor: 'pointer', fontSize: 15, fontWeight: 700, display: 'flex', alignItems: 'center', gap: 6 }}>
+            ← Messages
+          </button>
+        ) : (
+          <Logo variant="light" size="sm" onClick={() => router.push('/app')} style={{ cursor: 'pointer' }} />
+        )}
+        <button onClick={() => router.push('/app')} style={{ background: 'transparent', color: '#a0aec0', border: '1px solid #2d4a6b', padding: '6px 12px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
           onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#00c9a7' }}
           onMouseLeave={e => { e.currentTarget.style.color = '#a0aec0'; e.currentTarget.style.borderColor = '#2d4a6b' }}
-        >← Retour</button>
+        >← Marketplace</button>
       </header>
 
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden', height: 'calc(100vh - 60px)' }}>
@@ -412,13 +419,6 @@ function InboxInner() {
             <>
               {/* Header conversation */}
               <div style={{ padding: '12px 16px', background: 'white', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, position: 'sticky', top: 0, zIndex: 10 }}>
-                {isMobile && (
-                  <button onClick={() => setSelectedConv(null)} style={{
-                    background: '#f1f5f9', border: 'none', cursor: 'pointer',
-                    fontSize: 16, color: '#1a2e4a', padding: '8px 12px',
-                    borderRadius: 8, fontWeight: 700, flexShrink: 0
-                  }}>← Retour</button>
-                )}
                 {otherUser?.avatar_url ? (
                   <img src={otherUser.avatar_url} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
                 ) : (
