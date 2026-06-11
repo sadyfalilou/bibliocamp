@@ -202,20 +202,6 @@ export default function BookPage() {
                   </div>
                 )}
 
-                {/* Prix le moins cher */}
-                {cheapest !== null && (
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 10,
-                    background: '#f0fdf9', border: '1px solid #00c9a7',
-                    borderRadius: 10, padding: '10px 16px', marginBottom: 16
-                  }}>
-                    <span style={{ fontSize: 22, fontWeight: 900, color: '#1a2e4a' }}>{cheapest} $</span>
-                    <span style={{ fontSize: 13, color: '#00a88a', fontWeight: 600 }}>
-                      — {listings.length} vendeur{listings.length > 1 ? 's' : ''}
-                    </span>
-                  </div>
-                )}
-
                 {/* Boutons */}
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <button
