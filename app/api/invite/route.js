@@ -66,10 +66,13 @@ export async function POST(request) {
     .from('profiles')
     .select('id')
     .eq('invite_code', ref_code)
-    .single()
+    .maybeSingle()
 
-  if (!referrer || referrer.id === user_id) {
-    return NextResponse.json({ ok: false, reason: 'Code invalide ou auto-parrainage' })
+  if (!referrer) {
+    return NextResponse.json({ error: 'Code de parrainage introuvable' }, { status: 404 })
+  }
+  if (referrer.id === user_id) {
+    return NextResponse.json({ error: 'Auto-parrainage interdit' }, { status: 400 })
   }
 
   // Enregistre le parrainage (seulement si pas déjà parrainé)

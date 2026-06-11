@@ -1,6 +1,6 @@
 import { validateField, validateListing, validateMessage, validateImageFile } from '../lib/validation'
 
-// ─── validateField ────────────────────────────────────────────────────────────
+// ─── validateField — title ─────────────────────────────────────────────────────
 
 describe('validateField — title', () => {
   test('vide → erreur', () => {
@@ -18,6 +18,8 @@ describe('validateField — title', () => {
   })
 })
 
+// ─── validateField — price ─────────────────────────────────────────────────────
+
 describe('validateField — price', () => {
   test('vide → erreur', () => expect(validateField('price', '')).not.toBe(''))
   test('0 → erreur', () => expect(validateField('price', '0')).not.toBe(''))
@@ -27,6 +29,8 @@ describe('validateField — price', () => {
   test('9999 → ok', () => expect(validateField('price', '9999')).toBe(''))
   test('35.50 → ok', () => expect(validateField('price', '35.50')).toBe(''))
 })
+
+// ─── validateField — originalPrice ────────────────────────────────────────────
 
 describe('validateField — originalPrice', () => {
   test('vide → ok (optionnel)', () => expect(validateField('originalPrice', '')).toBe(''))
@@ -41,8 +45,11 @@ describe('validateField — originalPrice', () => {
   })
 })
 
+// ─── validateField — isbn (OBLIGATOIRE) ────────────────────────────────────────
+
 describe('validateField — isbn', () => {
-  test('vide → ok (optionnel)', () => expect(validateField('isbn', '')).toBe(''))
+  test('vide → erreur (obligatoire)', () => expect(validateField('isbn', '')).not.toBe(''))
+  test('null → erreur', () => expect(validateField('isbn', null)).not.toBe(''))
   test('ISBN-13 valide', () => expect(validateField('isbn', '9782765141310')).toBe(''))
   test('ISBN-10 valide', () => expect(validateField('isbn', '0306406152')).toBe(''))
   test('avec tirets → ok', () => expect(validateField('isbn', '978-2-7651-4131-0')).toBe(''))
@@ -50,14 +57,37 @@ describe('validateField — isbn', () => {
   test('lettres → erreur', () => expect(validateField('isbn', 'ABCDEFGHIJ')).not.toBe(''))
 })
 
+// ─── validateField — description / état (OBLIGATOIRE) ─────────────────────────
+
+describe('validateField — description (état)', () => {
+  test('vide → erreur (obligatoire)', () => expect(validateField('description', '')).not.toBe(''))
+  test('null → erreur', () => expect(validateField('description', null)).not.toBe(''))
+  test('Neuf → ok', () => expect(validateField('description', 'Neuf')).toBe(''))
+  test('Très bon état → ok', () => expect(validateField('description', 'Très bon état')).toBe(''))
+  test('Bon état → ok', () => expect(validateField('description', 'Bon état')).toBe(''))
+  test('Acceptable → ok', () => expect(validateField('description', 'Acceptable')).toBe(''))
+  test('valeur invalide → erreur', () => expect(validateField('description', 'Cassé')).not.toBe(''))
+})
+
+// ─── validateField — transaction (OBLIGATOIRE) ────────────────────────────────
+
+describe('validateField — transaction', () => {
+  test('vide → erreur (obligatoire)', () => expect(validateField('transaction', '')).not.toBe(''))
+  test('"ok" → pas d\'erreur', () => expect(validateField('transaction', 'ok')).toBe(''))
+})
+
+// ─── validateField — campus ────────────────────────────────────────────────────
+
 describe('validateField — campus', () => {
-  test('vide → ok', () => expect(validateField('campus', '')).toBe(''))
+  test('vide → ok (optionnel)', () => expect(validateField('campus', '')).toBe(''))
   test('UQAM → ok', () => expect(validateField('campus', 'UQAM')).toBe(''))
   test('>100 chars → erreur', () => expect(validateField('campus', 'a'.repeat(101))).not.toBe(''))
 })
 
+// ─── validateField — authors ──────────────────────────────────────────────────
+
 describe('validateField — authors', () => {
-  test('vide → ok', () => expect(validateField('authors', '')).toBe(''))
+  test('vide → ok (optionnel)', () => expect(validateField('authors', '')).toBe(''))
   test('>200 chars → erreur', () => expect(validateField('authors', 'a'.repeat(201))).not.toBe(''))
 })
 
@@ -67,12 +97,15 @@ describe('validateListing', () => {
   const validListing = {
     title: 'Le Marketing',
     authors: 'Philip Kotler',
-    isbn: '',
+    isbn: '9782765141310',
     course_code: 'MKG3301',
     price: '35',
     original_price: '85',
     campus: 'UQAM',
-    description: 'Bon état'
+    description: 'Bon état',
+    meet_campus: true,
+    meet_city: false,
+    post: false,
   }
 
   test('listing valide → null', () => {
@@ -81,8 +114,29 @@ describe('validateListing', () => {
   test('titre manquant → erreur', () => {
     expect(validateListing({ ...validListing, title: '' })).not.toBeNull()
   })
+  test('isbn manquant → erreur', () => {
+    expect(validateListing({ ...validListing, isbn: '' })).not.toBeNull()
+  })
+  test('isbn invalide → erreur', () => {
+    expect(validateListing({ ...validListing, isbn: '123' })).not.toBeNull()
+  })
+  test('état manquant → erreur', () => {
+    expect(validateListing({ ...validListing, description: '' })).not.toBeNull()
+  })
+  test('état invalide → erreur', () => {
+    expect(validateListing({ ...validListing, description: 'Cassé' })).not.toBeNull()
+  })
   test('prix invalide → erreur', () => {
     expect(validateListing({ ...validListing, price: '0' })).not.toBeNull()
+  })
+  test('aucune méthode de transaction → erreur', () => {
+    expect(validateListing({ ...validListing, meet_campus: false, meet_city: false, post: false })).not.toBeNull()
+  })
+  test('meet_city seul → ok', () => {
+    expect(validateListing({ ...validListing, meet_campus: false, meet_city: true, post: false })).toBeNull()
+  })
+  test('post seul → ok', () => {
+    expect(validateListing({ ...validListing, meet_campus: false, meet_city: false, post: true })).toBeNull()
   })
 })
 

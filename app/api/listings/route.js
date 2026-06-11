@@ -5,17 +5,20 @@ const VALID_ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5 MB
 
-function validate({ title, authors, isbn, course_code, price, original_price, campus, description }) {
+function validate({ title, authors, isbn, course_code, price, original_price, campus, description, meet_campus, meet_city, post }) {
   if (!title || title.trim().length === 0) return 'Le titre est obligatoire.'
   if (title.trim().length > 150) return 'Le titre ne peut pas dépasser 150 caractères.'
   if (authors && authors.length > 200) return 'Le champ auteurs ne peut pas dépasser 200 caractères.'
-  if (isbn && !/^\d{10,13}$/.test(isbn.replace(/[-\s]/g, ''))) return 'ISBN invalide — doit contenir 10 ou 13 chiffres.'
+  if (!isbn || isbn.trim().length === 0) return "L'ISBN est obligatoire."
+  if (!/^\d{10,13}$/.test(isbn.replace(/[-\s]/g, ''))) return 'ISBN invalide — doit contenir 10 ou 13 chiffres.'
   if (course_code && course_code.length > 20) return 'Le code de cours ne peut pas dépasser 20 caractères.'
   if (!price || isNaN(Number(price)) || Number(price) <= 0 || Number(price) > 9999) return 'Le prix doit être entre 1 $ et 9 999 $.'
   if (original_price && (isNaN(Number(original_price)) || Number(original_price) <= 0 || Number(original_price) > 9999)) return 'Le prix neuf doit être entre 1 $ et 9 999 $.'
   if (original_price && Number(original_price) <= Number(price)) return 'Le prix neuf doit être supérieur au prix de vente.'
   if (campus && campus.length > 100) return 'Le campus ne peut pas dépasser 100 caractères.'
-  if (description && !VALID_ETATS.includes(description)) return 'État du livre invalide.'
+  if (!description || description.trim().length === 0) return "L'état du livre est obligatoire."
+  if (!VALID_ETATS.includes(description)) return 'État du livre invalide.'
+  if (!meet_campus && !meet_city && !post) return 'Choisis au moins une méthode de transaction.'
   return null
 }
 
@@ -41,6 +44,9 @@ export async function POST(request) {
   )
 
   const formData = await request.formData()
+  const meetCampus = formData.get('meet_campus') === 'true'
+  const meetCity = formData.get('meet_city') === 'true'
+  const postVal = formData.get('post') === 'true'
   const fields = {
     title: formData.get('title') || '',
     authors: formData.get('authors') || '',
@@ -50,9 +56,9 @@ export async function POST(request) {
     original_price: formData.get('original_price') || null,
     description: formData.get('description') || '',
     campus: formData.get('campus') || '',
-    meet_campus: formData.get('meet_campus') === 'true',
-    meet_city: formData.get('meet_city') === 'true',
-    post: formData.get('post') === 'true',
+    meet_campus: meetCampus,
+    meet_city: meetCity,
+    post: postVal,
   }
 
   const err = validate(fields)
@@ -116,6 +122,9 @@ export async function PATCH(request) {
   const listingId = formData.get('listing_id')
   if (!listingId) return Response.json({ error: 'ID annonce manquant.' }, { status: 400 })
 
+  const meetCampusPatch = formData.get('meet_campus') === 'true'
+  const meetCityPatch = formData.get('meet_city') === 'true'
+  const postPatch = formData.get('post') === 'true'
   const fields = {
     title: formData.get('title') || '',
     authors: formData.get('authors') || '',
@@ -125,9 +134,9 @@ export async function PATCH(request) {
     original_price: formData.get('original_price') || null,
     description: formData.get('description') || '',
     campus: formData.get('campus') || '',
-    meet_campus: formData.get('meet_campus') === 'true',
-    meet_city: formData.get('meet_city') === 'true',
-    post: formData.get('post') === 'true',
+    meet_campus: meetCampusPatch,
+    meet_city: meetCityPatch,
+    post: postPatch,
   }
 
   const err = validate(fields)

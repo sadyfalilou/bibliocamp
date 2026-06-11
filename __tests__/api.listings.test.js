@@ -44,13 +44,13 @@ function makeRequest(fields = {}, withAuth = true) {
 const validFields = {
   title: 'Le Marketing',
   authors: 'Philip Kotler',
-  isbn: '',
+  isbn: '9782765141310',      // ISBN obligatoire
   course_code: 'MKG3301',
   price: '35',
   original_price: '85',
   campus: 'UQAM',
-  description: 'Bon état',
-  meet_campus: 'true',
+  description: 'Bon état',   // état obligatoire
+  meet_campus: 'true',        // au moins une méthode obligatoire
   meet_city: 'false',
   post: 'false',
 }
@@ -80,6 +80,36 @@ describe('POST /api/listings', () => {
     expect(body.error).toBeTruthy()
   })
 
+  test('isbn manquant → 400', async () => {
+    const req = makeRequest({ ...validFields, isbn: '' })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
+  test('isbn invalide → 400', async () => {
+    const req = makeRequest({ ...validFields, isbn: '123abc' })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
+  test('état manquant → 400', async () => {
+    const req = makeRequest({ ...validFields, description: '' })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
+  test('état invalide → 400', async () => {
+    const req = makeRequest({ ...validFields, description: 'Cassé' })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
+  test('aucune méthode de transaction → 400', async () => {
+    const req = makeRequest({ ...validFields, meet_campus: 'false', meet_city: 'false', post: 'false' })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
   test('prix invalide → 400', async () => {
     const req = makeRequest({ ...validFields, price: '0' })
     const res = await POST(req)
@@ -88,12 +118,6 @@ describe('POST /api/listings', () => {
 
   test('prix neuf ≤ prix de vente → 400', async () => {
     const req = makeRequest({ ...validFields, price: '50', original_price: '30' })
-    const res = await POST(req)
-    expect(res.status).toBe(400)
-  })
-
-  test('état invalide → 400', async () => {
-    const req = makeRequest({ ...validFields, description: 'Cassé' })
     const res = await POST(req)
     expect(res.status).toBe(400)
   })
@@ -135,6 +159,18 @@ describe('PATCH /api/listings', () => {
     expect(res.status).toBe(400)
     const body = await res.json()
     expect(body.error).toMatch(/id annonce/i)
+  })
+
+  test('isbn manquant → 400', async () => {
+    const req = makeRequest({ listing_id: '1', ...validFields, isbn: '' })
+    const res = await PATCH(req)
+    expect(res.status).toBe(400)
+  })
+
+  test('état manquant → 400', async () => {
+    const req = makeRequest({ listing_id: '1', ...validFields, description: '' })
+    const res = await PATCH(req)
+    expect(res.status).toBe(400)
   })
 
   test('champs invalides → 400', async () => {

@@ -20,6 +20,16 @@ export async function PATCH(request) {
     return NextResponse.json({ error: 'Paramètres invalides.' }, { status: 400 })
   }
 
+  // Vérifier que l'annonce existe et appartient à l'utilisateur
+  const { data: existing, error: fetchError } = await supabase
+    .from('listings')
+    .select('id, user_id')
+    .eq('id', listing_id)
+    .single()
+
+  if (fetchError || !existing) return NextResponse.json({ error: 'Annonce introuvable.' }, { status: 404 })
+  if (existing.user_id !== user.id) return NextResponse.json({ error: 'Accès refusé.' }, { status: 403 })
+
   const { data, error } = await supabase
     .from('listings')
     .update({ status })
@@ -28,7 +38,7 @@ export async function PATCH(request) {
     .select()
     .single()
 
-  if (error || !data) return NextResponse.json({ error: 'Annonce introuvable ou accès refusé.' }, { status: 403 })
+  if (error || !data) return NextResponse.json({ error: 'Erreur lors de la mise à jour.' }, { status: 500 })
 
   return NextResponse.json({ ok: true, listing: data })
 }
