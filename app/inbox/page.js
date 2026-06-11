@@ -18,6 +18,7 @@ function timeAgo(dateStr) {
 
 function InboxInner() {
   const [user, setUser] = useState(null)
+  const [currentProfile, setCurrentProfile] = useState(null)
   const [profiles, setProfiles] = useState({})
   const [conversations, setConversations] = useState([])
   const [selectedConv, setSelectedConv] = useState(null)
@@ -48,6 +49,15 @@ function InboxInner() {
       if (!session) { router.push('/login'); return }
       setUser(session.user)
       await fetchConversations(session.user.id)
+
+      // Charger le profil de l'utilisateur courant (pour le message système)
+      const { data: prof } = await supabase
+        .from('profiles')
+        .select('first_name, last_name')
+        .eq('id', session.user.id)
+        .single()
+      if (prof) setCurrentProfile(prof)
+
       setLoading(false)
 
       // Ouvrir une conv spécifique depuis l'URL
@@ -60,6 +70,21 @@ function InboxInner() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
+
+  // Rafraîchir les messages quand l'utilisateur revient sur l'onglet (mobile throttling fix)
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === 'visible' && selectedConv) {
+        fetchMessages(selectedConv)
+        markAsRead(selectedConv)
+      }
+      if (document.visibilityState === 'visible' && user?.id) {
+        fetchConversations(user.id)
+      }
+    }
+    document.addEventListener('visibilitychange', onVisible)
+    return () => document.removeEventListener('visibilitychange', onVisible)
+  }, [selectedConv, user?.id])
 
   useEffect(() => {
     if (!selectedConv) return
@@ -242,7 +267,7 @@ function InboxInner() {
       await supabase.from('conversations').delete().eq('id', convId)
     } else {
       // Insérer un message système pour avertir l'autre user
-      const senderName = user.user_metadata?.first_name || 'Un utilisateur'
+      const senderName = currentProfile?.first_name || user.user_metadata?.first_name || 'Un utilisateur'
       await supabase.from('messages').insert({
         conversation_id: convId,
         sender_id: user.id,
