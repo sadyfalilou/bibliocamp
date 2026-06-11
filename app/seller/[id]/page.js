@@ -180,10 +180,10 @@ export default function SellerPage() {
                     key={listing.id}
                     style={{
                       padding: '16px 24px', borderTop: idx > 0 ? '1px solid #f0f4f8' : 'none',
-                      display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', gap: 16, cursor: listing.isbn ? 'pointer' : 'default',
                       transition: 'background 0.15s'
                     }}
-                    onClick={() => listing.isbn ? router.push(`/book/${listing.isbn}`) : router.push('/login')}
+                    onClick={() => { if (listing.isbn) router.push(`/book/${listing.isbn}`) }}
                     onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                     onMouseLeave={e => e.currentTarget.style.background = 'white'}
                   >
