@@ -1120,7 +1120,7 @@ export default function Home() {
                               {sub && (() => {
                                 const p = profilesMap[item.user_id]
                                 const institution = p?.institution
-                                const campus = item.campus
+                                const campus = item.campus !== institution ? item.campus : null
                                 return (
                                   <span style={{ fontSize: 11, color: '#a0aec0' }}>·{' '}
                                     {institution && (
