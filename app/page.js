@@ -29,14 +29,12 @@ export default function Landing() {
   // Charger quelques annonces récentes (public)
   useEffect(() => {
     const load = async () => {
-      const { data } = await supabase
-        .from('listings')
-        .select('id, title, price, transaction_type, etat, images, created_at')
-        .order('created_at', { ascending: false })
-        .limit(8)
-      if (data) setListings(data)
-
-      // Stats désactivées — métriques qualitatives affichées à la place
+      // Passe par l'API serveur pour contourner les restrictions RLS (visiteurs non connectés)
+      const res = await fetch('/api/stats')
+      if (res.ok) {
+        const data = await res.json()
+        setListings(data.listings ?? [])
+      }
     }
     load()
   }, [])
