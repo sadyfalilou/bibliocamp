@@ -86,6 +86,7 @@ export default function Home() {
   const [otpError, setOtpError] = useState('')
   const [sendingCode, setSendingCode] = useState(false)
   const [verifyingCode, setVerifyingCode] = useState(false)
+  const [deleteConfirmId, setDeleteConfirmId] = useState(null)
   const router = useRouter()
 
   const fetchListings = async (offset = 0, append = false) => {
@@ -274,14 +275,13 @@ export default function Home() {
   }
 
   const handleDelete = async (id) => {
-    if (!confirm('Supprimer ce manuel ?')) return
     const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch(`/api/listings?id=${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${session?.access_token}` }
     })
-    if (!res.ok) alert('Erreur suppression')
-    else fetchListings()
+    setDeleteConfirmId(null)
+    if (res.ok) fetchListings()
   }
 
   const handleReport = async () => {
@@ -490,6 +490,53 @@ export default function Home() {
 
   return (
     <div style={{ fontFamily: "'Segoe UI', sans-serif", minHeight: '100vh', background: '#f5f7fa' }}>
+
+      {/* MODAL CONFIRMATION SUPPRESSION */}
+      {deleteConfirmId && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }} onClick={() => setDeleteConfirmId(null)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'white', borderRadius: 16, padding: '28px 32px',
+            maxWidth: 380, width: '90%', textAlign: 'center',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🗑️</div>
+            <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: '#1a2e4a' }}>
+              Supprimer ce manuel ?
+            </h3>
+            <p style={{ color: '#64748b', fontSize: 14, margin: '0 0 24px' }}>
+              Cette action est irréversible. L'annonce sera définitivement supprimée.
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                onClick={() => setDeleteConfirmId(null)}
+                style={{
+                  flex: 1, padding: '11px', borderRadius: 9,
+                  border: '1.5px solid #e2e8f0', background: 'white',
+                  color: '#64748b', fontWeight: 700, fontSize: 14, cursor: 'pointer'
+                }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirmId)}
+                style={{
+                  flex: 1, padding: '11px', borderRadius: 9,
+                  border: 'none', background: '#e53e3e',
+                  color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer'
+                }}
+                onMouseEnter={e => e.currentTarget.style.background = '#c53030'}
+                onMouseLeave={e => e.currentTarget.style.background = '#e53e3e'}
+              >
+                Supprimer
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* HEADER */}
       <header style={{
@@ -1011,7 +1058,7 @@ export default function Home() {
                               background: '#f0fdf9', color: '#00c9a7', border: '1px solid #00c9a7',
                               padding: '5px 10px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600
                             }}>✏️</button>
-                            <button onClick={() => handleDelete(item.id)} style={{
+                            <button onClick={() => setDeleteConfirmId(item.id)} style={{
                               background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7',
                               padding: '5px 10px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600
                             }}>🗑️</button>
@@ -1440,7 +1487,7 @@ export default function Home() {
                         <div style={{ fontSize: 18, fontWeight: 900, color: '#1a2e4a' }}>{item.price} $</div>
                         <div style={{ display: 'flex', gap: 6 }}>
                           <button onClick={() => router.push(`/edit/${item.id}`)} style={{ background: '#f0fdf9', color: '#00c9a7', border: '1px solid #00c9a7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Modifier</button>
-                          <button onClick={() => handleDelete(item.id)} style={{ background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Supprimer</button>
+                          <button onClick={() => setDeleteConfirmId(item.id)} style={{ background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Supprimer</button>
                         </div>
                       </div>
                     </div>
@@ -1857,7 +1904,7 @@ export default function Home() {
                             {user?.id === s.user_id && (
                               <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
                                 <button onClick={() => { setSelectedBook(null); router.push(`/edit/${s.id}`) }} style={{ flex: 1, padding: '8px', background: '#f0fdf9', color: '#00c9a7', border: '1px solid #00c9a7', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>✏️ Modifier</button>
-                                <button onClick={() => { handleDelete(s.id); setSelectedBook(null) }} style={{ flex: 1, padding: '8px', background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>🗑️ Supprimer</button>
+                                <button onClick={() => { setSelectedBook(null); setDeleteConfirmId(s.id) }} style={{ flex: 1, padding: '8px', background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', borderRadius: 8, fontWeight: 600, fontSize: 12, cursor: 'pointer' }}>🗑️ Supprimer</button>
                               </div>
                             )}
                             {user?.id !== s.user_id && (
