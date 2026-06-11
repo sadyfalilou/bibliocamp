@@ -642,6 +642,7 @@ export default function Home() {
                   { icon: '✉️', label: 'Messages', badge: unreadMessages > 0 ? unreadMessages : null, action: () => { router.push('/inbox'); setShowProfileMenu(false) } },
                   { icon: '📋', label: 'Mes annonces', badge: null, action: () => { setView('mes-annonces'); setShowProfileMenu(false) } },
                   { icon: '👤', label: 'Mon profil', badge: null, action: () => { router.push('/profile'); setShowProfileMenu(false) } },
+                  { icon: '🔗', label: 'Inviter des amis', badge: null, action: () => { router.push('/profile'); setShowProfileMenu(false) } },
                 ].map(item => (
                   <div key={item.label} onClick={item.action} style={{
                     display: 'flex', alignItems: 'center', gap: 12,

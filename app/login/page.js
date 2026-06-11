@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
 import * as Sentry from '@sentry/nextjs'
 import { supabase } from '../../lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Logo from '../../components/Logo'
 
-export default function Login() {
+function LoginInner() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [firstName, setFirstName] = useState('')
@@ -22,6 +22,12 @@ export default function Login() {
   const [isMobile, setIsMobile] = useState(false)
 
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  useEffect(() => {
+    // Si ?tab=signup dans l'URL, ouvrir directement le mode inscription
+    if (searchParams.get('tab') === 'signup') setMode('signup')
+  }, [])
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 900)
@@ -86,6 +92,15 @@ export default function Login() {
     }
     if (data?.user) {
       await supabase.from('profiles').upsert({ id: data.user.id, first_name: firstName.trim(), last_name: lastName.trim() })
+      // Enregistre le parrainage si un code ref est présent dans l'URL
+      const refCode = searchParams.get('ref')
+      if (refCode) {
+        await fetch('/api/invite', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: data.user.id, ref_code: refCode })
+        })
+      }
     }
     setLoading(false); setSignupDone(true); setMode('login')
   }
@@ -412,4 +427,8 @@ export default function Login() {
       </div>
     </div>
   )
+}
+
+export default function Login() {
+  return <Suspense><LoginInner /></Suspense>
 }
