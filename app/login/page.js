@@ -135,7 +135,7 @@ export default function Login() {
 
             {/* Logo */}
             <div style={{ marginBottom: 48 }}>
-              <Logo variant="light" size="lg" />
+              <Logo variant="light" size="lg" onClick={() => router.push('/')} style={{ cursor: 'pointer' }} />
             </div>
 
             {/* Tagline */}
@@ -177,7 +177,7 @@ export default function Login() {
           {/* Logo mobile seulement */}
           {isMobile && (
             <div style={{ marginBottom: 28 }}>
-              <Logo variant="dark" size="md" />
+              <Logo variant="dark" size="md" onClick={() => router.push('/')} style={{ cursor: 'pointer' }} />
             </div>
           )}
 
