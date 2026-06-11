@@ -91,20 +91,25 @@ function InboxInner() {
     fetchMessages(selectedConv)
     markAsRead(selectedConv)
 
-    // Polling toutes les 3s pour les nouveaux messages
-    const interval = setInterval(async () => {
-      const { data } = await supabase
-        .from('messages')
-        .select('*')
-        .eq('conversation_id', selectedConv)
-        .order('created_at', { ascending: true })
-      if (data) {
-        setMessages(data)
+    // Realtime : écoute les nouveaux messages dans la conversation ouverte
+    const channel = supabase
+      .channel(`messages:${selectedConv}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+        filter: `conversation_id=eq.${selectedConv}`,
+      }, (payload) => {
+        setMessages(prev => {
+          // Évite les doublons (message optimiste déjà affiché)
+          if (prev.find(m => m.id === payload.new.id)) return prev
+          return [...prev, payload.new]
+        })
         markAsRead(selectedConv)
-      }
-    }, 3000)
+      })
+      .subscribe()
 
-    return () => clearInterval(interval)
+    return () => supabase.removeChannel(channel)
   }, [selectedConv])
 
   const fetchConversations = async (userId) => {
@@ -288,48 +293,42 @@ function InboxInner() {
     return profiles[otherId]
   }
 
-  // Polling notifications pour les OTHER conversations (toutes les 5s)
+  // Realtime : écoute les nouveaux messages sur TOUTES les conversations (badges + son)
   useEffect(() => {
     if (!user?.id) return
+
     document.addEventListener('click', () => {
       if (!audioCtxRef.current) {
         audioCtxRef.current = new (window.AudioContext || window.webkitAudioContext)()
       }
     }, { once: true })
 
-    const checkOtherConvs = async () => {
-      const { data: convs } = await supabase
-        .from('conversations')
-        .select('id')
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-      if (!convs) return
+    const channel = supabase
+      .channel(`inbox:${user.id}`)
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'messages',
+      }, (payload) => {
+        const msg = payload.new
+        // Ignorer ses propres messages et ceux de la conv ouverte (déjà gérés)
+        if (msg.sender_id === user.id) return
+        if (msg.conversation_id === selectedConv) return
 
-      // Compter non lus dans toutes les convs SAUF celle ouverte
-      const otherIds = convs.map(c => c.id).filter(id => id !== selectedConv)
-      if (otherIds.length === 0) return
-
-      const { count } = await supabase
-        .from('messages')
-        .select('*', { count: 'exact', head: true })
-        .in('conversation_id', otherIds)
-        .eq('read', false)
-        .neq('sender_id', user.id)
-
-      const newCount = count || 0
-
-      // Rafraîchir la liste des convs pour les badges
-      fetchConversations(user.id)
-
-      // Son si nouveaux messages non lus
-      if (newCount > prevUnreadRef.current) {
+        // Badge non lu + son
+        setUnreadByConv(prev => ({
+          ...prev,
+          [msg.conversation_id]: (prev[msg.conversation_id] || 0) + 1,
+        }))
+        prevUnreadRef.current += 1
         playSound()
-      }
-      prevUnreadRef.current = newCount
-    }
 
-    checkOtherConvs()
-    const interval = setInterval(checkOtherConvs, 5000)
-    return () => clearInterval(interval)
+        // Rafraîchir la liste pour mettre à jour last_message_at
+        fetchConversations(user.id)
+      })
+      .subscribe()
+
+    return () => supabase.removeChannel(channel)
   }, [user?.id, selectedConv])
 
   const selectedConvData = conversations.find(c => c.id === selectedConv)
@@ -441,22 +440,19 @@ function InboxInner() {
                       )}
                     </div>
                   </div>
-                  {/* Bouton supprimer — toujours visible sur mobile, hover sur desktop */}
+                  {/* Bouton supprimer */}
                   <button
                     className="del-btn"
                     onClick={e => { e.stopPropagation(); setConfirmDelete(conv.id) }}
                     style={{
-                      opacity: isMobile ? 1 : 0,
-                      transition: 'opacity 0.15s',
+                      opacity: 0, transition: 'opacity 0.15s',
                       background: 'none', border: 'none', cursor: 'pointer',
-                      color: isMobile ? '#cbd5e0' : '#e53e3e',
-                      fontSize: isMobile ? 14 : 16,
-                      padding: '4px 6px',
+                      color: '#e53e3e', fontSize: 16, padding: '4px 6px',
                       borderRadius: 6, flexShrink: 0,
                       display: 'flex', alignItems: 'center'
                     }}
-                    title="Quitter la conversation"
-                  >{isMobile ? '✕' : '🗑️'}</button>
+                    title="Supprimer la conversation"
+                  >🗑️</button>
                 </div>
               )
             })}
