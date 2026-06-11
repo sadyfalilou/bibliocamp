@@ -316,7 +316,7 @@ function CreateInner() {
               <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 16px' }}>
                 Entre l'ISBN (au dos du livre, sous le code-barres) — titre, auteurs et photo se remplissent automatiquement.
               </p>
-              <div style={{ display: 'flex', gap: 10 }}>
+              <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 10 }}>
                 <input
                   placeholder="ex: 9782765141310"
                   value={isbnSearch}
@@ -326,7 +326,7 @@ function CreateInner() {
                     flex: 1, padding: '11px 14px',
                     border: `1.5px solid ${errors.isbnSearch ? '#e53e3e' : '#00c9a7'}`,
                     borderRadius: 8, fontSize: 15, outline: 'none',
-                    background: 'white', boxSizing: 'border-box'
+                    background: 'white', boxSizing: 'border-box', width: '100%'
                   }}
                 />
                 <button
@@ -338,7 +338,8 @@ function CreateInner() {
                     color: 'white', border: 'none', borderRadius: 8,
                     padding: '11px 20px', fontWeight: 700, fontSize: 14,
                     cursor: isbnLoading ? 'not-allowed' : 'pointer',
-                    whiteSpace: 'nowrap', transition: 'background 0.2s'
+                    whiteSpace: 'nowrap', transition: 'background 0.2s',
+                    width: isMobile ? '100%' : 'auto'
                   }}
                   onMouseEnter={e => { if (!isbnLoading) e.currentTarget.style.background = '#00c9a7' }}
                   onMouseLeave={e => { if (!isbnLoading) e.currentTarget.style.background = '#1a2e4a' }}
