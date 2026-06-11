@@ -310,7 +310,7 @@ export default function Home() {
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
-    window.location.replace('/login')
+    window.location.replace('/')
   }
 
   const handleSendCode = async () => {
@@ -1581,6 +1581,7 @@ export default function Home() {
                     if (selectedBook.authors) params.set('authors', selectedBook.authors)
                     if (selectedBook.isbn) params.set('isbn', selectedBook.isbn)
                     if (selectedBook.course_code) params.set('course', selectedBook.course_code)
+                    if (selectedBook.image_url) params.set('cover', selectedBook.image_url)
                     setSelectedBook(null)
                     router.push(`/create?${params.toString()}`)
                   }}

@@ -56,10 +56,16 @@ function CreateInner() {
     const a = searchParams.get('authors')
     const i = searchParams.get('isbn')
     const c = searchParams.get('course')
+    const cover = searchParams.get('cover')
     if (t) setTitle(t)
     if (a) setAuthors(a)
     if (i) setIsbn(i)
     if (c) setCourse(c)
+    if (cover) {
+      setCoverFromGoogle(cover)
+      setImagePreview(cover)
+      setIsbnFound(true)
+    }
   }, [])
 
   const searchingRef = useRef(false)
