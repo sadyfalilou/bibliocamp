@@ -424,8 +424,14 @@ export default function Home() {
 
   const filtered = listings?.filter(item => {
     if (item.status === 'sold' && item.user_id !== user?.id) return false // cache les vendus sauf au proprio
-    if (search && !item.title.toLowerCase().includes(search.toLowerCase()) &&
-        !item.course_code?.toLowerCase().includes(search.toLowerCase())) return false
+    if (search) {
+      const q = search.toLowerCase().replace(/[-\s]/g, '')
+      const matchTitle = item.title?.toLowerCase().includes(search.toLowerCase())
+      const matchCourse = item.course_code?.toLowerCase().includes(search.toLowerCase())
+      const matchIsbn = item.isbn?.replace(/[-\s]/g, '').includes(q)
+      const matchAuthors = item.authors?.toLowerCase().includes(search.toLowerCase())
+      if (!matchTitle && !matchCourse && !matchIsbn && !matchAuthors) return false
+    }
     if (filterEtat && item.description !== filterEtat) return false
     if (filterTransaction === 'campus' && !item.meet_campus) return false
     if (filterTransaction === 'city' && !item.meet_city) return false
@@ -871,7 +877,7 @@ export default function Home() {
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
                   <input
-                    placeholder="Titre, code de cours..."
+                    placeholder="Titre, ISBN, auteur, code de cours..."
                     value={search}
                     onChange={e => setSearch(e.target.value)}
                     style={{
