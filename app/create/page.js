@@ -62,7 +62,9 @@ function CreateInner() {
     if (c) setCourse(c)
   }, [])
 
+  const searchingRef = useRef(false)
   const searchByIsbn = async () => {
+    if (searchingRef.current) return // évite les doubles appels (React StrictMode)
     const cleaned = isbnSearch.replace(/[-\s]/g, '')
     if (!/^\d{10,13}$/.test(cleaned)) {
       setErrors(prev => ({ ...prev, isbnSearch: 'ISBN invalide — doit contenir 10 ou 13 chiffres.' }))
@@ -71,6 +73,7 @@ function CreateInner() {
     setErrors(prev => ({ ...prev, isbnSearch: '' }))
     setIsbnLoading(true)
     setIsbnFound(false)
+    searchingRef.current = true
     try {
       const res = await fetch(`/api/isbn?isbn=${cleaned}`)
       const data = await res.json()
@@ -87,12 +90,13 @@ function CreateInner() {
         setTouched(prev => ({ ...prev, title: true, authors: true, isbn: true }))
         setErrors(prev => ({ ...prev, title: '', authors: '', isbn: '' }))
       } else {
-        setErrors(prev => ({ ...prev, isbnSearch: 'Aucun livre trouvé pour cet ISBN. Remplis les champs manuellement.' }))
+        setErrors(prev => ({ ...prev, isbnSearch: 'Livre non indexé dans nos bases de données. Remplis les champs titre et auteurs manuellement ci-dessous.' }))
       }
     } catch {
       setErrors(prev => ({ ...prev, isbnSearch: 'Erreur de connexion. Remplis les champs manuellement.' }))
     }
     setIsbnLoading(false)
+    searchingRef.current = false
   }
 
   const validateField = (name, val, extra = {}) => {
