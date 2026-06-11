@@ -406,7 +406,7 @@ function CreateInner() {
               <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 16, marginBottom: 18 }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
-                    ISBN
+                    ISBN <span style={{ color: '#e53e3e' }}>*</span>
                   </label>
                   <input
                     placeholder="ex: 9782765141310"
