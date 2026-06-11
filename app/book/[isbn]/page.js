@@ -13,6 +13,7 @@ export default function BookPage() {
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
   const [userId, setUserId] = useState(null)
+  const [sellerProfiles, setSellerProfiles] = useState({})
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -70,7 +71,21 @@ export default function BookPage() {
       }
       if (listingsRes.ok) {
         const d = await listingsRes.json()
-        setListings(d.listings ?? [])
+        const ls = d.listings ?? []
+        setListings(ls)
+        // Charger les profils des vendeurs
+        const userIds = [...new Set(ls.map(l => l.user_id).filter(Boolean))]
+        if (userIds.length > 0) {
+          const profiles = {}
+          await Promise.all(userIds.map(async uid => {
+            const r = await fetch(`/api/seller?id=${uid}`)
+            if (r.ok) {
+              const sd = await r.json()
+              if (sd.profile) profiles[uid] = sd.profile
+            }
+          }))
+          setSellerProfiles(profiles)
+        }
       }
       setLoading(false)
     }
@@ -86,6 +101,12 @@ export default function BookPage() {
   }
 
   const cheapest = listings.length > 0 ? Math.min(...listings.map(l => l.price)) : null
+
+  // Fallback sur les données de la première annonce si Google Books n'a rien retourné
+  const displayTitle = book?.title || listings[0]?.title || 'Titre inconnu'
+  const displayAuthors = book?.authors || listings[0]?.authors || null
+  const displayCover = book?.cover || listings[0]?.image_url || null
+  const displayPublisher = book?.publisher || null
 
   return (
     <div style={{ fontFamily: "'Segoe UI', sans-serif", minHeight: '100vh', background: '#f8fafc', color: '#1a2e4a' }}>
@@ -130,7 +151,7 @@ export default function BookPage() {
           {' / '}
           <span onClick={() => router.push(userId ? '/app' : '/')} style={{ cursor: 'pointer', color: '#00c9a7' }}>Manuels</span>
           {' / '}
-          <span style={{ color: '#1a2e4a', fontWeight: 600 }}>{book?.title || isbn}</span>
+          <span style={{ color: '#1a2e4a', fontWeight: 600 }}>{displayTitle !== 'Titre inconnu' ? displayTitle : isbn}</span>
         </div>
 
         {loading ? (
@@ -148,8 +169,8 @@ export default function BookPage() {
             }}>
               {/* Couverture */}
               <div style={{ flexShrink: 0 }}>
-                {book?.cover
-                  ? <img src={book.cover} alt={book.title} style={{ width: isMobile ? 90 : 120, borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }} />
+                {displayCover
+                  ? <img src={displayCover} alt={displayTitle} style={{ width: isMobile ? 90 : 120, borderRadius: 8, boxShadow: '0 4px 16px rgba(0,0,0,0.15)' }} />
                   : <div style={{
                       width: isMobile ? 90 : 120, height: isMobile ? 115 : 150,
                       background: 'linear-gradient(135deg, #1a2e4a, #0d4f6b)',
@@ -165,19 +186,19 @@ export default function BookPage() {
                   Manuel universitaire
                 </div>
                 <h1 style={{ fontSize: isMobile ? 20 : 26, fontWeight: 900, margin: '0 0 8px', lineHeight: 1.2 }}>
-                  {book?.title || 'Titre inconnu'}
+                  {displayTitle}
                 </h1>
-                {book?.authors && (
+                {displayAuthors && (
                   <div style={{ fontSize: 15, color: '#1a2e4a', fontWeight: 600, marginBottom: 6 }}>
-                    {book.authors}
+                    {displayAuthors}
                   </div>
                 )}
                 <div style={{ fontSize: 13, color: '#64748b', marginBottom: 4 }}>
                   ISBN : <span style={{ fontWeight: 600, color: '#1a2e4a' }}>{isbn}</span>
                 </div>
-                {book?.publisher && (
+                {displayPublisher && (
                   <div style={{ fontSize: 13, color: '#64748b', marginBottom: 12 }}>
-                    Éditeur : {book.publisher}{book?.publishedDate ? ` (${book.publishedDate.slice(0, 4)})` : ''}
+                    Éditeur : {displayPublisher}{book?.publishedDate ? ` (${book.publishedDate.slice(0, 4)})` : ''}
                   </div>
                 )}
 
@@ -259,71 +280,87 @@ export default function BookPage() {
                     onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                     onMouseLeave={e => e.currentTarget.style.background = 'white'}
                   >
-                    {/* Avatar */}
-                    <div style={{
-                      width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
-                      background: 'linear-gradient(135deg, #1a2e4a, #00c9a7)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 18, color: 'white', fontWeight: 800
-                    }}>
-                      {listing.title?.[0] || '?'}
-                    </div>
+                    {/* Vendeur : avatar + infos + prix */}
+                    {(() => {
+                      const prof = sellerProfiles[listing.user_id]
+                      const name = prof?.first_name ? `${prof.first_name} ${prof.last_name || ''}`.trim() : 'Étudiant BiblioCamp'
+                      const campus = listing.campus || prof?.campus || prof?.institution
+                      return (
+                        <>
+                          {/* Avatar */}
+                          <div style={{ flexShrink: 0 }}>
+                            {prof?.avatar_url ? (
+                              <img src={prof.avatar_url} alt={name} style={{ width: 42, height: 42, borderRadius: '50%', objectFit: 'cover', border: '2px solid #00c9a7' }} />
+                            ) : (
+                              <div style={{
+                                width: 42, height: 42, borderRadius: '50%',
+                                background: 'linear-gradient(135deg, #1a2e4a, #00c9a7)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                fontSize: 18, color: 'white', fontWeight: 800
+                              }}>
+                                {name[0].toUpperCase()}
+                              </div>
+                            )}
+                          </div>
 
-                    {/* Infos vendeur */}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
-                        <span
-                          onClick={e => { e.stopPropagation(); router.push(`/seller/${listing.user_id}`) }}
-                          style={{ cursor: 'pointer', color: '#1a2e4a' }}
-                          onMouseEnter={e => e.currentTarget.style.color = '#00c9a7'}
-                          onMouseLeave={e => e.currentTarget.style.color = '#1a2e4a'}
-                        >
-                          {listing.seller_name || 'Étudiant BiblioCamp'}
-                        </span>
-                        {listing.campus && <span style={{ color: '#64748b', fontWeight: 500 }}> · {listing.campus}</span>}
-                      </div>
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
-                        {listing.description && (
-                          <span style={{
-                            fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
-                            background: listing.description === 'Neuf' ? '#dcfce7' : listing.description === 'Très bon état' ? '#dbeafe' : '#f1f5f9',
-                            color: listing.description === 'Neuf' ? '#16a34a' : listing.description === 'Très bon état' ? '#2563eb' : '#475569'
-                          }}>
-                            {listing.description}
-                          </span>
-                        )}
-                        {listing.meet_campus && <span style={{ fontSize: 12, color: '#6c63ff', fontWeight: 600 }}>🏫 Campus</span>}
-                        {listing.meet_city && <span style={{ fontSize: 12, color: '#d97706', fontWeight: 600 }}>🏙️ Ville</span>}
-                        {listing.post && <span style={{ fontSize: 12, color: '#2563eb', fontWeight: 600 }}>📦 Envoi</span>}
-                        <span style={{ fontSize: 11, color: '#cbd5e0' }}>{timeAgo(listing.created_at)}</span>
-                      </div>
-                    </div>
+                          {/* Infos */}
+                          <div style={{ flex: 1, minWidth: 0 }}>
+                            <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
+                              <span
+                                onClick={e => { e.stopPropagation(); router.push(`/seller/${listing.user_id}`) }}
+                                style={{ cursor: 'pointer', color: '#1a2e4a' }}
+                                onMouseEnter={e => e.currentTarget.style.color = '#00c9a7'}
+                                onMouseLeave={e => e.currentTarget.style.color = '#1a2e4a'}
+                              >
+                                {name}
+                              </span>
+                              {campus && <span style={{ color: '#64748b', fontWeight: 500 }}> · {campus}</span>}
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                              {listing.description && (
+                                <span style={{
+                                  fontSize: 12, fontWeight: 600, padding: '2px 8px', borderRadius: 20,
+                                  background: listing.description === 'Neuf' ? '#dcfce7' : listing.description === 'Très bon état' ? '#dbeafe' : '#f1f5f9',
+                                  color: listing.description === 'Neuf' ? '#16a34a' : listing.description === 'Très bon état' ? '#2563eb' : '#475569'
+                                }}>
+                                  {listing.description}
+                                </span>
+                              )}
+                              {listing.meet_campus && <span style={{ fontSize: 12, color: '#6c63ff', fontWeight: 600 }}>🏫 Campus</span>}
+                              {listing.meet_city && <span style={{ fontSize: 12, color: '#d97706', fontWeight: 600 }}>🏙️ Ville</span>}
+                              {listing.post && <span style={{ fontSize: 12, color: '#2563eb', fontWeight: 600 }}>📦 Envoi</span>}
+                              <span style={{ fontSize: 11, color: '#cbd5e0' }}>{timeAgo(listing.created_at)}</span>
+                            </div>
+                          </div>
 
-                    {/* Prix */}
-                    <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                      <div style={{ fontSize: 22, fontWeight: 900, color: '#1a2e4a' }}>{listing.price} $</div>
-                      {listing.original_price && listing.original_price > listing.price && (
-                        <div style={{
-                          background: '#00c9a7', color: 'white',
-                          borderRadius: 20, padding: '2px 8px',
-                          fontSize: 11, fontWeight: 700, marginTop: 2
-                        }}>
-                          Save {Math.round(((listing.original_price - listing.price) / listing.original_price) * 100)}%
-                        </div>
-                      )}
-                      <button
-                        onClick={(e) => handleContactSeller(e, listing)}
-                        style={{
-                          marginTop: 8, background: '#1a2e4a', border: 'none',
-                          borderRadius: 7, padding: '6px 14px', fontSize: 12,
-                          fontWeight: 700, color: 'white', cursor: 'pointer'
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = '#00c9a7'}
-                        onMouseLeave={e => e.currentTarget.style.background = '#1a2e4a'}
-                      >
-                        Contacter →
-                      </button>
-                    </div>
+                          {/* Prix */}
+                          <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                            <div style={{ fontSize: 22, fontWeight: 900, color: '#1a2e4a' }}>{listing.price} $</div>
+                            {listing.original_price && listing.original_price > listing.price && (
+                              <div style={{
+                                background: '#00c9a7', color: 'white',
+                                borderRadius: 20, padding: '2px 8px',
+                                fontSize: 11, fontWeight: 700, marginTop: 2
+                              }}>
+                                Save {Math.round(((listing.original_price - listing.price) / listing.original_price) * 100)}%
+                              </div>
+                            )}
+                            <button
+                              onClick={(e) => handleContactSeller(e, listing)}
+                              style={{
+                                marginTop: 8, background: '#1a2e4a', border: 'none',
+                                borderRadius: 7, padding: '6px 14px', fontSize: 12,
+                                fontWeight: 700, color: 'white', cursor: 'pointer'
+                              }}
+                              onMouseEnter={e => e.currentTarget.style.background = '#00c9a7'}
+                              onMouseLeave={e => e.currentTarget.style.background = '#1a2e4a'}
+                            >
+                              Contacter →
+                            </button>
+                          </div>
+                        </>
+                      )
+                    })()}
                   </div>
                 ))
               )}
