@@ -115,7 +115,8 @@ function CreateInner() {
         if (val.length > 200) return `${val.length}/200 — trop long.`
         return ''
       case 'isbn':
-        if (val && !/^\d{10,13}$/.test(val.replace(/[-\s]/g, ''))) return 'Doit contenir 10 ou 13 chiffres.'
+        if (!val || !val.trim()) return "L'ISBN est obligatoire — il se trouve sur la 4e de couverture ou sur le site de l'éditeur."
+        if (!/^\d{10,13}$/.test(val.replace(/[-\s]/g, ''))) return 'Doit contenir 10 ou 13 chiffres.'
         return ''
       case 'course':
         if (val.length > 20) return `${val.length}/20 — trop long.`
