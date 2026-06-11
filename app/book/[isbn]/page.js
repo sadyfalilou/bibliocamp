@@ -53,8 +53,12 @@ export default function BookPage() {
   }
 
   const handleSell = () => {
-    if (userId) router.push(`/create?isbn=${isbn}`)
-    else router.push(`/login?redirect=/create&isbn=${isbn}`)
+    const params = new URLSearchParams({ isbn })
+    if (displayTitle && displayTitle !== 'Titre inconnu') params.set('title', displayTitle)
+    if (displayAuthors) params.set('authors', displayAuthors)
+    if (displayCover) params.set('cover', displayCover)
+    if (userId) router.push(`/create?${params.toString()}`)
+    else router.push(`/login?redirect=/create&${params.toString()}`)
   }
 
   useEffect(() => {
@@ -149,9 +153,11 @@ export default function BookPage() {
         <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 20 }}>
           <span onClick={() => router.push(userId ? '/app' : '/')} style={{ cursor: 'pointer', color: '#00c9a7' }}>Accueil</span>
           {' / '}
-          <span onClick={() => router.push(userId ? '/app' : '/')} style={{ cursor: 'pointer', color: '#00c9a7' }}>Manuels</span>
+          <span onClick={() => router.push('/app')} style={{ cursor: 'pointer', color: '#00c9a7' }}>Manuels</span>
           {' / '}
-          <span style={{ color: '#1a2e4a', fontWeight: 600 }}>{displayTitle !== 'Titre inconnu' ? displayTitle : isbn}</span>
+          <span style={{ color: '#1a2e4a', fontWeight: 600 }}>
+            {loading ? isbn : (displayTitle !== 'Titre inconnu' ? displayTitle : isbn)}
+          </span>
         </div>
 
         {loading ? (
@@ -199,20 +205,6 @@ export default function BookPage() {
                 {displayPublisher && (
                   <div style={{ fontSize: 13, color: '#64748b', marginBottom: 12 }}>
                     Éditeur : {displayPublisher}{book?.publishedDate ? ` (${book.publishedDate.slice(0, 4)})` : ''}
-                  </div>
-                )}
-
-                {/* Prix le moins cher */}
-                {cheapest !== null && (
-                  <div style={{
-                    display: 'inline-flex', alignItems: 'center', gap: 10,
-                    background: '#f0fdf9', border: '1px solid #00c9a7',
-                    borderRadius: 10, padding: '10px 16px', marginBottom: 16
-                  }}>
-                    <span style={{ fontSize: 22, fontWeight: 900, color: '#1a2e4a' }}>{cheapest} $</span>
-                    <span style={{ fontSize: 13, color: '#00a88a', fontWeight: 600 }}>
-                      à partir de — {listings.length} vendeur{listings.length > 1 ? 's' : ''}
-                    </span>
                   </div>
                 )}
 

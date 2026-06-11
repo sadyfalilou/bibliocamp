@@ -256,7 +256,11 @@ export default function Edit() {
         {/* FORMULAIRE */}
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, color: '#a0aec0', marginBottom: 8 }}>
-            Accueil / Manuels / <span style={{ color: '#1a2e4a', fontWeight: 600 }}>Modifier un manuel</span>
+            <span onClick={() => router.push('/app')} style={{ cursor: 'pointer', color: '#00c9a7' }}>Accueil</span>
+            {' / '}
+            <span onClick={() => router.push('/app')} style={{ cursor: 'pointer', color: '#00c9a7' }}>Manuels</span>
+            {' / '}
+            <span style={{ color: '#1a2e4a', fontWeight: 600 }}>Modifier un manuel</span>
           </div>
           <h1 style={{ fontSize: 26, fontWeight: 900, color: '#1a2e4a', margin: '0 0 28px' }}>
             Modifier le manuel
