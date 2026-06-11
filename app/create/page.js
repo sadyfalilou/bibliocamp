@@ -129,6 +129,12 @@ function CreateInner() {
         if (isNaN(Number(val)) || Number(val) <= 0 || Number(val) > 9999) return 'Entre 1 $ et 9 999 $.'
         if (extra.price && Number(val) <= Number(extra.price)) return 'Doit être supérieur au prix de vente.'
         return ''
+      case 'etat':
+        if (!val) return "L'état du livre est obligatoire."
+        return ''
+      case 'transaction':
+        if (!val) return 'Choisis au moins une méthode de transaction.'
+        return ''
       case 'campus':
         if (val.length > 100) return `${val.length}/100 — trop long.`
         return ''
@@ -193,18 +199,21 @@ function CreateInner() {
   }
 
   const hasErrors = () => {
+    const hasTransaction = meetCampus || meetCity || post
     const allErrors = {
       title: validateField('title', title),
       authors: validateField('authors', authors),
       isbn: validateField('isbn', isbn),
       course: validateField('course', course),
+      etat: validateField('etat', etat),
+      transaction: validateField('transaction', hasTransaction ? 'ok' : ''),
       price: validateField('price', price),
       originalPrice: validateField('originalPrice', originalPrice, { price }),
       campus: validateField('campus', campus),
       image: errors.image || '',
     }
     setErrors(allErrors)
-    setTouched({ title: true, authors: true, isbn: true, course: true, price: true, originalPrice: true, campus: true })
+    setTouched({ title: true, authors: true, isbn: true, course: true, etat: true, transaction: true, price: true, originalPrice: true, campus: true })
     return Object.values(allErrors).some(e => e !== '')
   }
 
@@ -426,17 +435,17 @@ function CreateInner() {
               {/* ÉTAT */}
               <div style={{ marginBottom: 0 }}>
                 <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
-                  État du livre
+                  État du livre <span style={{ color: '#e53e3e' }}>*</span>
                 </label>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {ETATS.map(e => (
                     <button
                       key={e}
                       type="button"
-                      onClick={() => setEtat(e)}
+                      onClick={() => { setEtat(e); setErrors(prev => ({ ...prev, etat: '' })) }}
                       style={{
                         padding: '8px 16px',
-                        border: `2px solid ${etat === e ? '#00c9a7' : '#cbd5e0'}`,
+                        border: `2px solid ${etat === e ? '#00c9a7' : errors.etat ? '#e53e3e' : '#cbd5e0'}`,
                         borderRadius: 20,
                         background: etat === e ? '#f0fdf9' : 'white',
                         color: etat === e ? '#00c9a7' : '#4a5568',
@@ -449,6 +458,7 @@ function CreateInner() {
                     </button>
                   ))}
                 </div>
+                <ErrorMsg name="etat" />
               </div>
 
               {/* CAMPUS */}
@@ -469,7 +479,7 @@ function CreateInner() {
               {/* MÉTHODES DE TRANSACTION */}
               <div style={{ marginTop: 18 }}>
                 <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 10 }}>
-                  Méthodes de transaction
+                  Méthodes de transaction <span style={{ color: '#e53e3e' }}>*</span>
                 </label>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   {[
@@ -477,9 +487,12 @@ function CreateInner() {
                     { key: 'city', label: '🏙️ Rencontre en ville', state: meetCity, set: setMeetCity, color: '#f59e0b' },
                     { key: 'post', label: '📦 Envoi postal', state: post, set: setPost, color: '#3b82f6' },
                   ].map(m => (
-                    <button key={m.key} type="button" onClick={() => m.set(!m.state)} style={{
+                    <button key={m.key} type="button" onClick={() => {
+                      m.set(!m.state)
+                      setErrors(prev => ({ ...prev, transaction: '' }))
+                    }} style={{
                       padding: '10px 18px',
-                      border: `2px solid ${m.state ? m.color : '#cbd5e0'}`,
+                      border: `2px solid ${m.state ? m.color : errors.transaction ? '#e53e3e' : '#cbd5e0'}`,
                       borderRadius: 20,
                       background: m.state ? `${m.color}15` : 'white',
                       color: m.state ? m.color : '#4a5568',
@@ -492,6 +505,7 @@ function CreateInner() {
                     </button>
                   ))}
                 </div>
+                <ErrorMsg name="transaction" />
               </div>
             </div>
 
