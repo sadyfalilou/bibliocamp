@@ -8,8 +8,10 @@ import Logo from '../components/Logo'
 export default function Landing() {
   const router = useRouter()
   const [listings, setListings] = useState([])
-  const [stats, setStats] = useState({ listings: 0, users: 0 }) // eslint-disable-line
   const [isMobile, setIsMobile] = useState(false)
+  const [searchBuy, setSearchBuy] = useState('')
+  const [searchSell, setSearchSell] = useState('')
+  const [activeTab, setActiveTab] = useState('acheter') // 'acheter' | 'vendre'
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -18,7 +20,6 @@ export default function Landing() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
-  // Si déjà connecté, aller à la marketplace
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (session?.user) router.push('/app')
@@ -26,10 +27,8 @@ export default function Landing() {
     return () => listener.subscription.unsubscribe()
   }, [])
 
-  // Charger quelques annonces récentes (public)
   useEffect(() => {
     const load = async () => {
-      // Passe par l'API serveur pour contourner les restrictions RLS (visiteurs non connectés)
       const res = await fetch('/api/stats')
       if (res.ok) {
         const data = await res.json()
@@ -39,6 +38,30 @@ export default function Landing() {
     load()
   }, [])
 
+  const handleBuySearch = (e) => {
+    e.preventDefault()
+    // Redirige vers login avec la recherche en param
+    router.push(`/login?redirect=/app&q=${encodeURIComponent(searchBuy)}`)
+  }
+
+  const handleSellSearch = (e) => {
+    e.preventDefault()
+    const cleaned = searchSell.replace(/[-\s]/g, '')
+    if (/^\d{10,13}$/.test(cleaned)) {
+      router.push(`/login?redirect=/create&isbn=${encodeURIComponent(cleaned)}`)
+    } else {
+      router.push(`/login?redirect=/create`)
+    }
+  }
+
+  const timeAgo = (dateStr) => {
+    const diff = (Date.now() - new Date(dateStr)) / 1000
+    if (diff < 3600) return `il y a ${Math.floor(diff / 60)} min`
+    if (diff < 86400) return `il y a ${Math.floor(diff / 3600)}h`
+    if (diff < 604800) return `il y a ${Math.floor(diff / 86400)}j`
+    return new Date(dateStr).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
+  }
+
   const institutions = [
     'UQAM', 'HEC Montréal', 'Université de Montréal',
     'McGill', 'Concordia', 'Université Laval',
@@ -46,7 +69,7 @@ export default function Landing() {
   ]
 
   const benefits = [
-    { icon: '💸', title: 'Économise sur tes manuels', desc: 'Jusqu\'à 80% moins cher qu\'en librairie' },
+    { icon: '💸', title: 'Économise sur tes manuels', desc: "Jusqu'à 80% moins cher qu'en librairie" },
     { icon: '📦', title: 'Vends tes anciens manuels', desc: 'Transforme tes livres en argent de poche' },
     { icon: '🎓', title: 'Entre étudiants seulement', desc: 'Une communauté de confiance au Québec' },
     { icon: '💬', title: 'Messagerie intégrée', desc: 'Contacte les vendeurs directement' },
@@ -66,200 +89,289 @@ export default function Landing() {
       }}>
         <Logo variant="dark" size="md" style={{ cursor: 'pointer' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <button
-            onClick={() => router.push('/login')}
-            style={{
-              background: 'transparent', border: '1.5px solid #e8edf2',
-              borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 600,
-              color: '#1a2e4a', cursor: 'pointer', transition: 'all 0.2s'
-            }}
+          <button onClick={() => router.push('/login')} style={{
+            background: 'transparent', border: '1.5px solid #e8edf2',
+            borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 600,
+            color: '#1a2e4a', cursor: 'pointer', transition: 'all 0.2s'
+          }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = '#00c9a7'; e.currentTarget.style.color = '#00c9a7' }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = '#e8edf2'; e.currentTarget.style.color = '#1a2e4a' }}
-          >
-            Se connecter
-          </button>
-          <button
-            onClick={() => router.push('/login?tab=signup')}
-            style={{
-              background: '#1a2e4a', border: 'none',
-              borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 700,
-              color: 'white', cursor: 'pointer', transition: 'all 0.2s'
-            }}
+          >Se connecter</button>
+          <button onClick={() => router.push('/login?tab=signup')} style={{
+            background: '#1a2e4a', border: 'none', borderRadius: 8,
+            padding: '8px 18px', fontSize: 14, fontWeight: 700,
+            color: 'white', cursor: 'pointer', transition: 'all 0.2s'
+          }}
             onMouseEnter={e => e.currentTarget.style.background = '#00c9a7'}
             onMouseLeave={e => e.currentTarget.style.background = '#1a2e4a'}
-          >
-            Rejoindre gratuitement
-          </button>
+          >Rejoindre gratuitement</button>
         </div>
       </nav>
 
       {/* HERO */}
       <section style={{
         background: 'linear-gradient(160deg, #0f1f35 0%, #1a2e4a 50%, #0d4f6b 100%)',
-        padding: isMobile ? '60px 20px 80px' : '80px 40px 100px',
+        padding: isMobile ? '48px 20px 56px' : '64px 40px 72px',
         textAlign: 'center', position: 'relative', overflow: 'hidden'
       }}>
-        {/* Cercles déco */}
         <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, borderRadius: '50%', background: 'rgba(0,201,167,0.07)', pointerEvents: 'none' }} />
         <div style={{ position: 'absolute', bottom: -80, left: -80, width: 300, height: 300, borderRadius: '50%', background: 'rgba(0,201,167,0.05)', pointerEvents: 'none' }} />
 
-        <div style={{ position: 'relative', maxWidth: 720, margin: '0 auto' }}>
+        <div style={{ position: 'relative', maxWidth: 760, margin: '0 auto' }}>
           <div style={{
             display: 'inline-block', background: 'rgba(0,201,167,0.15)',
             border: '1px solid rgba(0,201,167,0.3)', borderRadius: 20,
             padding: '6px 16px', fontSize: 13, fontWeight: 600,
-            color: '#00c9a7', marginBottom: 24, letterSpacing: 0.3
+            color: '#00c9a7', marginBottom: 20, letterSpacing: 0.3
           }}>
-            ✅ 100% gratuit — aucune carte requise
+            ✅ 100% gratuit — aucune commission
           </div>
 
           <h1 style={{
-            color: 'white', fontSize: isMobile ? 32 : 52,
-            fontWeight: 900, lineHeight: 1.15, margin: '0 0 20px',
-            letterSpacing: -1
+            color: 'white', fontSize: isMobile ? 28 : 48,
+            fontWeight: 900, lineHeight: 1.15, margin: '0 0 16px', letterSpacing: -1
           }}>
             La marketplace des manuels{' '}
             <span style={{ color: '#00c9a7' }}>étudiants du Québec</span>
           </h1>
 
           <p style={{
-            color: 'rgba(255,255,255,0.7)', fontSize: isMobile ? 16 : 19,
-            margin: '0 0 40px', lineHeight: 1.6, maxWidth: 540, marginLeft: 'auto', marginRight: 'auto'
+            color: 'rgba(255,255,255,0.7)', fontSize: isMobile ? 15 : 18,
+            margin: '0 0 36px', lineHeight: 1.6
           }}>
-            Achète et vends tes manuels directement entre étudiants.
-            Économise jusqu'à 80% sur tes livres.
+            Achète et vends tes manuels directement entre étudiants. Économise jusqu'à 80%.
           </p>
 
-          <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button
-              onClick={() => router.push('/login?tab=signup')}
-              style={{
-                background: '#00c9a7', border: 'none', borderRadius: 10,
-                padding: '14px 32px', fontSize: 16, fontWeight: 800,
-                color: 'white', cursor: 'pointer',
-                boxShadow: '0 4px 20px rgba(0,201,167,0.4)',
-                transition: 'all 0.2s'
-              }}
-              onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 6px 24px rgba(0,201,167,0.5)' }}
-              onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,201,167,0.4)' }}
-            >
-              Créer mon compte gratuit
-            </button>
-            <button
-              onClick={() => router.push('/login')}
-              style={{
-                background: 'rgba(255,255,255,0.1)', border: '1.5px solid rgba(255,255,255,0.2)',
-                borderRadius: 10, padding: '14px 32px', fontSize: 16, fontWeight: 700,
-                color: 'white', cursor: 'pointer', transition: 'all 0.2s'
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.18)'}
-              onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
-            >
-              Se connecter
-            </button>
+          {/* BARRE DE RECHERCHE DOUBLE */}
+          <div style={{
+            background: 'white', borderRadius: 16,
+            padding: isMobile ? '20px' : '24px 28px',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
+            maxWidth: 640, margin: '0 auto', textAlign: 'left'
+          }}>
+            {/* Tabs */}
+            <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderRadius: 10, overflow: 'hidden', border: '1.5px solid #e2e8f0' }}>
+              {[
+                { key: 'acheter', label: '🔍 Acheter un manuel' },
+                { key: 'vendre', label: '📦 Vendre mon manuel' },
+              ].map(tab => (
+                <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)} style={{
+                  flex: 1, padding: '10px 8px', border: 'none',
+                  background: activeTab === tab.key ? '#1a2e4a' : 'white',
+                  color: activeTab === tab.key ? 'white' : '#64748b',
+                  fontWeight: 700, fontSize: isMobile ? 13 : 14, cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}>
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Formulaire Acheter */}
+            {activeTab === 'acheter' && (
+              <form onSubmit={handleBuySearch}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
+                  ISBN, titre ou auteur
+                </label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    value={searchBuy}
+                    onChange={e => setSearchBuy(e.target.value)}
+                    placeholder="ex: Comptabilité, Kotler, 9782765..."
+                    style={{
+                      flex: 1, padding: '12px 14px', border: '1.5px solid #e2e8f0',
+                      borderRadius: 9, fontSize: 15, outline: 'none',
+                      transition: 'border-color 0.2s'
+                    }}
+                    onFocus={e => e.target.style.borderColor = '#00c9a7'}
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  />
+                  <button type="submit" style={{
+                    background: '#00c9a7', border: 'none', borderRadius: 9,
+                    padding: '12px 20px', color: 'white', fontWeight: 800,
+                    fontSize: 15, cursor: 'pointer', whiteSpace: 'nowrap',
+                    boxShadow: '0 4px 14px rgba(0,201,167,0.35)', transition: 'all 0.2s'
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#00a88a'}
+                    onMouseLeave={e => e.currentTarget.style.background = '#00c9a7'}
+                  >
+                    Rechercher →
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* Formulaire Vendre */}
+            {activeTab === 'vendre' && (
+              <form onSubmit={handleSellSearch}>
+                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
+                  Entre l'ISBN (au dos du livre) pour auto-remplir les infos
+                </label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input
+                    value={searchSell}
+                    onChange={e => setSearchSell(e.target.value)}
+                    placeholder="ex: 9782765141310"
+                    style={{
+                      flex: 1, padding: '12px 14px', border: '1.5px solid #e2e8f0',
+                      borderRadius: 9, fontSize: 15, outline: 'none',
+                      transition: 'border-color 0.2s'
+                    }}
+                    onFocus={e => e.target.style.borderColor = '#00c9a7'}
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  />
+                  <button type="submit" style={{
+                    background: '#1a2e4a', border: 'none', borderRadius: 9,
+                    padding: '12px 20px', color: 'white', fontWeight: 800,
+                    fontSize: 15, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s'
+                  }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#00c9a7'}
+                    onMouseLeave={e => e.currentTarget.style.background = '#1a2e4a'}
+                  >
+                    Vendre →
+                  </button>
+                </div>
+                <p style={{ margin: '10px 0 0', fontSize: 12, color: '#94a3b8' }}>
+                  Pas d'ISBN ? <span onClick={() => router.push('/login?redirect=/create')} style={{ color: '#00c9a7', cursor: 'pointer', fontWeight: 600 }}>Remplis manuellement →</span>
+                </p>
+              </form>
+            )}
           </div>
         </div>
       </section>
 
-      {/* STATS */}
-      <section style={{
-        background: '#f8fafc', borderBottom: '1px solid #e8edf2',
-        padding: '28px 24px'
-      }}>
+      {/* STATS RAPIDES */}
+      <section style={{ background: '#f8fafc', borderBottom: '1px solid #e8edf2', padding: '20px 24px' }}>
         <div style={{
           maxWidth: 860, margin: '0 auto',
           display: 'flex', justifyContent: 'center', alignItems: 'center',
           gap: isMobile ? 20 : 48, flexWrap: 'wrap', textAlign: 'center'
         }}>
           {[
-            { icon: '📚', value: '100% gratuit', label: 'Aucune commission sur tes ventes' },
-            { icon: '⚡', value: 'Inscription rapide', label: 'Prêt en moins de 30 secondes' },
-            { icon: '💸', value: 'Jusqu\'à 80%', label: 'D\'économies vs la librairie' },
-            { icon: '🎓', value: 'Québec seulement', label: 'Communauté étudiante locale' },
+            { icon: '📚', value: '100% gratuit', label: 'Aucune commission' },
+            { icon: '⚡', value: 'Inscription rapide', label: 'Prêt en 30 secondes' },
+            { icon: '💸', value: "Jusqu'à 80%", label: "D'économies vs librairie" },
+            { icon: '🎓', value: 'Québec seulement', label: 'Communauté locale' },
           ].map((s, i) => (
-            <div key={i} style={{ minWidth: isMobile ? 130 : 160 }}>
-              <div style={{ fontSize: 22, marginBottom: 4 }}>{s.icon}</div>
-              <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, color: '#1a2e4a' }}>{s.value}</div>
-              <div style={{ fontSize: 12, color: '#64748b', fontWeight: 500, marginTop: 2 }}>{s.label}</div>
+            <div key={i} style={{ minWidth: isMobile ? 120 : 150 }}>
+              <div style={{ fontSize: 20, marginBottom: 2 }}>{s.icon}</div>
+              <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 800, color: '#1a2e4a' }}>{s.value}</div>
+              <div style={{ fontSize: 11, color: '#64748b', fontWeight: 500, marginTop: 1 }}>{s.label}</div>
             </div>
           ))}
         </div>
       </section>
 
-      {/* ANNONCES RÉCENTES */}
-      <section style={{ padding: isMobile ? '48px 16px' : '64px 40px', maxWidth: 1100, margin: '0 auto' }}>
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <h2 style={{ fontSize: isMobile ? 24 : 34, fontWeight: 900, margin: '0 0 10px', letterSpacing: -0.5 }}>
-            Manuels disponibles maintenant
-          </h2>
-          <p style={{ color: '#64748b', fontSize: 16, margin: 0 }}>
-            Parcours, contacte, économise. C'est aussi simple que ça.
-          </p>
+      {/* ANNONCES RÉCENTES — FORMAT LISTE */}
+      <section style={{ padding: isMobile ? '40px 16px' : '56px 40px', maxWidth: 860, margin: '0 auto' }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 8 }}>
+          <div>
+            <h2 style={{ fontSize: isMobile ? 22 : 30, fontWeight: 900, margin: '0 0 4px', letterSpacing: -0.5 }}>
+              Derniers manuels ajoutés
+            </h2>
+            <p style={{ color: '#64748b', fontSize: 14, margin: 0 }}>
+              Parcours, contacte, économise. C'est aussi simple que ça.
+            </p>
+          </div>
+          <button onClick={() => router.push('/login')} style={{
+            background: 'transparent', border: '1.5px solid #00c9a7',
+            borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 700,
+            color: '#00c9a7', cursor: 'pointer'
+          }}>
+            Voir tout →
+          </button>
         </div>
 
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
-          gap: 16
-        }}>
+        {/* Liste */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {listings.length === 0
-            ? Array.from({ length: 8 }).map((_, i) => (
-              <div key={i} style={{ background: '#f8fafc', borderRadius: 12, height: 200, animation: 'pulse 1.5s infinite' }} />
+            ? Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} style={{ background: '#f8fafc', borderRadius: 10, height: 80, marginBottom: 1 }} />
             ))
-            : listings.map(listing => (
+            : listings.map((listing, idx) => (
               <div
                 key={listing.id}
                 onClick={() => router.push('/login')}
                 style={{
-                  background: 'white', borderRadius: 12, overflow: 'hidden',
-                  border: '1px solid #e8edf2', cursor: 'pointer',
-                  transition: 'all 0.2s', boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
+                  display: 'flex', alignItems: 'center', gap: 16,
+                  padding: '14px 16px',
+                  background: 'white',
+                  borderRadius: idx === 0 ? '12px 12px 0 0' : idx === listings.length - 1 ? '0 0 12px 12px' : 0,
+                  border: '1px solid #e8edf2',
+                  borderTop: idx === 0 ? '1px solid #e8edf2' : 'none',
+                  cursor: 'pointer', transition: 'background 0.15s'
                 }}
-                onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-3px)'; e.currentTarget.style.boxShadow = '0 8px 24px rgba(0,0,0,0.1)' }}
-                onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.05)' }}
+                onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+                onMouseLeave={e => e.currentTarget.style.background = 'white'}
               >
-                {/* Image */}
-                <div style={{ height: 120, background: '#f0f4f8', position: 'relative', overflow: 'hidden' }}>
+                {/* Cover */}
+                <div style={{ flexShrink: 0, width: 44, height: 56 }}>
                   {listing.image_url
-                    ? <img src={listing.image_url} alt={listing.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                    : <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 36 }}>📚</div>
+                    ? <img src={listing.image_url} alt={listing.title} style={{ width: 44, height: 56, objectFit: 'cover', borderRadius: 5 }} />
+                    : <div style={{
+                        width: 44, height: 56, borderRadius: 5,
+                        background: 'linear-gradient(135deg, #1a2e4a, #0d4f6b)',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20
+                      }}>📖</div>
                   }
-                  {/* Badge mode de transaction */}
-                  <div style={{
-                    position: 'absolute', top: 8, left: 8,
-                    background: listing.meet_campus ? '#6366f1' : listing.post ? '#2563eb' : '#1a2e4a',
-                    color: 'white', borderRadius: 6, padding: '2px 8px', fontSize: 11, fontWeight: 700
-                  }}>
-                    {listing.meet_campus ? '🏫 Campus' : listing.post ? '📦 Envoi' : '🏙️ Ville'}
-                  </div>
                 </div>
+
                 {/* Infos */}
-                <div style={{ padding: '10px 12px' }}>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a', lineHeight: 1.3, marginBottom: 6,
-                    overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{
+                    fontWeight: 700, fontSize: 14, color: '#1a2e4a',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 3
+                  }}>
                     {listing.title}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 15, fontWeight: 900, color: '#00c9a7' }}>
-                      {listing.price ? `${listing.price} $` : '—'}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    {listing.authors && (
+                      <span style={{ fontSize: 12, color: '#64748b' }}>{listing.authors}</span>
+                    )}
+                    {listing.isbn && (
+                      <span style={{ fontSize: 11, color: '#94a3b8' }}>ISBN: {listing.isbn}</span>
+                    )}
+                    <span style={{
+                      fontSize: 11, fontWeight: 600, padding: '1px 7px', borderRadius: 20,
+                      background: listing.meet_campus ? '#ede9fe' : listing.post ? '#dbeafe' : '#fef3c7',
+                      color: listing.meet_campus ? '#6c63ff' : listing.post ? '#2563eb' : '#d97706'
+                    }}>
+                      {listing.meet_campus ? '🏫 Campus' : listing.post ? '📦 Envoi' : '🏙️ Ville'}
                     </span>
                     <span style={{ fontSize: 11, color: '#94a3b8' }}>{listing.description}</span>
                   </div>
+                  <div style={{ fontSize: 11, color: '#cbd5e0', marginTop: 2 }}>
+                    {listing.created_at ? timeAgo(listing.created_at) : ''}
+                  </div>
+                </div>
+
+                {/* Prix + savings */}
+                <div style={{ flexShrink: 0, textAlign: 'right' }}>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: '#1a2e4a' }}>
+                    {listing.price ? `${listing.price} $` : '—'}
+                  </div>
+                  {listing.original_price && listing.original_price > listing.price && (
+                    <div style={{
+                      background: '#00c9a7', color: 'white',
+                      borderRadius: 20, padding: '2px 8px',
+                      fontSize: 11, fontWeight: 700, marginTop: 3
+                    }}>
+                      Save {Math.round(((listing.original_price - listing.price) / listing.original_price) * 100)}%
+                    </div>
+                  )}
                 </div>
               </div>
             ))
           }
         </div>
 
-        {/* CTA voir plus */}
-        <div style={{ textAlign: 'center', marginTop: 36 }}>
-          <button
-            onClick={() => router.push('/login')}
-            style={{
-              background: 'white', border: '2px solid #1a2e4a',
-              borderRadius: 10, padding: '13px 32px', fontSize: 15, fontWeight: 700,
-              color: '#1a2e4a', cursor: 'pointer', transition: 'all 0.2s'
-            }}
+        {/* CTA */}
+        <div style={{ textAlign: 'center', marginTop: 24 }}>
+          <button onClick={() => router.push('/login')} style={{
+            background: 'white', border: '2px solid #1a2e4a',
+            borderRadius: 10, padding: '12px 32px', fontSize: 15, fontWeight: 700,
+            color: '#1a2e4a', cursor: 'pointer', transition: 'all 0.2s'
+          }}
             onMouseEnter={e => { e.currentTarget.style.background = '#1a2e4a'; e.currentTarget.style.color = 'white' }}
             onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#1a2e4a' }}
           >
@@ -274,11 +386,7 @@ export default function Landing() {
           <h2 style={{ textAlign: 'center', fontSize: isMobile ? 24 : 34, fontWeight: 900, margin: '0 0 48px', letterSpacing: -0.5 }}>
             Pourquoi choisir BiblioCamp ?
           </h2>
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)',
-            gap: 20
-          }}>
+          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 20 }}>
             {benefits.map((b, i) => (
               <div key={i} style={{
                 background: 'white', borderRadius: 14, padding: '24px',
@@ -320,8 +428,7 @@ export default function Landing() {
       {/* CTA FINAL */}
       <section style={{
         background: 'linear-gradient(135deg, #1a2e4a 0%, #0d4f6b 100%)',
-        padding: isMobile ? '56px 24px' : '80px 40px',
-        textAlign: 'center'
+        padding: isMobile ? '56px 24px' : '80px 40px', textAlign: 'center'
       }}>
         <h2 style={{ color: 'white', fontSize: isMobile ? 26 : 40, fontWeight: 900, margin: '0 0 16px', letterSpacing: -0.5 }}>
           Prêt à économiser sur tes manuels ?
@@ -329,15 +436,12 @@ export default function Landing() {
         <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 17, margin: '0 0 36px' }}>
           Rejoins BiblioCamp gratuitement en moins de 30 secondes.
         </p>
-        <button
-          onClick={() => router.push('/login?tab=signup')}
-          style={{
-            background: '#00c9a7', border: 'none', borderRadius: 12,
-            padding: '16px 40px', fontSize: 17, fontWeight: 800,
-            color: 'white', cursor: 'pointer',
-            boxShadow: '0 4px 24px rgba(0,201,167,0.4)',
-            transition: 'all 0.2s'
-          }}
+        <button onClick={() => router.push('/login?tab=signup')} style={{
+          background: '#00c9a7', border: 'none', borderRadius: 12,
+          padding: '16px 40px', fontSize: 17, fontWeight: 800,
+          color: 'white', cursor: 'pointer',
+          boxShadow: '0 4px 24px rgba(0,201,167,0.4)', transition: 'all 0.2s'
+        }}
           onMouseEnter={e => { e.currentTarget.style.transform = 'translateY(-2px)'; e.currentTarget.style.boxShadow = '0 8px 32px rgba(0,201,167,0.5)' }}
           onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = '0 4px 24px rgba(0,201,167,0.4)' }}
         >
@@ -346,10 +450,7 @@ export default function Landing() {
       </section>
 
       {/* FOOTER */}
-      <footer style={{
-        background: '#0f1f35', padding: '32px 24px',
-        textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 13
-      }}>
+      <footer style={{ background: '#0f1f35', padding: '32px 24px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
         <Logo variant="light" size="sm" style={{ marginBottom: 16, opacity: 0.7 }} />
         <p style={{ margin: '12px 0 8px' }}>© 2026 BiblioCamp — Fait pour les étudiants, par des étudiants</p>
         <div style={{ display: 'flex', gap: 20, justifyContent: 'center', marginTop: 8 }}>
