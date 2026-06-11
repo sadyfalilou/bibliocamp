@@ -93,7 +93,7 @@ export default function SellerPage() {
 
         {/* BREADCRUMB */}
         <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 20 }}>
-          <span onClick={() => router.push('/')} style={{ cursor: 'pointer', color: '#00c9a7' }}>Accueil</span>
+          <span onClick={() => router.push(currentUser ? '/app' : '/')} style={{ cursor: 'pointer', color: '#00c9a7' }}>Accueil</span>
           {' / '}
           <span style={{ color: '#1a2e4a', fontWeight: 600 }}>{displayName}</span>
         </div>

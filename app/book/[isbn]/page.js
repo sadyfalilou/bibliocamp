@@ -147,7 +147,7 @@ export default function BookPage() {
 
         {/* BREADCRUMB */}
         <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 20 }}>
-          <span onClick={() => router.push('/')} style={{ cursor: 'pointer', color: '#00c9a7' }}>Accueil</span>
+          <span onClick={() => router.push(userId ? '/app' : '/')} style={{ cursor: 'pointer', color: '#00c9a7' }}>Accueil</span>
           {' / '}
           <span onClick={() => router.push(userId ? '/app' : '/')} style={{ cursor: 'pointer', color: '#00c9a7' }}>Manuels</span>
           {' / '}
