@@ -8,7 +8,7 @@ import Logo from '../components/Logo'
 export default function Landing() {
   const router = useRouter()
   const [listings, setListings] = useState([])
-  const [stats, setStats] = useState({ listings: 0, users: 0 })
+  const [stats, setStats] = useState({ listings: 0, users: 0 }) // eslint-disable-line
   const [isMobile, setIsMobile] = useState(false)
 
   useEffect(() => {
@@ -36,12 +36,7 @@ export default function Landing() {
         .limit(8)
       if (data) setListings(data)
 
-      // Récupère les stats via l'API serveur (contourne les restrictions RLS)
-      const res = await fetch('/api/stats')
-      if (res.ok) {
-        const s = await res.json()
-        setStats({ listings: s.listings, users: s.users })
-      }
+      // Stats désactivées — métriques qualitatives affichées à la place
     }
     load()
   }, [])
@@ -171,21 +166,23 @@ export default function Landing() {
       {/* STATS */}
       <section style={{
         background: '#f8fafc', borderBottom: '1px solid #e8edf2',
-        padding: '32px 24px'
+        padding: '28px 24px'
       }}>
         <div style={{
-          maxWidth: 800, margin: '0 auto',
-          display: 'flex', justifyContent: 'center',
-          gap: isMobile ? 32 : 64, flexWrap: 'wrap', textAlign: 'center'
+          maxWidth: 860, margin: '0 auto',
+          display: 'flex', justifyContent: 'center', alignItems: 'center',
+          gap: isMobile ? 20 : 48, flexWrap: 'wrap', textAlign: 'center'
         }}>
           {[
-            { value: stats.listings > 0 ? stats.listings : '—', label: 'Manuels disponibles' },
-            { value: stats.users > 0 ? stats.users : '—', label: 'Étudiants inscrits' },
-            { value: '80%', label: 'D\'économies en moyenne' },
+            { icon: '📚', value: '100% gratuit', label: 'Aucune commission sur tes ventes' },
+            { icon: '⚡', value: 'Inscription rapide', label: 'Prêt en moins de 30 secondes' },
+            { icon: '💸', value: 'Jusqu\'à 80%', label: 'D\'économies vs la librairie' },
+            { icon: '🎓', value: 'Québec seulement', label: 'Communauté étudiante locale' },
           ].map((s, i) => (
-            <div key={i}>
-              <div style={{ fontSize: isMobile ? 32 : 40, fontWeight: 900, color: '#1a2e4a' }}>{s.value}</div>
-              <div style={{ fontSize: 14, color: '#64748b', fontWeight: 500, marginTop: 4 }}>{s.label}</div>
+            <div key={i} style={{ minWidth: isMobile ? 130 : 160 }}>
+              <div style={{ fontSize: 22, marginBottom: 4 }}>{s.icon}</div>
+              <div style={{ fontSize: isMobile ? 15 : 17, fontWeight: 800, color: '#1a2e4a' }}>{s.value}</div>
+              <div style={{ fontSize: 12, color: '#64748b', fontWeight: 500, marginTop: 2 }}>{s.label}</div>
             </div>
           ))}
         </div>
