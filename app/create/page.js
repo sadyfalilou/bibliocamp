@@ -64,8 +64,9 @@ function CreateInner() {
     if (cover) {
       setCoverFromGoogle(cover)
       setImagePreview(cover)
-      setIsbnFound(true)
     }
+    // Afficher "Livre trouvé" seulement si on a isbn + titre + cover via URL (vient d'une page livre)
+    if (i && t && cover) setIsbnFound(true)
   }, [])
 
   const searchingRef = useRef(false)
