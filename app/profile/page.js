@@ -34,7 +34,7 @@ function InviteSection({ userId }) {
   }
 
   const handleWhatsapp = () => {
-    const msg = encodeURIComponent(`Salut ! 👋 Je t'invite sur BiblioCamp — la meilleure façon d'acheter et vendre des manuels entre étudiants québécois. C'est gratuit et tu peux économiser jusqu'à 70% ! 📚\n${inviteUrl}`)
+    const msg = encodeURIComponent(`Salut ! Je t'invite sur BiblioCamp — la meilleure façon d'acheter et vendre des manuels entre étudiants québécois. C'est gratuit et tu peux économiser jusqu'à 70% !\n${inviteUrl}`)
     window.open(`https://wa.me/?text=${msg}`, '_blank')
   }
 
