@@ -36,13 +36,12 @@ export default function Landing() {
         .limit(8)
       if (data) setListings(data)
 
-      const { count: listingsCount } = await supabase
-        .from('listings')
-        .select('*', { count: 'exact', head: true })
-      const { count: usersCount } = await supabase
-        .from('profiles')
-        .select('*', { count: 'exact', head: true })
-      setStats({ listings: listingsCount || 0, users: usersCount || 0 })
+      // Récupère les stats via l'API serveur (contourne les restrictions RLS)
+      const res = await fetch('/api/stats')
+      if (res.ok) {
+        const s = await res.json()
+        setStats({ listings: s.listings, users: s.users })
+      }
     }
     load()
   }, [])
