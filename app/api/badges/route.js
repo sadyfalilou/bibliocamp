@@ -83,7 +83,7 @@ export async function GET(request) {
     if ((inviteCount ?? 0) >= 10) earned.push('ambassador')
   }
 
-  // 4. Bibliothécaire + Vendeur actif — nombre d'annonces
+  // 4. Bibliothécaire + Vendeur actif — toutes annonces (actives + vendues)
   const { count: listingCount } = await supabase
     .from('listings')
     .select('*', { count: 'exact', head: true })

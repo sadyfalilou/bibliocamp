@@ -14,6 +14,7 @@ export async function GET(request) {
     .from('listings')
     .select('id, title, authors, price, original_price, description, image_url, meet_campus, meet_city, post, campus, created_at')
     .eq('isbn', isbn)
+    .eq('status', 'active')
     .order('price', { ascending: true })
 
   return NextResponse.json({ listings: listings ?? [] })

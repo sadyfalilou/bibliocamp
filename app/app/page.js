@@ -88,6 +88,8 @@ export default function Home() {
   const [sendingCode, setSendingCode] = useState(false)
   const [verifyingCode, setVerifyingCode] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
+  const [soldConfirmId, setSoldConfirmId] = useState(null)
+  const [markingAsSold, setMarkingAsSold] = useState(false)
   const router = useRouter()
 
   const fetchListings = async (offset = 0, append = false) => {
@@ -285,6 +287,29 @@ export default function Home() {
     if (res.ok) fetchListings()
   }
 
+  const handleMarkSold = async (id) => {
+    setMarkingAsSold(true)
+    const { data: { session } } = await supabase.auth.getSession()
+    await fetch('/api/listings/status', {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listing_id: id, status: 'sold' })
+    })
+    setSoldConfirmId(null)
+    setMarkingAsSold(false)
+    fetchListings()
+  }
+
+  const handleMarkActive = async (id) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    await fetch('/api/listings/status', {
+      method: 'PATCH',
+      headers: { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listing_id: id, status: 'active' })
+    })
+    fetchListings()
+  }
+
   const handleReport = async () => {
     if (!reportReason) return
     setReportLoading(true)
@@ -398,6 +423,7 @@ export default function Home() {
   }
 
   const filtered = listings?.filter(item => {
+    if (item.status === 'sold' && item.user_id !== user?.id) return false // cache les vendus sauf au proprio
     if (search && !item.title.toLowerCase().includes(search.toLowerCase()) &&
         !item.course_code?.toLowerCase().includes(search.toLowerCase())) return false
     if (filterEtat && item.description !== filterEtat) return false
@@ -491,6 +517,47 @@ export default function Home() {
 
   return (
     <div style={{ fontFamily: "'Segoe UI', sans-serif", minHeight: '100vh', background: '#f5f7fa' }}>
+
+      {/* MODAL CONFIRMATION VENDU */}
+      {soldConfirmId && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }} onClick={() => setSoldConfirmId(null)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'white', borderRadius: 16, padding: '28px 32px',
+            maxWidth: 380, width: '90%', textAlign: 'center',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🎉</div>
+            <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: '#1a2e4a' }}>
+              Marquer comme vendu ?
+            </h3>
+            <p style={{ color: '#64748b', fontSize: 14, margin: '0 0 24px' }}>
+              L'annonce sera masquée du marketplace. Tu pourras la remettre en ligne si besoin.
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => setSoldConfirmId(null)} style={{
+                flex: 1, padding: '11px', borderRadius: 9,
+                border: '1.5px solid #e2e8f0', background: 'white',
+                color: '#64748b', fontWeight: 700, fontSize: 14, cursor: 'pointer'
+              }}>Annuler</button>
+              <button
+                onClick={() => handleMarkSold(soldConfirmId)}
+                disabled={markingAsSold}
+                style={{
+                  flex: 1, padding: '11px', borderRadius: 9,
+                  border: 'none', background: '#00c9a7',
+                  color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer'
+                }}
+              >
+                {markingAsSold ? '...' : '✓ Vendu !'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* MODAL CONFIRMATION SUPPRESSION */}
       {deleteConfirmId && (
@@ -1464,23 +1531,40 @@ export default function Home() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {myListings.map(item => (
+                  {myListings.map(item => {
+                    const isSold = item.status === 'sold'
+                    return (
                     <div key={item.id} style={{
-                      background: 'white', borderRadius: 10, padding: '14px',
+                      background: isSold ? '#f8fafc' : 'white', borderRadius: 10, padding: '14px',
                       display: 'flex', flexDirection: isMobile ? 'column' : 'row',
                       alignItems: isMobile ? 'flex-start' : 'center',
-                      gap: isMobile ? 10 : 16, border: '1px solid #e2e8f0'
+                      gap: isMobile ? 10 : 16,
+                      border: `1px solid ${isSold ? '#e2e8f0' : '#e2e8f0'}`,
+                      opacity: isSold ? 0.75 : 1
                     }}>
                       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1, minWidth: 0 }}>
-                        <div style={{ flexShrink: 0 }}>
+                        {/* Image avec stamp VENDU */}
+                        <div style={{ flexShrink: 0, position: 'relative' }}>
                           {item.image_url ? (
-                            <img src={item.image_url} alt={item.title} style={{ width: 48, height: 60, objectFit: 'cover', borderRadius: 6 }} />
+                            <img src={item.image_url} alt={item.title} style={{ width: 48, height: 60, objectFit: 'cover', borderRadius: 6, filter: isSold ? 'grayscale(50%)' : 'none' }} />
                           ) : (
                             <div style={{ width: 48, height: 60, background: 'linear-gradient(135deg, #1a2e4a, #0d4f6b)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20 }}>📖</div>
                           )}
+                          {isSold && (
+                            <div style={{
+                              position: 'absolute', inset: 0, borderRadius: 6,
+                              background: 'rgba(0,0,0,0.45)',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center'
+                            }}>
+                              <span style={{ fontSize: 9, fontWeight: 900, color: 'white', textTransform: 'uppercase', letterSpacing: 0.5, background: '#00c9a7', padding: '2px 4px', borderRadius: 3 }}>VENDU</span>
+                            </div>
+                          )}
                         </div>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontWeight: 700, color: '#00a88a', fontSize: 14 }}>{item.title}</div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                            <div style={{ fontWeight: 700, color: isSold ? '#94a3b8' : '#00a88a', fontSize: 14 }}>{item.title}</div>
+                            {isSold && <span style={{ fontSize: 10, fontWeight: 700, background: '#dcfce7', color: '#16a34a', padding: '1px 6px', borderRadius: 10 }}>Vendu</span>}
+                          </div>
                           {item.course_code && (
                             <div style={{ fontSize: 12, color: '#718096' }}>Cours : <strong>{item.course_code}</strong></div>
                           )}
@@ -1488,14 +1572,26 @@ export default function Home() {
                         </div>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: isMobile ? '100%' : 'auto', gap: 8 }}>
-                        <div style={{ fontSize: 18, fontWeight: 900, color: '#1a2e4a' }}>{item.price} $</div>
+                        <div style={{ fontSize: 18, fontWeight: 900, color: isSold ? '#94a3b8' : '#1a2e4a' }}>{item.price} $</div>
                         <div style={{ display: 'flex', gap: 6 }}>
-                          <button onClick={() => router.push(`/edit/${item.id}`)} style={{ background: '#f0fdf9', color: '#00c9a7', border: '1px solid #00c9a7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Modifier</button>
-                          <button onClick={() => setDeleteConfirmId(item.id)} style={{ background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Supprimer</button>
+                          {isSold ? (
+                            <>
+                              <button onClick={() => handleMarkActive(item.id)} style={{ background: '#f0fdf9', color: '#00a88a', border: '1px solid #00c9a7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>
+                                ↩ Remettre en ligne
+                              </button>
+                              <button onClick={() => setDeleteConfirmId(item.id)} style={{ background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Supprimer</button>
+                            </>
+                          ) : (
+                            <>
+                              <button onClick={() => setSoldConfirmId(item.id)} style={{ background: '#f0fdf9', color: '#00a88a', border: '1px solid #00c9a7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>✓ Vendu</button>
+                              <button onClick={() => router.push(`/edit/${item.id}`)} style={{ background: 'white', color: '#64748b', border: '1px solid #e2e8f0', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Modifier</button>
+                              <button onClick={() => setDeleteConfirmId(item.id)} style={{ background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}>Supprimer</button>
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )})
                 </div>
               )}
             </>
