@@ -8,17 +8,10 @@ import Logo from '../components/Logo'
 export default function Landing() {
   const router = useRouter()
   const [listings, setListings] = useState([])
-  const [isMobile, setIsMobile] = useState(false)
   const [searchBuy, setSearchBuy] = useState('')
   const [searchSell, setSearchSell] = useState('')
-  const [activeTab, setActiveTab] = useState('acheter') // 'acheter' | 'vendre'
-
-  useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768)
-    check()
-    window.addEventListener('resize', check)
-    return () => window.removeEventListener('resize', check)
-  }, [])
+  const [activeTab, setActiveTab] = useState('acheter')
+  const [menuOpen, setMenuOpen] = useState(false)
 
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
@@ -41,7 +34,6 @@ export default function Landing() {
   const handleBuySearch = (e) => {
     e.preventDefault()
     const cleaned = searchBuy.replace(/[-\s]/g, '')
-    // Si c'est un ISBN → page publique du livre
     if (/^\d{10,13}$/.test(cleaned)) {
       router.push(`/book/${cleaned}`)
     } else {
@@ -83,40 +75,87 @@ export default function Landing() {
   return (
     <div style={{ fontFamily: "'Segoe UI', sans-serif", background: '#ffffff', color: '#1a2e4a' }}>
 
-      {/* NAVBAR */}
+      {/* ── STYLE GLOBAL (mobile-first) ── */}
+      <style>{`
+        * { box-sizing: border-box; }
+
+        .nav-btn-text { display: inline; }
+        .nav-cta { display: flex; }
+
+        .hero-title { font-size: 32px; }
+        .hero-sub { font-size: 15px; }
+        .search-row { flex-direction: column; gap: 10px; }
+        .search-row button { width: 100%; }
+        .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 16px; }
+        .benefits-grid { grid-template-columns: 1fr; gap: 16px; }
+        .listings-section { padding: 40px 16px; }
+        .section-title { font-size: 22px; }
+        .cta-title { font-size: 26px; }
+        .cta-sub { font-size: 15px; }
+        .uni-section { padding: 48px 16px; }
+        .advantages-section { padding: 48px 16px; }
+
+        @media (min-width: 480px) {
+          .hero-title { font-size: 38px; }
+          .search-row { flex-direction: row; gap: 8px; }
+          .search-row button { width: auto; }
+        }
+
+        @media (min-width: 768px) {
+          .nav-cta { display: flex; }
+          .hero-title { font-size: 48px; }
+          .hero-sub { font-size: 18px; }
+          .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 24px; }
+          .benefits-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+          .listings-section { padding: 56px 40px; }
+          .section-title { font-size: 30px; }
+          .cta-title { font-size: 40px; }
+          .cta-sub { font-size: 17px; }
+          .uni-section { padding: 64px 40px; }
+          .advantages-section { padding: 64px 40px; }
+        }
+      `}</style>
+
+      {/* ── NAVBAR ── */}
       <nav style={{
         position: 'sticky', top: 0, zIndex: 100,
-        background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(10px)',
+        background: 'rgba(255,255,255,0.97)', backdropFilter: 'blur(10px)',
         borderBottom: '1px solid #e8edf2',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        padding: '0 24px', height: 64,
+        padding: '0 16px', height: 60,
         boxShadow: '0 1px 8px rgba(0,0,0,0.06)'
       }}>
         <Logo variant="dark" size="md" style={{ cursor: 'pointer' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+
+        {/* Desktop buttons */}
+        <div className="nav-cta" style={{ gap: 10, alignItems: 'center' }}>
           <button onClick={() => router.push('/login')} style={{
             background: 'transparent', border: '1.5px solid #e8edf2',
-            borderRadius: 8, padding: '8px 18px', fontSize: 14, fontWeight: 600,
-            color: '#1a2e4a', cursor: 'pointer', transition: 'all 0.2s'
+            borderRadius: 8, padding: '8px 14px', fontSize: 14, fontWeight: 600,
+            color: '#1a2e4a', cursor: 'pointer', whiteSpace: 'nowrap'
           }}
             onMouseEnter={e => { e.currentTarget.style.borderColor = '#00c9a7'; e.currentTarget.style.color = '#00c9a7' }}
             onMouseLeave={e => { e.currentTarget.style.borderColor = '#e8edf2'; e.currentTarget.style.color = '#1a2e4a' }}
-          >Se connecter</button>
+          >
+            Se connecter
+          </button>
           <button onClick={() => router.push('/login?tab=signup')} style={{
             background: '#1a2e4a', border: 'none', borderRadius: 8,
-            padding: '8px 18px', fontSize: 14, fontWeight: 700,
-            color: 'white', cursor: 'pointer', transition: 'all 0.2s'
+            padding: '8px 14px', fontSize: 14, fontWeight: 700,
+            color: 'white', cursor: 'pointer', whiteSpace: 'nowrap'
           }}
             onMouseEnter={e => e.currentTarget.style.background = '#00c9a7'}
             onMouseLeave={e => e.currentTarget.style.background = '#1a2e4a'}
-          >Rejoindre gratuitement</button>
+          >
+            <span className="nav-btn-text">Rejoindre </span>gratuitement
+          </button>
         </div>
       </nav>
 
-      {/* HERO */}
+      {/* ── HERO ── */}
       <section style={{
         background: 'linear-gradient(160deg, #0f1f35 0%, #1a2e4a 50%, #0d4f6b 100%)',
-        padding: isMobile ? '48px 20px 56px' : '64px 40px 72px',
+        padding: '52px 20px 64px',
         textAlign: 'center', position: 'relative', overflow: 'hidden'
       }}>
         <div style={{ position: 'absolute', top: -100, right: -100, width: 400, height: 400, borderRadius: '50%', background: 'rgba(0,201,167,0.07)', pointerEvents: 'none' }} />
@@ -132,39 +171,39 @@ export default function Landing() {
             ✅ 100% gratuit — aucune commission
           </div>
 
-          <h1 style={{
-            color: 'white', fontSize: isMobile ? 28 : 48,
-            fontWeight: 900, lineHeight: 1.15, margin: '0 0 16px', letterSpacing: -1
+          <h1 className="hero-title" style={{
+            color: 'white', fontWeight: 900, lineHeight: 1.15,
+            margin: '0 0 16px', letterSpacing: -1
           }}>
             La marketplace des manuels{' '}
             <span style={{ color: '#00c9a7' }}>étudiants du Québec</span>
           </h1>
 
-          <p style={{
-            color: 'rgba(255,255,255,0.7)', fontSize: isMobile ? 15 : 18,
+          <p className="hero-sub" style={{
+            color: 'rgba(255,255,255,0.75)',
             margin: '0 0 36px', lineHeight: 1.6
           }}>
             Achète et vends tes manuels directement entre étudiants. Économise jusqu'à 80%.
           </p>
 
-          {/* BARRE DE RECHERCHE DOUBLE */}
+          {/* Barre de recherche */}
           <div style={{
             background: 'white', borderRadius: 16,
-            padding: isMobile ? '20px' : '24px 28px',
+            padding: '20px 20px',
             boxShadow: '0 20px 60px rgba(0,0,0,0.3)',
-            maxWidth: 640, margin: '0 auto', textAlign: 'left'
+            maxWidth: 620, margin: '0 auto', textAlign: 'left'
           }}>
             {/* Tabs */}
-            <div style={{ display: 'flex', gap: 0, marginBottom: 20, borderRadius: 10, overflow: 'hidden', border: '1.5px solid #e2e8f0' }}>
+            <div style={{ display: 'flex', marginBottom: 18, borderRadius: 10, overflow: 'hidden', border: '1.5px solid #e2e8f0' }}>
               {[
-                { key: 'acheter', label: '🔍 Acheter un manuel' },
-                { key: 'vendre', label: '📦 Vendre mon manuel' },
+                { key: 'acheter', label: '🔍 Acheter' },
+                { key: 'vendre', label: '📦 Vendre' },
               ].map(tab => (
                 <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)} style={{
                   flex: 1, padding: '10px 8px', border: 'none',
                   background: activeTab === tab.key ? '#1a2e4a' : 'white',
                   color: activeTab === tab.key ? 'white' : '#64748b',
-                  fontWeight: 700, fontSize: isMobile ? 13 : 14, cursor: 'pointer',
+                  fontWeight: 700, fontSize: 14, cursor: 'pointer',
                   transition: 'all 0.2s'
                 }}>
                   {tab.label}
@@ -172,13 +211,12 @@ export default function Landing() {
               ))}
             </div>
 
-            {/* Formulaire Acheter */}
             {activeTab === 'acheter' && (
               <form onSubmit={handleBuySearch}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
                   ISBN, titre ou auteur
                 </label>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div className="search-row" style={{ display: 'flex' }}>
                   <input
                     value={searchBuy}
                     onChange={e => setSearchBuy(e.target.value)}
@@ -186,7 +224,7 @@ export default function Landing() {
                     style={{
                       flex: 1, padding: '12px 14px', border: '1.5px solid #e2e8f0',
                       borderRadius: 9, fontSize: 15, outline: 'none',
-                      transition: 'border-color 0.2s'
+                      transition: 'border-color 0.2s', minWidth: 0
                     }}
                     onFocus={e => e.target.style.borderColor = '#00c9a7'}
                     onBlur={e => e.target.style.borderColor = '#e2e8f0'}
@@ -195,24 +233,20 @@ export default function Landing() {
                     background: '#00c9a7', border: 'none', borderRadius: 9,
                     padding: '12px 20px', color: 'white', fontWeight: 800,
                     fontSize: 15, cursor: 'pointer', whiteSpace: 'nowrap',
-                    boxShadow: '0 4px 14px rgba(0,201,167,0.35)', transition: 'all 0.2s'
-                  }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#00a88a'}
-                    onMouseLeave={e => e.currentTarget.style.background = '#00c9a7'}
-                  >
+                    boxShadow: '0 4px 14px rgba(0,201,167,0.35)'
+                  }}>
                     Rechercher →
                   </button>
                 </div>
               </form>
             )}
 
-            {/* Formulaire Vendre */}
             {activeTab === 'vendre' && (
               <form onSubmit={handleSellSearch}>
-                <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
                   Entre l'ISBN (au dos du livre) pour auto-remplir les infos
                 </label>
-                <div style={{ display: 'flex', gap: 8 }}>
+                <div className="search-row" style={{ display: 'flex' }}>
                   <input
                     value={searchSell}
                     onChange={e => setSearchSell(e.target.value)}
@@ -220,7 +254,7 @@ export default function Landing() {
                     style={{
                       flex: 1, padding: '12px 14px', border: '1.5px solid #e2e8f0',
                       borderRadius: 9, fontSize: 15, outline: 'none',
-                      transition: 'border-color 0.2s'
+                      transition: 'border-color 0.2s', minWidth: 0
                     }}
                     onFocus={e => e.target.style.borderColor = '#00c9a7'}
                     onBlur={e => e.target.style.borderColor = '#e2e8f0'}
@@ -228,16 +262,17 @@ export default function Landing() {
                   <button type="submit" style={{
                     background: '#1a2e4a', border: 'none', borderRadius: 9,
                     padding: '12px 20px', color: 'white', fontWeight: 800,
-                    fontSize: 15, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.2s'
-                  }}
-                    onMouseEnter={e => e.currentTarget.style.background = '#00c9a7'}
-                    onMouseLeave={e => e.currentTarget.style.background = '#1a2e4a'}
-                  >
+                    fontSize: 15, cursor: 'pointer', whiteSpace: 'nowrap'
+                  }}>
                     Vendre →
                   </button>
                 </div>
                 <p style={{ margin: '10px 0 0', fontSize: 12, color: '#94a3b8' }}>
-                  Pas d'ISBN ? <span onClick={() => router.push('/login?redirect=/create')} style={{ color: '#00c9a7', cursor: 'pointer', fontWeight: 600 }}>Remplis manuellement →</span>
+                  Pas d'ISBN ?{' '}
+                  <span onClick={() => router.push('/login?redirect=/create')}
+                    style={{ color: '#00c9a7', cursor: 'pointer', fontWeight: 600 }}>
+                    Remplis manuellement →
+                  </span>
                 </p>
               </form>
             )}
@@ -245,37 +280,35 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* STATS RAPIDES */}
-      <section style={{ background: '#f8fafc', borderBottom: '1px solid #e8edf2', padding: '20px 24px' }}>
-        <div style={{
-          maxWidth: 860, margin: '0 auto',
-          display: 'flex', justifyContent: 'center', alignItems: 'center',
-          gap: isMobile ? 20 : 48, flexWrap: 'wrap', textAlign: 'center'
-        }}>
-          {[
-            { icon: '📚', value: '100% gratuit', label: 'Aucune commission' },
-            { icon: '⚡', value: 'Inscription rapide', label: 'Prêt en 30 secondes' },
-            { icon: '💸', value: "Jusqu'à 80%", label: "D'économies vs librairie" },
-            { icon: '🎓', value: 'Québec seulement', label: 'Communauté locale' },
-          ].map((s, i) => (
-            <div key={i} style={{ minWidth: isMobile ? 120 : 150 }}>
-              <div style={{ fontSize: 20, marginBottom: 2 }}>{s.icon}</div>
-              <div style={{ fontSize: isMobile ? 14 : 16, fontWeight: 800, color: '#1a2e4a' }}>{s.value}</div>
-              <div style={{ fontSize: 11, color: '#64748b', fontWeight: 500, marginTop: 1 }}>{s.label}</div>
-            </div>
-          ))}
+      {/* ── STATS ── */}
+      <section style={{ background: '#f8fafc', borderBottom: '1px solid #e8edf2', padding: '24px 20px' }}>
+        <div style={{ maxWidth: 860, margin: '0 auto' }}>
+          <div className="stats-grid" style={{ display: 'grid', textAlign: 'center' }}>
+            {[
+              { icon: '📚', value: '100% gratuit', label: 'Aucune commission' },
+              { icon: '⚡', value: 'Inscription rapide', label: 'Prêt en 30 secondes' },
+              { icon: '💸', value: "Jusqu'à 80%", label: "D'économies vs librairie" },
+              { icon: '🎓', value: 'Québec seulement', label: 'Communauté locale' },
+            ].map((s, i) => (
+              <div key={i}>
+                <div style={{ fontSize: 22, marginBottom: 4 }}>{s.icon}</div>
+                <div style={{ fontSize: 15, fontWeight: 800, color: '#1a2e4a' }}>{s.value}</div>
+                <div style={{ fontSize: 12, color: '#64748b', fontWeight: 500, marginTop: 2 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
         </div>
       </section>
 
-      {/* ANNONCES RÉCENTES — FORMAT LISTE */}
-      <section style={{ padding: isMobile ? '40px 16px' : '56px 40px', maxWidth: 860, margin: '0 auto' }}>
+      {/* ── ANNONCES RÉCENTES ── */}
+      <section className="listings-section" style={{ maxWidth: 860, margin: '0 auto' }}>
         <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 8 }}>
           <div>
-            <h2 style={{ fontSize: isMobile ? 22 : 30, fontWeight: 900, margin: '0 0 4px', letterSpacing: -0.5 }}>
+            <h2 className="section-title" style={{ fontWeight: 900, margin: '0 0 4px', letterSpacing: -0.5 }}>
               Derniers manuels ajoutés
             </h2>
             <p style={{ color: '#64748b', fontSize: 14, margin: 0 }}>
-              Parcours, contacte, économise. C'est aussi simple que ça.
+              Parcours, contacte, économise.
             </p>
           </div>
           <button onClick={() => router.push('/login')} style={{
@@ -287,19 +320,18 @@ export default function Landing() {
           </button>
         </div>
 
-        {/* Liste */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           {listings.length === 0
             ? Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} style={{ background: '#f8fafc', borderRadius: 10, height: 80, marginBottom: 1 }} />
+              <div key={i} style={{ background: '#f8fafc', borderRadius: 10, height: 76, marginBottom: 1 }} />
             ))
             : listings.map((listing, idx) => (
               <div
                 key={listing.id}
                 onClick={() => router.push('/login')}
                 style={{
-                  display: 'flex', alignItems: 'center', gap: 16,
-                  padding: '14px 16px',
+                  display: 'flex', alignItems: 'center', gap: 12,
+                  padding: '12px 14px',
                   background: 'white',
                   borderRadius: idx === 0 ? '12px 12px 0 0' : idx === listings.length - 1 ? '0 0 12px 12px' : 0,
                   border: '1px solid #e8edf2',
@@ -310,13 +342,13 @@ export default function Landing() {
                 onMouseLeave={e => e.currentTarget.style.background = 'white'}
               >
                 {/* Cover */}
-                <div style={{ flexShrink: 0, width: 44, height: 56 }}>
+                <div style={{ flexShrink: 0, width: 40, height: 52 }}>
                   {listing.image_url
-                    ? <img src={listing.image_url} alt={listing.title} style={{ width: 44, height: 56, objectFit: 'cover', borderRadius: 5 }} />
+                    ? <img src={listing.image_url} alt={listing.title} style={{ width: 40, height: 52, objectFit: 'cover', borderRadius: 4 }} />
                     : <div style={{
-                        width: 44, height: 56, borderRadius: 5,
+                        width: 40, height: 52, borderRadius: 4,
                         background: 'linear-gradient(135deg, #1a2e4a, #0d4f6b)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20
+                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18
                       }}>📖</div>
                   }
                 </div>
@@ -329,12 +361,9 @@ export default function Landing() {
                   }}>
                     {listing.title}
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     {listing.authors && (
                       <span style={{ fontSize: 12, color: '#64748b' }}>{listing.authors}</span>
-                    )}
-                    {listing.isbn && (
-                      <span style={{ fontSize: 11, color: '#94a3b8' }}>ISBN: {listing.isbn}</span>
                     )}
                     <span style={{
                       fontSize: 11, fontWeight: 600, padding: '1px 7px', borderRadius: 20,
@@ -343,25 +372,24 @@ export default function Landing() {
                     }}>
                       {listing.meet_campus ? '🏫 Campus' : listing.post ? '📦 Envoi' : '🏙️ Ville'}
                     </span>
-                    <span style={{ fontSize: 11, color: '#94a3b8' }}>{listing.description}</span>
                   </div>
                   <div style={{ fontSize: 11, color: '#cbd5e0', marginTop: 2 }}>
                     {listing.created_at ? timeAgo(listing.created_at) : ''}
                   </div>
                 </div>
 
-                {/* Prix + savings */}
+                {/* Prix */}
                 <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: '#1a2e4a' }}>
+                  <div style={{ fontSize: 17, fontWeight: 900, color: '#1a2e4a' }}>
                     {listing.price ? `${listing.price} $` : '—'}
                   </div>
                   {listing.original_price && listing.original_price > listing.price && (
                     <div style={{
                       background: '#00c9a7', color: 'white',
-                      borderRadius: 20, padding: '2px 8px',
-                      fontSize: 11, fontWeight: 700, marginTop: 3
+                      borderRadius: 20, padding: '2px 7px',
+                      fontSize: 11, fontWeight: 700, marginTop: 2
                     }}>
-                      Save {Math.round(((listing.original_price - listing.price) / listing.original_price) * 100)}%
+                      -{Math.round(((listing.original_price - listing.price) / listing.original_price) * 100)}%
                     </div>
                   )}
                 </div>
@@ -370,7 +398,6 @@ export default function Landing() {
           }
         </div>
 
-        {/* CTA */}
         <div style={{ textAlign: 'center', marginTop: 24 }}>
           <button onClick={() => router.push('/login')} style={{
             background: 'white', border: '2px solid #1a2e4a',
@@ -385,22 +412,22 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* AVANTAGES */}
-      <section style={{ background: '#f8fafc', padding: isMobile ? '48px 16px' : '64px 40px' }}>
+      {/* ── AVANTAGES ── */}
+      <section className="advantages-section" style={{ background: '#f8fafc' }}>
         <div style={{ maxWidth: 1000, margin: '0 auto' }}>
-          <h2 style={{ textAlign: 'center', fontSize: isMobile ? 24 : 34, fontWeight: 900, margin: '0 0 48px', letterSpacing: -0.5 }}>
+          <h2 className="section-title" style={{ textAlign: 'center', fontWeight: 900, margin: '0 0 40px', letterSpacing: -0.5 }}>
             Pourquoi choisir BiblioCamp ?
           </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(2, 1fr)', gap: 20 }}>
+          <div className="benefits-grid" style={{ display: 'grid' }}>
             {benefits.map((b, i) => (
               <div key={i} style={{
-                background: 'white', borderRadius: 14, padding: '24px',
+                background: 'white', borderRadius: 14, padding: '22px',
                 border: '1px solid #e8edf2', display: 'flex', gap: 16, alignItems: 'flex-start',
                 boxShadow: '0 1px 4px rgba(0,0,0,0.04)'
               }}>
-                <div style={{ fontSize: 36, flexShrink: 0 }}>{b.icon}</div>
+                <div style={{ fontSize: 34, flexShrink: 0 }}>{b.icon}</div>
                 <div>
-                  <div style={{ fontWeight: 800, fontSize: 16, color: '#1a2e4a', marginBottom: 6 }}>{b.title}</div>
+                  <div style={{ fontWeight: 800, fontSize: 15, color: '#1a2e4a', marginBottom: 6 }}>{b.title}</div>
                   <div style={{ color: '#64748b', fontSize: 14, lineHeight: 1.5 }}>{b.desc}</div>
                 </div>
               </div>
@@ -409,19 +436,19 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* UNIVERSITÉS */}
-      <section style={{ padding: isMobile ? '48px 16px' : '64px 40px', maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
-        <h2 style={{ fontSize: isMobile ? 22 : 30, fontWeight: 900, margin: '0 0 12px', letterSpacing: -0.5 }}>
+      {/* ── UNIVERSITÉS ── */}
+      <section className="uni-section" style={{ maxWidth: 900, margin: '0 auto', textAlign: 'center' }}>
+        <h2 className="section-title" style={{ fontWeight: 900, margin: '0 0 12px', letterSpacing: -0.5 }}>
           Disponible dans toutes les universités québécoises
         </h2>
-        <p style={{ color: '#64748b', fontSize: 15, margin: '0 0 36px' }}>
+        <p style={{ color: '#64748b', fontSize: 15, margin: '0 0 32px' }}>
           Rejoins des étudiants de partout au Québec
         </p>
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'center' }}>
           {institutions.map(inst => (
             <span key={inst} style={{
               background: '#f0f4f8', border: '1px solid #e8edf2',
-              borderRadius: 20, padding: '8px 18px', fontSize: 14,
+              borderRadius: 20, padding: '8px 16px', fontSize: 13,
               fontWeight: 600, color: '#1a2e4a'
             }}>
               {inst}
@@ -430,20 +457,20 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CTA FINAL */}
+      {/* ── CTA FINAL ── */}
       <section style={{
         background: 'linear-gradient(135deg, #1a2e4a 0%, #0d4f6b 100%)',
-        padding: isMobile ? '56px 24px' : '80px 40px', textAlign: 'center'
+        padding: '56px 24px', textAlign: 'center'
       }}>
-        <h2 style={{ color: 'white', fontSize: isMobile ? 26 : 40, fontWeight: 900, margin: '0 0 16px', letterSpacing: -0.5 }}>
+        <h2 className="cta-title" style={{ color: 'white', fontWeight: 900, margin: '0 0 16px', letterSpacing: -0.5 }}>
           Prêt à économiser sur tes manuels ?
         </h2>
-        <p style={{ color: 'rgba(255,255,255,0.7)', fontSize: 17, margin: '0 0 36px' }}>
+        <p className="cta-sub" style={{ color: 'rgba(255,255,255,0.75)', margin: '0 0 36px' }}>
           Rejoins BiblioCamp gratuitement en moins de 30 secondes.
         </p>
         <button onClick={() => router.push('/login?tab=signup')} style={{
           background: '#00c9a7', border: 'none', borderRadius: 12,
-          padding: '16px 40px', fontSize: 17, fontWeight: 800,
+          padding: '16px 36px', fontSize: 17, fontWeight: 800,
           color: 'white', cursor: 'pointer',
           boxShadow: '0 4px 24px rgba(0,201,167,0.4)', transition: 'all 0.2s'
         }}
@@ -454,15 +481,16 @@ export default function Landing() {
         </button>
       </section>
 
-      {/* FOOTER */}
-      <footer style={{ background: '#0f1f35', padding: '32px 24px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
-        <Logo variant="light" size="sm" style={{ marginBottom: 16, opacity: 0.7 }} />
-        <p style={{ margin: '12px 0 8px' }}>© 2026 BiblioCamp — Fait pour les étudiants, par des étudiants</p>
-        <div style={{ display: 'flex', gap: 20, justifyContent: 'center', marginTop: 8 }}>
-          <a href="/cgu" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Conditions d'utilisation</a>
-          <a href="/confidentialite" style={{ color: 'rgba(255,255,255,0.4)', textDecoration: 'none' }}>Confidentialité</a>
+      {/* ── FOOTER ── */}
+      <footer style={{ background: '#0f1f35', padding: '32px 20px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
+        <Logo variant="light" size="sm" style={{ marginBottom: 12, opacity: 0.7 }} />
+        <p style={{ margin: '10px 0 8px' }}>© 2026 BiblioCamp — Fait pour les étudiants, par des étudiants</p>
+        <div style={{ display: 'flex', gap: 20, justifyContent: 'center', marginTop: 8, flexWrap: 'wrap' }}>
+          <a href="/cgu" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Conditions d'utilisation</a>
+          <a href="/confidentialite" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Confidentialité</a>
         </div>
       </footer>
+
     </div>
   )
 }
