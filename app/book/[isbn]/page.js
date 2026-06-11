@@ -27,10 +27,28 @@ export default function BookPage() {
     })
   }, [])
 
-  const handleContact = (e) => {
+  const handleContactSeller = async (e, listing) => {
     if (e) e.stopPropagation()
-    if (userId) router.push('/inbox')
-    else router.push('/login')
+    if (!userId) { router.push('/login'); return }
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session.access_token}`
+        },
+        body: JSON.stringify({ listing_id: listing.id, seller_id: listing.user_id })
+      })
+      const d = await res.json()
+      if (d.conversation_id) {
+        router.push(`/inbox?conv=${d.conversation_id}`)
+      } else {
+        router.push('/inbox')
+      }
+    } catch {
+      router.push('/inbox')
+    }
   }
 
   const handleSell = () => {
@@ -110,7 +128,7 @@ export default function BookPage() {
         <div style={{ fontSize: 13, color: '#94a3b8', marginBottom: 20 }}>
           <span onClick={() => router.push('/')} style={{ cursor: 'pointer', color: '#00c9a7' }}>Accueil</span>
           {' / '}
-          <span onClick={() => router.push('/')} style={{ cursor: 'pointer', color: '#00c9a7' }}>Manuels</span>
+          <span onClick={() => router.push(userId ? '/app' : '/')} style={{ cursor: 'pointer', color: '#00c9a7' }}>Manuels</span>
           {' / '}
           <span style={{ color: '#1a2e4a', fontWeight: 600 }}>{book?.title || isbn}</span>
         </div>
@@ -237,7 +255,7 @@ export default function BookPage() {
                       display: 'flex', alignItems: 'center', gap: 16,
                       transition: 'background 0.15s', cursor: 'pointer'
                     }}
-                    onClick={handleContact}
+                    onClick={(e) => handleContactSeller(e, listing)}
                     onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
                     onMouseLeave={e => e.currentTarget.style.background = 'white'}
                   >
@@ -294,7 +312,7 @@ export default function BookPage() {
                         </div>
                       )}
                       <button
-                        onClick={handleContact}
+                        onClick={(e) => handleContactSeller(e, listing)}
                         style={{
                           marginTop: 8, background: '#1a2e4a', border: 'none',
                           borderRadius: 7, padding: '6px 14px', fontSize: 12,
