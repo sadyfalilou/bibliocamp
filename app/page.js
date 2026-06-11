@@ -40,15 +40,20 @@ export default function Landing() {
 
   const handleBuySearch = (e) => {
     e.preventDefault()
-    // Redirige vers login avec la recherche en param
-    router.push(`/login?redirect=/app&q=${encodeURIComponent(searchBuy)}`)
+    const cleaned = searchBuy.replace(/[-\s]/g, '')
+    // Si c'est un ISBN → page publique du livre
+    if (/^\d{10,13}$/.test(cleaned)) {
+      router.push(`/book/${cleaned}`)
+    } else {
+      router.push(`/login?redirect=/app&q=${encodeURIComponent(searchBuy)}`)
+    }
   }
 
   const handleSellSearch = (e) => {
     e.preventDefault()
     const cleaned = searchSell.replace(/[-\s]/g, '')
     if (/^\d{10,13}$/.test(cleaned)) {
-      router.push(`/login?redirect=/create&isbn=${encodeURIComponent(cleaned)}`)
+      router.push(`/book/${cleaned}`)
     } else {
       router.push(`/login?redirect=/create`)
     }

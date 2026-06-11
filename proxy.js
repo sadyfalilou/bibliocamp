@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 
 const PUBLIC_ROUTES = ['/', '/login', '/reset-password', '/confidentialite', '/cgu']
+const PUBLIC_PREFIXES = ['/book/']
 
 export async function proxy(req) {
   let supabaseResponse = NextResponse.next({ request: req })
@@ -30,7 +31,10 @@ export async function proxy(req) {
   // Rafraîchit le token de session si expiré (requis pour PKCE OAuth)
   const { data: { user } } = await supabase.auth.getUser()
 
-  if (!user && !PUBLIC_ROUTES.includes(req.nextUrl.pathname)) {
+  const path = req.nextUrl.pathname
+  const isPublic = PUBLIC_ROUTES.includes(path) || PUBLIC_PREFIXES.some(p => path.startsWith(p))
+
+  if (!user && !isPublic) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
