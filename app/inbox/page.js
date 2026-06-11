@@ -441,19 +441,22 @@ function InboxInner() {
                       )}
                     </div>
                   </div>
-                  {/* Bouton supprimer */}
+                  {/* Bouton supprimer — toujours visible sur mobile, hover sur desktop */}
                   <button
                     className="del-btn"
                     onClick={e => { e.stopPropagation(); setConfirmDelete(conv.id) }}
                     style={{
-                      opacity: 0, transition: 'opacity 0.15s',
+                      opacity: isMobile ? 1 : 0,
+                      transition: 'opacity 0.15s',
                       background: 'none', border: 'none', cursor: 'pointer',
-                      color: '#e53e3e', fontSize: 16, padding: '4px 6px',
+                      color: isMobile ? '#cbd5e0' : '#e53e3e',
+                      fontSize: isMobile ? 14 : 16,
+                      padding: '4px 6px',
                       borderRadius: 6, flexShrink: 0,
                       display: 'flex', alignItems: 'center'
                     }}
-                    title="Supprimer la conversation"
-                  >🗑️</button>
+                    title="Quitter la conversation"
+                  >{isMobile ? '✕' : '🗑️'}</button>
                 </div>
               )
             })}
