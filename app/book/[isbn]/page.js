@@ -85,16 +85,26 @@ export default function BookPage() {
       }}>
         <Logo variant="light" size="sm" onClick={() => router.push('/')} style={{ cursor: 'pointer' }} />
         <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={() => router.push('/login')} style={{
-            background: 'transparent', border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 600,
-            color: 'rgba(255,255,255,0.8)', cursor: 'pointer'
-          }}>Se connecter</button>
-          <button onClick={() => router.push('/login?tab=signup')} style={{
-            background: '#00c9a7', border: 'none', borderRadius: 8,
-            padding: '6px 14px', fontSize: 13, fontWeight: 700,
-            color: 'white', cursor: 'pointer'
-          }}>Rejoindre</button>
+          {userId ? (
+            <button onClick={() => router.push('/app')} style={{
+              background: '#00c9a7', border: 'none', borderRadius: 8,
+              padding: '6px 14px', fontSize: 13, fontWeight: 700,
+              color: 'white', cursor: 'pointer'
+            }}>← Marketplace</button>
+          ) : (
+            <>
+              <button onClick={() => router.push('/login')} style={{
+                background: 'transparent', border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 600,
+                color: 'rgba(255,255,255,0.8)', cursor: 'pointer'
+              }}>Se connecter</button>
+              <button onClick={() => router.push('/login?tab=signup')} style={{
+                background: '#00c9a7', border: 'none', borderRadius: 8,
+                padding: '6px 14px', fontSize: 13, fontWeight: 700,
+                color: 'white', cursor: 'pointer'
+              }}>Rejoindre</button>
+            </>
+          )}
         </div>
       </header>
 

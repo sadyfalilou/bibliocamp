@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
+import { createClient } from '@supabase/supabase-js'
 import Logo from '../../../components/Logo'
 import BadgeList from '../../../components/BadgeList'
 
@@ -12,12 +13,23 @@ export default function SellerPage() {
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
+  const [currentUser, setCurrentUser] = useState(null)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
     check()
     window.addEventListener('resize', check)
     return () => window.removeEventListener('resize', check)
+  }, [])
+
+  useEffect(() => {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )
+    supabase.auth.getUser().then(({ data }) => {
+      if (data?.user) setCurrentUser(data.user)
+    })
   }, [])
 
   useEffect(() => {
@@ -58,16 +70,26 @@ export default function SellerPage() {
       }}>
         <Logo variant="light" size="sm" onClick={() => router.push('/')} style={{ cursor: 'pointer' }} />
         <div style={{ display: 'flex', gap: 10 }}>
-          <button onClick={() => router.push('/login')} style={{
-            background: 'transparent', border: '1px solid rgba(255,255,255,0.2)',
-            borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 600,
-            color: 'rgba(255,255,255,0.8)', cursor: 'pointer'
-          }}>Se connecter</button>
-          <button onClick={() => router.push('/app')} style={{
-            background: '#00c9a7', border: 'none', borderRadius: 8,
-            padding: '6px 14px', fontSize: 13, fontWeight: 700,
-            color: 'white', cursor: 'pointer'
-          }}>Marketplace</button>
+          {currentUser ? (
+            <button onClick={() => router.push('/app')} style={{
+              background: '#00c9a7', border: 'none', borderRadius: 8,
+              padding: '6px 14px', fontSize: 13, fontWeight: 700,
+              color: 'white', cursor: 'pointer'
+            }}>← Marketplace</button>
+          ) : (
+            <>
+              <button onClick={() => router.push('/login')} style={{
+                background: 'transparent', border: '1px solid rgba(255,255,255,0.2)',
+                borderRadius: 8, padding: '6px 14px', fontSize: 13, fontWeight: 600,
+                color: 'rgba(255,255,255,0.8)', cursor: 'pointer'
+              }}>Se connecter</button>
+              <button onClick={() => router.push('/login?tab=signup')} style={{
+                background: '#00c9a7', border: 'none', borderRadius: 8,
+                padding: '6px 14px', fontSize: 13, fontWeight: 700,
+                color: 'white', cursor: 'pointer'
+              }}>Rejoindre</button>
+            </>
+          )}
         </div>
       </header>
 

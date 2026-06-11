@@ -1073,10 +1073,10 @@ export default function Home() {
                                 {(name || '?')[0].toUpperCase()}
                               </div>
                               <span
-                                onClick={e => { e.stopPropagation(); router.push(`/seller/${item.user_id}`) }}
-                                style={{ fontSize: 12, fontWeight: 600, color: '#4a5568', cursor: 'pointer', textDecoration: 'none' }}
-                                onMouseEnter={e => e.currentTarget.style.color = '#00c9a7'}
-                                onMouseLeave={e => e.currentTarget.style.color = '#4a5568'}
+                                onClick={item.user_id !== user?.id ? (e => { e.stopPropagation(); router.push(`/seller/${item.user_id}`) }) : undefined}
+                                style={{ fontSize: 12, fontWeight: 600, color: '#4a5568', cursor: item.user_id !== user?.id ? 'pointer' : 'default', textDecoration: 'none' }}
+                                onMouseEnter={item.user_id !== user?.id ? (e => e.currentTarget.style.color = '#00c9a7') : undefined}
+                                onMouseLeave={item.user_id !== user?.id ? (e => e.currentTarget.style.color = '#4a5568') : undefined}
                               >{name}</span>
                               {sub && <span style={{ fontSize: 11, color: '#a0aec0' }}>· {sub}</span>}
                             </div>
@@ -1392,12 +1392,7 @@ export default function Home() {
                               <div style={{ width: 16, height: 16, background: 'linear-gradient(135deg,#1a2e4a,#00c9a7)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: 'white', fontWeight: 700 }}>
                                 {sellerName[0].toUpperCase()}
                               </div>
-                              <span
-                                onClick={e => { e.stopPropagation(); router.push(`/seller/${item.user_id}`) }}
-                                style={{ fontSize: 11, color: '#718096', cursor: 'pointer' }}
-                                onMouseEnter={e => e.currentTarget.style.color = '#00c9a7'}
-                                onMouseLeave={e => e.currentTarget.style.color = '#718096'}
-                              >{sellerName}</span>
+                              <span style={{ fontSize: 11, color: '#718096' }}>{sellerName}</span>
                             </div>
                           )}
                           {item.user_id && <div style={{ marginTop: 4 }}><BadgeList userId={item.user_id} mode="card" /></div>}
