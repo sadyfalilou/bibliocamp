@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, Suspense } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Logo from '../../components/Logo'
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -26,6 +27,8 @@ function InboxInner() {
   const [loading, setLoading] = useState(true)
   const [unreadByConv, setUnreadByConv] = useState({})
   const [isMobile, setIsMobile] = useState(false)
+  const [deletingConv, setDeletingConv] = useState(null)
+  const [confirmDelete, setConfirmDelete] = useState(null)
   const prevUnreadRef = useRef(0)
   const audioCtxRef = useRef(null)
   const messagesEndRef = useRef(null)
@@ -199,15 +202,30 @@ function InboxInner() {
     setSending(false)
   }
 
+  const deleteConversation = async (convId) => {
+    setDeletingConv(convId)
+    const { error: msgError } = await supabase.from('messages').delete().eq('conversation_id', convId)
+    if (msgError) {
+      alert(`Erreur lors de la suppression des messages : ${msgError.message}\n\nVérifie les règles RLS sur la table "messages" dans Supabase.`)
+      setDeletingConv(null)
+      return
+    }
+    const { error: convError } = await supabase.from('conversations').delete().eq('id', convId)
+    if (convError) {
+      alert(`Erreur lors de la suppression de la conversation : ${convError.message}\n\nVérifie les règles RLS sur la table "conversations" dans Supabase.`)
+      setDeletingConv(null)
+      return
+    }
+    setConversations(prev => prev.filter(c => c.id !== convId))
+    if (selectedConv === convId) setSelectedConv(null)
+    setConfirmDelete(null)
+    setDeletingConv(null)
+  }
+
   const getOtherUser = (conv) => {
     if (!user) return null
     const otherId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
     return profiles[otherId]
-  }
-
-  const getUnread = (conv) => {
-    // Simplifié — à améliorer avec comptage réel
-    return false
   }
 
   // Polling notifications pour les OTHER conversations (toutes les 5s)
@@ -268,10 +286,8 @@ function InboxInner() {
 
       {/* HEADER */}
       <header style={{ background: '#1a2e4a', height: 60, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 28px', flexShrink: 0, boxShadow: '0 2px 10px rgba(0,0,0,0.3)' }}>
-        <div onClick={() => router.push('/')} style={{ background: '#00c9a7', color: 'white', fontWeight: 900, fontSize: 16, padding: '5px 14px', borderRadius: 8, letterSpacing: 1, cursor: 'pointer' }}>
-          📚 BIBLIOCAMP
-        </div>
-        <button onClick={() => router.push('/')} style={{ background: 'transparent', color: '#a0aec0', border: '1px solid #2d4a6b', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+        <Logo variant="light" size="sm" onClick={() => router.push('/app')} style={{ cursor: 'pointer' }} />
+        <button onClick={() => router.push('/app')} style={{ background: 'transparent', color: '#a0aec0', border: '1px solid #2d4a6b', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
           onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#00c9a7' }}
           onMouseLeave={e => { e.currentTarget.style.color = '#a0aec0'; e.currentTarget.style.borderColor = '#2d4a6b' }}
         >← Retour</button>
@@ -303,17 +319,26 @@ function InboxInner() {
               const isSelected = conv.id === selectedConv
               const hasUnread = unreadByConv[conv.id] > 0
               return (
-                <div key={conv.id} onClick={() => setSelectedConv(conv.id)} style={{
-                  padding: '14px 20px', cursor: 'pointer',
+                <div key={conv.id} style={{
+                  padding: '14px 20px',
                   background: isSelected ? '#f0fdf9' : hasUnread ? '#fffbf0' : 'white',
                   borderLeft: isSelected ? '3px solid #00c9a7' : hasUnread ? '3px solid #e53e3e' : '3px solid transparent',
                   borderBottom: '1px solid #f7fafc',
                   display: 'flex', gap: 12, alignItems: 'center',
-                  transition: 'background 0.1s'
+                  transition: 'background 0.1s', position: 'relative'
                 }}
-                  onMouseEnter={e => { if (!isSelected) e.currentTarget.style.background = '#f8fafc' }}
-                  onMouseLeave={e => { if (!isSelected) e.currentTarget.style.background = 'white' }}
+                  onMouseEnter={e => {
+                    if (!isSelected) e.currentTarget.style.background = '#f8fafc'
+                    const btn = e.currentTarget.querySelector('.del-btn')
+                    if (btn) btn.style.opacity = '1'
+                  }}
+                  onMouseLeave={e => {
+                    if (!isSelected) e.currentTarget.style.background = 'white'
+                    const btn = e.currentTarget.querySelector('.del-btn')
+                    if (btn) btn.style.opacity = '0'
+                  }}
                 >
+                  <div onClick={() => setSelectedConv(conv.id)} style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1, minWidth: 0, cursor: 'pointer' }}>
                   {/* Avatar */}
                   {other?.avatar_url ? (
                     <img src={other.avatar_url} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
@@ -335,19 +360,33 @@ function InboxInner() {
                       <div style={{ fontSize: 11, color: '#718096' }}>🏫 {other.institution}</div>
                     )}
                   </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
-                    <div style={{ fontSize: 11, color: '#b0bec5' }}>{timeAgo(conv.last_message_at)}</div>
-                    {hasUnread && (
-                      <div style={{
-                        background: '#e53e3e', color: 'white',
-                        borderRadius: '50%', width: 18, height: 18,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 10, fontWeight: 800
-                      }}>
-                        {unreadByConv[conv.id] > 9 ? '9+' : unreadByConv[conv.id]}
-                      </div>
-                    )}
+                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0 }}>
+                      <div style={{ fontSize: 11, color: '#b0bec5' }}>{timeAgo(conv.last_message_at)}</div>
+                      {hasUnread && (
+                        <div style={{
+                          background: '#e53e3e', color: 'white',
+                          borderRadius: '50%', width: 18, height: 18,
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontSize: 10, fontWeight: 800
+                        }}>
+                          {unreadByConv[conv.id] > 9 ? '9+' : unreadByConv[conv.id]}
+                        </div>
+                      )}
+                    </div>
                   </div>
+                  {/* Bouton supprimer */}
+                  <button
+                    className="del-btn"
+                    onClick={e => { e.stopPropagation(); setConfirmDelete(conv.id) }}
+                    style={{
+                      opacity: 0, transition: 'opacity 0.15s',
+                      background: 'none', border: 'none', cursor: 'pointer',
+                      color: '#e53e3e', fontSize: 16, padding: '4px 6px',
+                      borderRadius: 6, flexShrink: 0,
+                      display: 'flex', alignItems: 'center'
+                    }}
+                    title="Supprimer la conversation"
+                  >🗑️</button>
                 </div>
               )
             })}
@@ -365,7 +404,7 @@ function InboxInner() {
               <div style={{ fontSize: 48 }}>💬</div>
               <div style={{ fontSize: 16, fontWeight: 600, color: '#718096' }}>Sélectionne une conversation</div>
               <div style={{ fontSize: 13, color: '#b0bec5' }}>ou contacte un vendeur depuis un livre</div>
-              <button onClick={() => router.push('/')} style={{ marginTop: 8, background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
+              <button onClick={() => router.push('/app')} style={{ marginTop: 8, background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 10, padding: '10px 20px', fontWeight: 600, cursor: 'pointer', fontSize: 13 }}>
                 Parcourir les manuels →
               </button>
             </div>
@@ -466,6 +505,48 @@ function InboxInner() {
           )}
         </div>
       </div>
+      {/* MODAL CONFIRMATION SUPPRESSION */}
+      {confirmDelete && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)',
+          zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }} onClick={() => setConfirmDelete(null)}>
+          <div style={{
+            background: 'white', borderRadius: 16, padding: '28px 32px',
+            maxWidth: 360, width: '90%', textAlign: 'center',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🗑️</div>
+            <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: '#1a2e4a' }}>
+              Supprimer la conversation ?
+            </h3>
+            <p style={{ color: '#64748b', fontSize: 14, margin: '0 0 24px' }}>
+              Tous les messages seront effacés définitivement.
+            </p>
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center' }}>
+              <button
+                onClick={() => setConfirmDelete(null)}
+                style={{
+                  background: '#f1f5f9', border: 'none', borderRadius: 9,
+                  padding: '10px 20px', fontSize: 14, fontWeight: 600,
+                  color: '#64748b', cursor: 'pointer'
+                }}
+              >Annuler</button>
+              <button
+                onClick={() => deleteConversation(confirmDelete)}
+                disabled={deletingConv === confirmDelete}
+                style={{
+                  background: '#e53e3e', border: 'none', borderRadius: 9,
+                  padding: '10px 20px', fontSize: 14, fontWeight: 700,
+                  color: 'white', cursor: 'pointer', opacity: deletingConv === confirmDelete ? 0.7 : 1
+                }}
+              >
+                {deletingConv === confirmDelete ? 'Suppression...' : 'Supprimer'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }

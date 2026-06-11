@@ -19,13 +19,28 @@ test.describe('Navigation et pages publiques', () => {
   })
 
   test.describe('protection des routes privées', () => {
-    const protectedRoutes = ['/', '/create', '/inbox', '/profile']
+    const protectedRoutes = ['/', '/create', '/inbox', '/profile', '/app']
 
     for (const route of protectedRoutes) {
       test(`${route} redirige vers /login si non authentifié`, async ({ page }) => {
         await page.goto(route, { waitUntil: 'domcontentloaded' })
         await page.waitForURL(/\/login/, { timeout: 20000 })
         await expect(page).toHaveURL(/\/login/)
+      })
+    }
+  })
+
+  test.describe('routes publiques accessibles sans auth', () => {
+    const publicRoutes = [
+      '/book/9780134685991',
+      '/seller/00000000-0000-0000-0000-000000000000',
+      '/invite/TEST123',
+    ]
+
+    for (const route of publicRoutes) {
+      test(`${route} accessible sans authentification`, async ({ page }) => {
+        await page.goto(route, { waitUntil: 'domcontentloaded' })
+        await expect(page).not.toHaveURL(/\/login/)
       })
     }
   })

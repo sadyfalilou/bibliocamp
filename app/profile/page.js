@@ -3,6 +3,146 @@
 import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
+import Logo from '../../components/Logo'
+import BadgeList from '../../components/BadgeList'
+
+function InviteSection({ userId }) {
+  const [inviteCode, setInviteCode] = useState(null)
+  const [invitedCount, setInvitedCount] = useState(0)
+  const [copied, setCopied] = useState(false)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const load = async () => {
+      const res = await fetch(`/api/invite?user_id=${userId}`)
+      if (res.ok) {
+        const d = await res.json()
+        setInviteCode(d.code)
+        setInvitedCount(d.invited_count || 0)
+      }
+      setLoading(false)
+    }
+    load()
+  }, [userId])
+
+  const inviteUrl = typeof window !== 'undefined' ? `${window.location.origin}/invite/${inviteCode}` : ''
+
+  const handleCopy = async () => {
+    await navigator.clipboard.writeText(inviteUrl)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
+  const handleWhatsapp = () => {
+    const msg = encodeURIComponent(`Salut ! 👋 Je t'invite sur BiblioCamp — la meilleure façon d'acheter et vendre des manuels entre étudiants québécois. C'est gratuit et tu peux économiser jusqu'à 70% ! 📚\n${inviteUrl}`)
+    window.open(`https://wa.me/?text=${msg}`, '_blank')
+  }
+
+  const handleEmail = () => {
+    const subject = encodeURIComponent("Je t'invite sur BiblioCamp 📚")
+    const body = encodeURIComponent(`Salut !\n\nJe t'invite à rejoindre BiblioCamp, la marketplace pour acheter et vendre des manuels universitaires entre étudiants.\n\nC'est gratuit et tu peux économiser jusqu'à 70% sur tes manuels !\n\nInscris-toi ici : ${inviteUrl}\n\nÀ bientôt !`)
+    window.location.href = `mailto:?subject=${subject}&body=${body}`
+  }
+
+  const isFounder = invitedCount >= 3
+
+  if (loading) return null
+
+  return (
+    <div style={{ background: 'white', borderRadius: 14, padding: '24px', border: '1px solid #e2e8f0', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+        <h2 style={{ fontSize: 12, fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: 1, margin: 0 }}>
+          Inviter des amis
+        </h2>
+        {isFounder && (
+          <span style={{
+            background: 'linear-gradient(135deg, #f59e0b, #e53e3e)',
+            color: 'white', fontWeight: 800, fontSize: 12,
+            padding: '4px 12px', borderRadius: 20
+          }}>
+            🏅 Fondateur
+          </span>
+        )}
+      </div>
+
+      {/* Compteur */}
+      <div style={{
+        background: invitedCount > 0 ? 'linear-gradient(135deg, #f0fdf9, #f0f4ff)' : '#f8fafc',
+        borderRadius: 10, padding: '14px 18px', marginBottom: 18,
+        border: `1px solid ${invitedCount > 0 ? '#00c9a7' : '#e2e8f0'}`,
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+      }}>
+        <div>
+          <div style={{ fontSize: 28, fontWeight: 900, color: '#1a2e4a' }}>{invitedCount}</div>
+          <div style={{ fontSize: 12, color: '#64748b', fontWeight: 600 }}>
+            ami{invitedCount !== 1 ? 's' : ''} inscrit{invitedCount !== 1 ? 's' : ''} via ton lien
+          </div>
+        </div>
+        <div style={{ textAlign: 'right' }}>
+          {invitedCount < 3 ? (
+            <div style={{ fontSize: 12, color: '#94a3b8' }}>
+              Encore <strong style={{ color: '#1a2e4a' }}>{3 - invitedCount}</strong> pour le badge Fondateur 🏅
+            </div>
+          ) : (
+            <div style={{ fontSize: 13, color: '#00c9a7', fontWeight: 700 }}>
+              Badge Fondateur débloqué ! 🎉
+            </div>
+          )}
+          {/* Barre de progression */}
+          <div style={{ background: '#e2e8f0', borderRadius: 20, height: 6, width: 120, overflow: 'hidden', marginTop: 8 }}>
+            <div style={{
+              background: isFounder ? '#00c9a7' : '#6c63ff',
+              height: '100%',
+              width: `${Math.min(100, (invitedCount / 3) * 100)}%`,
+              borderRadius: 20, transition: 'width 0.3s'
+            }} />
+          </div>
+        </div>
+      </div>
+
+      {/* Lien */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
+        <div style={{
+          flex: 1, padding: '10px 14px',
+          background: '#f8fafc', border: '1px solid #e2e8f0',
+          borderRadius: 8, fontSize: 13, color: '#64748b',
+          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'
+        }}>
+          {inviteUrl}
+        </div>
+        <button type="button" onClick={handleCopy} style={{
+          background: copied ? '#00c9a7' : '#1a2e4a',
+          color: 'white', border: 'none', borderRadius: 8,
+          padding: '10px 16px', fontSize: 13, fontWeight: 700,
+          cursor: 'pointer', flexShrink: 0, transition: 'background 0.2s',
+          whiteSpace: 'nowrap'
+        }}>
+          {copied ? '✓ Copié !' : '📋 Copier'}
+        </button>
+      </div>
+
+      {/* Boutons de partage */}
+      <div style={{ display: 'flex', gap: 10 }}>
+        <button type="button" onClick={handleWhatsapp} style={{
+          flex: 1, padding: '10px', borderRadius: 9,
+          background: '#25d366', border: 'none',
+          color: 'white', fontWeight: 700, fontSize: 13,
+          cursor: 'pointer'
+        }}>
+          💬 WhatsApp
+        </button>
+        <button type="button" onClick={handleEmail} style={{
+          flex: 1, padding: '10px', borderRadius: 9,
+          background: '#f1f5f9', border: '1px solid #e2e8f0',
+          color: '#1a2e4a', fontWeight: 700, fontSize: 13,
+          cursor: 'pointer'
+        }}>
+          📧 Email
+        </button>
+      </div>
+    </div>
+  )
+}
 
 const INSTITUTIONS = [
   'UQAM', 'HEC Montréal', 'Université de Montréal', 'McGill', 'Concordia',
@@ -127,10 +267,8 @@ export default function Profile() {
         padding: '0 28px', position: 'sticky', top: 0, zIndex: 100,
         boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
       }}>
-        <div onClick={() => router.push('/')} style={{ background: '#00c9a7', color: 'white', fontWeight: 900, fontSize: 16, padding: '5px 14px', borderRadius: 8, letterSpacing: 1, cursor: 'pointer' }}>
-          📚 BIBLIOCAMP
-        </div>
-        <button onClick={() => router.push('/')} style={{ background: 'transparent', color: '#a0aec0', border: '1px solid #2d4a6b', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
+        <Logo variant="light" size="sm" onClick={() => router.push('/app')} style={{ cursor: 'pointer' }} />
+        <button onClick={() => router.push('/app')} style={{ background: 'transparent', color: '#a0aec0', border: '1px solid #2d4a6b', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
           onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#00c9a7' }}
           onMouseLeave={e => { e.currentTarget.style.color = '#a0aec0'; e.currentTarget.style.borderColor = '#2d4a6b' }}
         >← Retour</button>
@@ -220,6 +358,9 @@ export default function Profile() {
               </div>
               <div style={{ color: '#718096', fontSize: 13 }}>{user?.email}</div>
               {institution && <div style={{ color: '#00c9a7', fontSize: 12, fontWeight: 600, marginTop: 2 }}>🏫 {institution}</div>}
+              <div style={{ marginTop: 10 }}>
+                <BadgeList userId={user?.id} mode="profile" />
+              </div>
               <button type="button" onClick={() => avatarInputRef.current?.click()} style={{
                 marginTop: 8, background: 'none', border: '1px solid #e2e8f0',
                 borderRadius: 8, padding: '5px 12px', fontSize: 12,
@@ -294,6 +435,9 @@ export default function Profile() {
               </select>
             </div>
           </div>
+
+          {/* Section invitation */}
+          <InviteSection userId={user?.id} />
 
           {saved && (
             <div style={{ background: '#f0fdf9', border: '1px solid #00c9a7', borderRadius: 10, padding: '12px 16px', marginBottom: 16, color: '#00a88a', fontWeight: 600, fontSize: 14 }}>

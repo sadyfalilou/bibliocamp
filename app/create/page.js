@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, Suspense } from 'react'
 import imageCompression from 'browser-image-compression'
 import { supabase } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Logo from '../../components/Logo'
 
 const ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
 
@@ -28,7 +29,12 @@ function CreateInner() {
   const [errors, setErrors] = useState({})
   const [touched, setTouched] = useState({})
   const [serverError, setServerError] = useState('')
-  const [imageInfo, setImageInfo] = useState(null) // { original, compressed }
+  const [imageInfo, setImageInfo] = useState(null)
+  const [isbnSearch, setIsbnSearch] = useState('')
+  const [isbnLoading, setIsbnLoading] = useState(false)
+  const [isbnFound, setIsbnFound] = useState(false) // true = recherche manuelle
+  const [prefilled, setPrefilled] = useState(false) // true = pré-rempli via URL
+  const [coverFromGoogle, setCoverFromGoogle] = useState(null)
   const sessionTokenRef = useRef(null)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -51,11 +57,55 @@ function CreateInner() {
     const a = searchParams.get('authors')
     const i = searchParams.get('isbn')
     const c = searchParams.get('course')
+    const cover = searchParams.get('cover')
     if (t) setTitle(t)
     if (a) setAuthors(a)
     if (i) setIsbn(i)
     if (c) setCourse(c)
+    if (cover) {
+      setCoverFromGoogle(cover)
+      setImagePreview(cover)
+    }
+    // Pré-rempli via URL (depuis modal marketplace) — banner discret, pas "Livre trouvé"
+    if (i && t) setPrefilled(true)
   }, [])
+
+  const searchingRef = useRef(false)
+  const searchByIsbn = async () => {
+    if (searchingRef.current) return // évite les doubles appels (React StrictMode)
+    const cleaned = isbnSearch.replace(/[-\s]/g, '')
+    if (!/^\d{10,13}$/.test(cleaned)) {
+      setErrors(prev => ({ ...prev, isbnSearch: 'ISBN invalide — doit contenir 10 ou 13 chiffres.' }))
+      return
+    }
+    setErrors(prev => ({ ...prev, isbnSearch: '' }))
+    setIsbnLoading(true)
+    setIsbnFound(false)
+    searchingRef.current = true
+    try {
+      const res = await fetch(`/api/isbn?isbn=${cleaned}`)
+      const data = await res.json()
+      if (data.found && data.book) {
+        const book = data.book
+        setTitle(book.title || '')
+        setAuthors(book.authors || '')
+        setIsbn(cleaned)
+        if (book.cover) {
+          setCoverFromGoogle(book.cover)
+          setImagePreview(book.cover)
+        }
+        setIsbnFound(true)
+        setTouched(prev => ({ ...prev, title: true, authors: true, isbn: true }))
+        setErrors(prev => ({ ...prev, title: '', authors: '', isbn: '' }))
+      } else {
+        setErrors(prev => ({ ...prev, isbnSearch: 'Livre non indexé dans nos bases de données. Remplis les champs titre et auteurs manuellement ci-dessous.' }))
+      }
+    } catch {
+      setErrors(prev => ({ ...prev, isbnSearch: 'Erreur de connexion. Remplis les champs manuellement.' }))
+    }
+    setIsbnLoading(false)
+    searchingRef.current = false
+  }
 
   const validateField = (name, val, extra = {}) => {
     switch (name) {
@@ -67,7 +117,8 @@ function CreateInner() {
         if (val.length > 200) return `${val.length}/200 — trop long.`
         return ''
       case 'isbn':
-        if (val && !/^\d{10,13}$/.test(val.replace(/[-\s]/g, ''))) return 'Doit contenir 10 ou 13 chiffres.'
+        if (!val || !val.trim()) return "L'ISBN est obligatoire — il se trouve sur la 4e de couverture ou sur le site de l'éditeur."
+        if (!/^\d{10,13}$/.test(val.replace(/[-\s]/g, ''))) return 'Doit contenir 10 ou 13 chiffres.'
         return ''
       case 'course':
         if (val.length > 20) return `${val.length}/20 — trop long.`
@@ -79,6 +130,12 @@ function CreateInner() {
         if (!val) return ''
         if (isNaN(Number(val)) || Number(val) <= 0 || Number(val) > 9999) return 'Entre 1 $ et 9 999 $.'
         if (extra.price && Number(val) <= Number(extra.price)) return 'Doit être supérieur au prix de vente.'
+        return ''
+      case 'etat':
+        if (!val) return "L'état du livre est obligatoire."
+        return ''
+      case 'transaction':
+        if (!val) return 'Choisis au moins une méthode de transaction.'
         return ''
       case 'campus':
         if (val.length > 100) return `${val.length}/100 — trop long.`
@@ -109,7 +166,7 @@ function CreateInner() {
 
   const ErrorMsg = ({ name }) => errors[name] ? (
     <div style={{ color: '#e53e3e', fontSize: 12, fontWeight: 600, marginTop: 4, display: 'flex', alignItems: 'center', gap: 4 }}>
-      <span>⚠</span> {errors[name]}
+      ⚠ {errors[name]}
     </div>
   ) : null
 
@@ -131,7 +188,6 @@ function CreateInner() {
     }
     setErrors(prev => ({ ...prev, image: '' }))
     const originalKB = Math.round(file.size / 1024)
-    // Compression automatique avant upload
     const compressed = await imageCompression(file, {
       maxSizeMB: 0.5,
       maxWidthOrHeight: 800,
@@ -141,30 +197,32 @@ function CreateInner() {
     setImageInfo({ original: originalKB, compressed: compressedKB })
     setImage(compressed)
     setImagePreview(URL.createObjectURL(compressed))
+    setCoverFromGoogle(null) // l'upload remplace la couverture Google
   }
 
   const hasErrors = () => {
+    const hasTransaction = meetCampus || meetCity || post
     const allErrors = {
       title: validateField('title', title),
       authors: validateField('authors', authors),
       isbn: validateField('isbn', isbn),
       course: validateField('course', course),
+      etat: validateField('etat', etat),
+      transaction: validateField('transaction', hasTransaction ? 'ok' : ''),
       price: validateField('price', price),
       originalPrice: validateField('originalPrice', originalPrice, { price }),
       campus: validateField('campus', campus),
-      image: errors.image || '', // conserver l'erreur image existante
+      image: errors.image || '',
     }
     setErrors(allErrors)
-    setTouched({ title: true, authors: true, isbn: true, course: true, price: true, originalPrice: true, campus: true })
+    setTouched({ title: true, authors: true, isbn: true, course: true, etat: true, transaction: true, price: true, originalPrice: true, campus: true })
     return Object.values(allErrors).some(e => e !== '')
   }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (hasErrors()) return
-
     setLoading(true)
-
     const formData = new FormData()
     formData.append('title', title)
     formData.append('authors', authors)
@@ -178,6 +236,7 @@ function CreateInner() {
     formData.append('meet_city', meetCity)
     formData.append('post', post)
     if (image) formData.append('image', image)
+    else if (coverFromGoogle) formData.append('image_url', coverFromGoogle)
 
     const res = await fetch('/api/listings', {
       method: 'POST',
@@ -188,7 +247,6 @@ function CreateInner() {
     setLoading(false)
     if (!res.ok) {
       const msg = json.error || 'Erreur lors de la création.'
-      // Erreur image → afficher dans la section photo
       if (msg.toLowerCase().includes('image') || msg.toLowerCase().includes('format')) {
         setErrors(prev => ({ ...prev, image: msg }))
       } else {
@@ -196,7 +254,7 @@ function CreateInner() {
       }
       return
     }
-    window.location.href = '/'
+    window.location.href = '/app'
   }
 
   return (
@@ -209,16 +267,8 @@ function CreateInner() {
         padding: '0 28px', position: 'sticky', top: 0, zIndex: 100,
         boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
       }}>
-        <div
-          onClick={() => router.push('/')}
-          style={{
-            background: '#00c9a7', color: 'white', fontWeight: 900,
-            fontSize: 16, padding: '5px 14px', borderRadius: 8,
-            letterSpacing: 1, cursor: 'pointer'
-          }}>
-          📚 BIBLIOCAMP
-        </div>
-        <button onClick={() => router.push('/')} style={{
+        <Logo variant="light" size="sm" onClick={() => router.push('/app')} style={{ cursor: 'pointer' }} />
+        <button onClick={() => router.push('/app')} style={{
           background: 'transparent', color: '#a0aec0',
           border: '1px solid #2d4a6b', padding: '6px 14px',
           borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600
@@ -241,8 +291,96 @@ function CreateInner() {
             Publier un manuel
           </h1>
 
-
           <form onSubmit={handleSubmit}>
+
+            {/* RECHERCHE ISBN AUTO */}
+            <div style={{
+              background: 'linear-gradient(135deg, #f0fdf9, #e6f7ff)',
+              borderRadius: 14, padding: '24px 28px',
+              border: '1.5px solid #00c9a7', marginBottom: 16
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                <span style={{ fontSize: 22 }}>🔍</span>
+                <h2 style={{ fontSize: 15, fontWeight: 800, color: '#1a2e4a', margin: 0 }}>
+                  Trouve ton manuel par ISBN
+                </h2>
+                <span style={{
+                  background: '#00c9a7', color: 'white', fontSize: 10,
+                  fontWeight: 700, padding: '2px 8px', borderRadius: 20, letterSpacing: 0.5
+                }}>NOUVEAU</span>
+              </div>
+              <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 16px' }}>
+                Entre l'ISBN (au dos du livre, sous le code-barres) — titre, auteurs et photo se remplissent automatiquement.
+              </p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <input
+                  placeholder="ex: 9782765141310"
+                  value={isbnSearch}
+                  onChange={e => { setIsbnSearch(e.target.value); setErrors(prev => ({ ...prev, isbnSearch: '' })); setIsbnFound(false) }}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), searchByIsbn())}
+                  style={{
+                    flex: 1, padding: '11px 14px',
+                    border: `1.5px solid ${errors.isbnSearch ? '#e53e3e' : '#00c9a7'}`,
+                    borderRadius: 8, fontSize: 15, outline: 'none',
+                    background: 'white', boxSizing: 'border-box'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={searchByIsbn}
+                  disabled={isbnLoading}
+                  style={{
+                    background: isbnLoading ? '#a0aec0' : '#1a2e4a',
+                    color: 'white', border: 'none', borderRadius: 8,
+                    padding: '11px 20px', fontWeight: 700, fontSize: 14,
+                    cursor: isbnLoading ? 'not-allowed' : 'pointer',
+                    whiteSpace: 'nowrap', transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={e => { if (!isbnLoading) e.currentTarget.style.background = '#00c9a7' }}
+                  onMouseLeave={e => { if (!isbnLoading) e.currentTarget.style.background = '#1a2e4a' }}
+                >
+                  {isbnLoading ? '⏳ Recherche...' : '→ Rechercher'}
+                </button>
+              </div>
+              {errors.isbnSearch && (
+                <div style={{ color: '#e53e3e', fontSize: 12, fontWeight: 600, marginTop: 8 }}>
+                  ⚠ {errors.isbnSearch}
+                </div>
+              )}
+              {prefilled && !isbnFound && (
+                <div style={{
+                  marginTop: 12, background: '#f8fafc', border: '1px solid #e2e8f0',
+                  borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12,
+                  color: '#64748b', fontSize: 13
+                }}>
+                  {coverFromGoogle && (
+                    <img src={coverFromGoogle} alt="couverture" style={{ height: 48, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
+                  )}
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#1a2e4a', fontSize: 14 }}>📋 Informations pré-remplies</div>
+                    <div style={{ color: '#64748b', fontSize: 13 }}>{title}{authors ? ` — ${authors}` : ''}</div>
+                    <div style={{ color: '#a0aec0', fontSize: 12, marginTop: 2 }}>Vérifie et complète les champs ci-dessous.</div>
+                  </div>
+                </div>
+              )}
+              {isbnFound && (
+                <div style={{
+                  marginTop: 12, background: 'white', border: '1px solid #00c9a7',
+                  borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12
+                }}>
+                  {coverFromGoogle && (
+                    <img src={coverFromGoogle} alt="couverture" style={{ height: 64, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
+                  )}
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#1a2e4a', fontSize: 14 }}>✅ Livre trouvé !</div>
+                    <div style={{ color: '#64748b', fontSize: 13 }}>{title}{authors ? ` — ${authors}` : ''}</div>
+                    <div style={{ color: '#a0aec0', fontSize: 12, marginTop: 2 }}>Vérifie les informations ci-dessous et complète les champs manquants.</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* INFORMATIONS DU LIVRE */}
             <div style={{
               background: 'white', borderRadius: 14, padding: '28px',
               border: '1px solid #e2e8f0', marginBottom: 16
@@ -258,7 +396,7 @@ function CreateInner() {
                   <span style={{ fontWeight: 400, color: '#a0aec0', fontSize: 12, marginLeft: 8 }}>{title.length}/150</span>
                 </label>
                 <input
-                  placeholder="ex: Le Marketing – 4e édition"
+                  placeholder="ex: Le Marketing — 4e édition"
                   value={title}
                   onChange={e => handleFieldChange('title', e.target.value, setTitle)}
                   onBlur={e => touch('title', e.target.value)}
@@ -286,7 +424,7 @@ function CreateInner() {
               <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 16, marginBottom: 18 }}>
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
-                    ISBN
+                    ISBN <span style={{ color: '#e53e3e' }}>*</span>
                   </label>
                   <input
                     placeholder="ex: 9782765141310"
@@ -315,17 +453,17 @@ function CreateInner() {
               {/* ÉTAT */}
               <div style={{ marginBottom: 0 }}>
                 <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
-                  État du livre
+                  État du livre <span style={{ color: '#e53e3e' }}>*</span>
                 </label>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   {ETATS.map(e => (
                     <button
                       key={e}
                       type="button"
-                      onClick={() => setEtat(e)}
+                      onClick={() => { setEtat(e); setErrors(prev => ({ ...prev, etat: '' })) }}
                       style={{
                         padding: '8px 16px',
-                        border: `2px solid ${etat === e ? '#00c9a7' : '#cbd5e0'}`,
+                        border: `2px solid ${etat === e ? '#00c9a7' : errors.etat ? '#e53e3e' : '#cbd5e0'}`,
                         borderRadius: 20,
                         background: etat === e ? '#f0fdf9' : 'white',
                         color: etat === e ? '#00c9a7' : '#4a5568',
@@ -338,6 +476,7 @@ function CreateInner() {
                     </button>
                   ))}
                 </div>
+                <ErrorMsg name="etat" />
               </div>
 
               {/* CAMPUS */}
@@ -358,7 +497,7 @@ function CreateInner() {
               {/* MÉTHODES DE TRANSACTION */}
               <div style={{ marginTop: 18 }}>
                 <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 10 }}>
-                  Méthodes de transaction
+                  Méthodes de transaction <span style={{ color: '#e53e3e' }}>*</span>
                 </label>
                 <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                   {[
@@ -366,9 +505,12 @@ function CreateInner() {
                     { key: 'city', label: '🏙️ Rencontre en ville', state: meetCity, set: setMeetCity, color: '#f59e0b' },
                     { key: 'post', label: '📦 Envoi postal', state: post, set: setPost, color: '#3b82f6' },
                   ].map(m => (
-                    <button key={m.key} type="button" onClick={() => m.set(!m.state)} style={{
+                    <button key={m.key} type="button" onClick={() => {
+                      m.set(!m.state)
+                      setErrors(prev => ({ ...prev, transaction: '' }))
+                    }} style={{
                       padding: '10px 18px',
-                      border: `2px solid ${m.state ? m.color : '#cbd5e0'}`,
+                      border: `2px solid ${m.state ? m.color : errors.transaction ? '#e53e3e' : '#cbd5e0'}`,
                       borderRadius: 20,
                       background: m.state ? `${m.color}15` : 'white',
                       color: m.state ? m.color : '#4a5568',
@@ -381,6 +523,7 @@ function CreateInner() {
                     </button>
                   ))}
                 </div>
+                <ErrorMsg name="transaction" />
               </div>
             </div>
 
@@ -442,9 +585,19 @@ function CreateInner() {
               background: 'white', borderRadius: 14, padding: '28px',
               border: '1px solid #e2e8f0', marginBottom: 24
             }}>
-              <h2 style={{ fontSize: 12, fontWeight: 700, color: '#a0aec0', margin: '0 0 20px', textTransform: 'uppercase', letterSpacing: 1 }}>
+              <h2 style={{ fontSize: 12, fontWeight: 700, color: '#a0aec0', margin: '0 0 4px', textTransform: 'uppercase', letterSpacing: 1 }}>
                 Photo de couverture
               </h2>
+              {coverFromGoogle && !image && (
+                <p style={{ fontSize: 12, color: '#00a88a', margin: '0 0 14px' }}>
+                  ✅ Couverture récupérée automatiquement via Google Books. Tu peux en uploader une autre ci-dessous.
+                </p>
+              )}
+              {!coverFromGoogle && !image && (
+                <p style={{ fontSize: 12, color: '#a0aec0', margin: '0 0 14px' }}>
+                  JPG, PNG, WebP — compressée automatiquement
+                </p>
+              )}
 
               <label style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -465,13 +618,17 @@ function CreateInner() {
                   <>
                     <span style={{ fontSize: 32 }}>📷</span>
                     <span style={{ color: '#718096', fontSize: 14 }}>Clique pour ajouter une photo</span>
-                    <span style={{ color: '#a0aec0', fontSize: 12 }}>JPG, PNG, WebP — compressée automatiquement</span>
                   </>
                 )}
                 <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
               </label>
               {imagePreview && (
-                <button type="button" onClick={() => { setImage(null); setImagePreview(null); setImageInfo(null); setErrors(prev => ({ ...prev, image: '' })); if (fileInputRef.current) fileInputRef.current.value = '' }} style={{
+                <button type="button" onClick={() => {
+                  setImage(null); setImagePreview(null); setImageInfo(null)
+                  setCoverFromGoogle(null)
+                  setErrors(prev => ({ ...prev, image: '' }))
+                  if (fileInputRef.current) fileInputRef.current.value = ''
+                }} style={{
                   marginTop: 10, background: 'none', border: 'none',
                   color: '#e53e3e', cursor: 'pointer', fontSize: 13
                 }}>
@@ -479,7 +636,7 @@ function CreateInner() {
                 </button>
               )}
               {errors.image && (
-                <div style={{ color: '#e53e3e', fontSize: 12, fontWeight: 600, marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
+                <div style={{ color: '#e53e3e', fontSize: 12, fontWeight: 600, marginTop: 8 }}>
                   ⚠ {errors.image}
                 </div>
               )}

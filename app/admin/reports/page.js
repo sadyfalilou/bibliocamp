@@ -8,6 +8,7 @@ export default function AdminReportsPage() {
   const [reports, setReports] = useState([])
   const [error, setError] = useState('')
   const [actingId, setActingId] = useState(null)
+  const [confirmAction, setConfirmAction] = useState(null) // { reportId, action }
 
   const fetchReports = async () => {
     setLoading(true)
@@ -30,16 +31,15 @@ export default function AdminReportsPage() {
 
   useEffect(() => { fetchReports() }, [])
 
-  const handleAction = async (reportId, action, confirmMsg) => {
-    if (confirmMsg && !confirm(confirmMsg)) return
+  const handleAction = async (reportId, action) => {
+    setConfirmAction(null)
     setActingId(reportId)
     const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch(`/api/admin/reports?id=${reportId}&action=${action}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${session?.access_token}` }
     })
-    if (!res.ok) alert('Erreur lors du traitement.')
-    else setReports(prev => prev.filter(r => r.id !== reportId))
+    if (res.ok) setReports(prev => prev.filter(r => r.id !== reportId))
     setActingId(null)
   }
 
@@ -49,6 +49,41 @@ export default function AdminReportsPage() {
       <p style={{ color: '#6b7280', marginBottom: 24 }}>
         Gère les signalements envoyés par les utilisateurs : ignore-les ou retire l'annonce concernée.
       </p>
+
+      {/* MODAL CONFIRMATION */}
+      {confirmAction && (
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          background: 'rgba(0,0,0,0.45)', backdropFilter: 'blur(4px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center'
+        }} onClick={() => setConfirmAction(null)}>
+          <div onClick={e => e.stopPropagation()} style={{
+            background: 'white', borderRadius: 16, padding: '28px 32px',
+            maxWidth: 380, width: '90%', textAlign: 'center',
+            boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+          }}>
+            <div style={{ fontSize: 40, marginBottom: 12 }}>🗑️</div>
+            <h3 style={{ margin: '0 0 8px', fontSize: 18, fontWeight: 800, color: '#1a2e4a' }}>
+              Retirer cette annonce ?
+            </h3>
+            <p style={{ color: '#64748b', fontSize: 14, margin: '0 0 24px' }}>
+              L'annonce et son image seront définitivement supprimées.
+            </p>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button onClick={() => setConfirmAction(null)} style={{
+                flex: 1, padding: '11px', borderRadius: 9,
+                border: '1.5px solid #e2e8f0', background: 'white',
+                color: '#64748b', fontWeight: 700, fontSize: 14, cursor: 'pointer'
+              }}>Annuler</button>
+              <button onClick={() => handleAction(confirmAction.reportId, confirmAction.action)} style={{
+                flex: 1, padding: '11px', borderRadius: 9,
+                border: 'none', background: '#e53e3e',
+                color: 'white', fontWeight: 700, fontSize: 14, cursor: 'pointer'
+              }}>Supprimer</button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {loading && <p>Chargement...</p>}
 
@@ -95,7 +130,7 @@ export default function AdminReportsPage() {
             </button>
             <button
               disabled={actingId === r.id}
-              onClick={() => handleAction(r.id, 'remove-listing', "Supprimer définitivement cette annonce et son image ?")}
+              onClick={() => setConfirmAction({ reportId: r.id, action: 'remove-listing' })}
               style={{ flex: 1, padding: '8px 14px', background: '#fff5f5', color: '#e53e3e', border: '1px solid #fed7d7', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}
             >
               🗑️ Retirer l'annonce
