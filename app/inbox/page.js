@@ -419,13 +419,6 @@ function InboxInner() {
             <>
               {/* Header conversation */}
               <div style={{ padding: '12px 16px', background: 'white', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, position: 'sticky', top: 0, zIndex: 10 }}>
-                {isMobile && (
-                  <button onClick={() => setSelectedConv(null)} style={{
-                    background: '#f1f5f9', border: 'none', cursor: 'pointer',
-                    fontSize: 16, color: '#1a2e4a', padding: '8px 12px',
-                    borderRadius: 8, fontWeight: 700, flexShrink: 0
-                  }}>← Retour</button>
-                )}
                 {otherUser?.avatar_url ? (
                   <img src={otherUser.avatar_url} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
                 ) : (
