@@ -204,9 +204,18 @@ function InboxInner() {
 
   const deleteConversation = async (convId) => {
     setDeletingConv(convId)
-    // Supprimer les messages d'abord (FK), puis la conversation
-    await supabase.from('messages').delete().eq('conversation_id', convId)
-    await supabase.from('conversations').delete().eq('id', convId)
+    const { error: msgError } = await supabase.from('messages').delete().eq('conversation_id', convId)
+    if (msgError) {
+      alert(`Erreur lors de la suppression des messages : ${msgError.message}\n\nVérifie les règles RLS sur la table "messages" dans Supabase.`)
+      setDeletingConv(null)
+      return
+    }
+    const { error: convError } = await supabase.from('conversations').delete().eq('id', convId)
+    if (convError) {
+      alert(`Erreur lors de la suppression de la conversation : ${convError.message}\n\nVérifie les règles RLS sur la table "conversations" dans Supabase.`)
+      setDeletingConv(null)
+      return
+    }
     setConversations(prev => prev.filter(c => c.id !== convId))
     if (selectedConv === convId) setSelectedConv(null)
     setConfirmDelete(null)
