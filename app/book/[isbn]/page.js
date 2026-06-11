@@ -211,7 +211,7 @@ export default function BookPage() {
                   }}>
                     <span style={{ fontSize: 22, fontWeight: 900, color: '#1a2e4a' }}>{cheapest} $</span>
                     <span style={{ fontSize: 13, color: '#00a88a', fontWeight: 600 }}>
-                      à partir de — {listings.length} vendeur{listings.length > 1 ? 's' : ''}
+                      — {listings.length} vendeur{listings.length > 1 ? 's' : ''}
                     </span>
                   </div>
                 )}

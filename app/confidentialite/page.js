@@ -280,11 +280,11 @@ export default function ConfidentialitePage() {
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 12, marginBottom: 16 }}>
                 {[
-                  { icon: '👁️', title: 'Droit d'accès', desc: 'Consulter vos données' },
+                  { icon: '👁️', title: "Droit d'accès", desc: 'Consulter vos données' },
                   { icon: '✏️', title: 'Droit de rectification', desc: 'Corriger vos données' },
                   { icon: '🗑️', title: 'Droit de suppression', desc: 'Effacer votre compte' },
                   { icon: '📦', title: 'Droit à la portabilité', desc: 'Exporter vos données' },
-                  { icon: '✋', title: 'Droit d'opposition', desc: 'Limiter certains traitements' },
+                  { icon: '✋', title: "Droit d'opposition", desc: 'Limiter certains traitements' },
                   { icon: '📋', title: 'Droit de déposer plainte', desc: 'Auprès de la CAI' },
                 ].map(r => (
                   <div key={r.title} style={{
