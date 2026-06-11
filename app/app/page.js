@@ -1104,7 +1104,7 @@ export default function Home() {
                         {(() => {
                           const p = profilesMap[item.user_id]
                           const name = p?.first_name ? `${p.first_name} ${p.last_name || ''}`.trim() : (item.campus || null)
-                          const sub = item.campus || p?.institution
+                          const sub = item.campus || null
                           if (!name && !sub) return null
                           return (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
@@ -1117,34 +1117,17 @@ export default function Home() {
                                 onMouseEnter={item.user_id !== user?.id ? (e => e.currentTarget.style.color = '#00c9a7') : undefined}
                                 onMouseLeave={item.user_id !== user?.id ? (e => e.currentTarget.style.color = '#4a5568') : undefined}
                               >{name}</span>
-                              {sub && (() => {
-                                const p = profilesMap[item.user_id]
-                                const institution = p?.institution
-                                const campus = item.campus !== institution ? item.campus : null
-                                return (
-                                  <span style={{ fontSize: 11, color: '#a0aec0' }}>·{' '}
-                                    {institution && (
-                                      <span
-                                        onClick={e => { e.stopPropagation(); setFilterInstitution(institution); setView('acheter') }}
-                                        style={{ cursor: 'pointer', color: '#a0aec0' }}
-                                        onMouseEnter={e => { e.currentTarget.style.color = '#00c9a7'; e.currentTarget.style.textDecoration = 'underline' }}
-                                        onMouseLeave={e => { e.currentTarget.style.color = '#a0aec0'; e.currentTarget.style.textDecoration = 'none' }}
-                                        title={`Filtrer par ${institution}`}
-                                      >{institution}</span>
-                                    )}
-                                    {institution && campus && ' · '}
-                                    {campus && (
-                                      <span
-                                        onClick={e => { e.stopPropagation(); setFilterCampus(campus); setView('acheter') }}
-                                        style={{ cursor: 'pointer', color: '#a0aec0' }}
-                                        onMouseEnter={e => { e.currentTarget.style.color = '#00c9a7'; e.currentTarget.style.textDecoration = 'underline' }}
-                                        onMouseLeave={e => { e.currentTarget.style.color = '#a0aec0'; e.currentTarget.style.textDecoration = 'none' }}
-                                        title={`Filtrer par ${campus}`}
-                                      >{campus}</span>
-                                    )}
-                                  </span>
-                                )
-                              })()}
+                              {sub && (
+                                <span style={{ fontSize: 11, color: '#a0aec0' }}>·{' '}
+                                  <span
+                                    onClick={e => { e.stopPropagation(); setFilterCampus(sub); setView('acheter') }}
+                                    style={{ cursor: 'pointer', color: '#a0aec0' }}
+                                    onMouseEnter={e => { e.currentTarget.style.color = '#00c9a7'; e.currentTarget.style.textDecoration = 'underline' }}
+                                    onMouseLeave={e => { e.currentTarget.style.color = '#a0aec0'; e.currentTarget.style.textDecoration = 'none' }}
+                                    title={`Filtrer par ${sub}`}
+                                  >{sub}</span>
+                                </span>
+                              )}
                             </div>
                           )
                         })()}
