@@ -59,7 +59,7 @@ export async function POST(request) {
   if (err) return Response.json({ error: err }, { status: 400 })
 
   // Validation et upload image
-  let imageUrl = null
+  let imageUrl = formData.get('image_url') || null // URL Google Books si pas de fichier uploadé
   const imageFile = formData.get('image')
   if (imageFile && imageFile.size > 0) {
     if (!ALLOWED_TYPES.includes(imageFile.type)) {

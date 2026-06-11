@@ -30,6 +30,10 @@ function CreateInner() {
   const [touched, setTouched] = useState({})
   const [serverError, setServerError] = useState('')
   const [imageInfo, setImageInfo] = useState(null) // { original, compressed }
+  const [isbnSearch, setIsbnSearch] = useState('')
+  const [isbnLoading, setIsbnLoading] = useState(false)
+  const [isbnFound, setIsbnFound] = useState(false)
+  const [coverFromGoogle, setCoverFromGoogle] = useState(null) // URL image Google Books
   const sessionTokenRef = useRef(null)
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -57,6 +61,48 @@ function CreateInner() {
     if (i) setIsbn(i)
     if (c) setCourse(c)
   }, [])
+
+  const searchByIsbn = async () => {
+    const cleaned = isbnSearch.replace(/[-\s]/g, '')
+    if (!/^\d{10,13}$/.test(cleaned)) {
+      setErrors(prev => ({ ...prev, isbnSearch: 'ISBN invalide — doit contenir 10 ou 13 chiffres.' }))
+      return
+    }
+    setErrors(prev => ({ ...prev, isbnSearch: '' }))
+    setIsbnLoading(true)
+    setIsbnFound(false)
+    try {
+      const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${cleaned}`)
+      const data = await res.json()
+      if (data.totalItems > 0) {
+        const book = data.items[0].volumeInfo
+        setTitle(book.title || '')
+        setAuthors((book.authors || []).join(', '))
+        setIsbn(cleaned)
+        setOriginalPrice(book.retailPrice?.amount ? String(Math.round(book.retailPrice.amount)) : originalPrice)
+        // Image de couverture Google Books (haute résolution)
+        const cover = book.imageLinks?.extraLarge
+          || book.imageLinks?.large
+          || book.imageLinks?.medium
+          || book.imageLinks?.thumbnail
+          || null
+        if (cover) {
+          // Convertir en HTTPS et sans zoom limité
+          const coverHttps = cover.replace('http://', 'https://').replace('&edge=curl', '')
+          setCoverFromGoogle(coverHttps)
+          setImagePreview(coverHttps)
+        }
+        setIsbnFound(true)
+        setTouched(prev => ({ ...prev, title: true, authors: true, isbn: true }))
+        setErrors(prev => ({ ...prev, title: '', authors: '', isbn: '' }))
+      } else {
+        setErrors(prev => ({ ...prev, isbnSearch: 'Aucun livre trouvé pour cet ISBN. Remplis les champs manuellement.' }))
+      }
+    } catch {
+      setErrors(prev => ({ ...prev, isbnSearch: 'Erreur de connexion. Remplis les champs manuellement.' }))
+    }
+    setIsbnLoading(false)
+  }
 
   const validateField = (name, val, extra = {}) => {
     switch (name) {
@@ -179,6 +225,7 @@ function CreateInner() {
     formData.append('meet_city', meetCity)
     formData.append('post', post)
     if (image) formData.append('image', image)
+    else if (coverFromGoogle) formData.append('image_url', coverFromGoogle)
 
     const res = await fetch('/api/listings', {
       method: 'POST',
@@ -236,6 +283,78 @@ function CreateInner() {
 
 
           <form onSubmit={handleSubmit}>
+
+            {/* RECHERCHE ISBN AUTO */}
+            <div style={{
+              background: 'linear-gradient(135deg, #f0fdf9, #e6f7ff)',
+              borderRadius: 14, padding: '24px 28px',
+              border: '1.5px solid #00c9a7', marginBottom: 16
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                <span style={{ fontSize: 22 }}>🔍</span>
+                <h2 style={{ fontSize: 15, fontWeight: 800, color: '#1a2e4a', margin: 0 }}>
+                  Trouve ton manuel par ISBN
+                </h2>
+                <span style={{
+                  background: '#00c9a7', color: 'white', fontSize: 10,
+                  fontWeight: 700, padding: '2px 8px', borderRadius: 20, letterSpacing: 0.5
+                }}>NOUVEAU</span>
+              </div>
+              <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 16px' }}>
+                Entre l'ISBN (au dos du livre, sous le code-barres) — titre, auteurs et photo se remplissent automatiquement.
+              </p>
+              <div style={{ display: 'flex', gap: 10 }}>
+                <input
+                  placeholder="ex: 9782765141310"
+                  value={isbnSearch}
+                  onChange={e => { setIsbnSearch(e.target.value); setErrors(prev => ({ ...prev, isbnSearch: '' })); setIsbnFound(false) }}
+                  onKeyDown={e => e.key === 'Enter' && (e.preventDefault(), searchByIsbn())}
+                  style={{
+                    flex: 1, padding: '11px 14px',
+                    border: `1.5px solid ${errors.isbnSearch ? '#e53e3e' : '#00c9a7'}`,
+                    borderRadius: 8, fontSize: 15, outline: 'none',
+                    background: 'white', boxSizing: 'border-box'
+                  }}
+                />
+                <button
+                  type="button"
+                  onClick={searchByIsbn}
+                  disabled={isbnLoading}
+                  style={{
+                    background: isbnLoading ? '#a0aec0' : '#1a2e4a',
+                    color: 'white', border: 'none', borderRadius: 8,
+                    padding: '11px 20px', fontWeight: 700, fontSize: 14,
+                    cursor: isbnLoading ? 'not-allowed' : 'pointer',
+                    whiteSpace: 'nowrap', transition: 'background 0.2s'
+                  }}
+                  onMouseEnter={e => { if (!isbnLoading) e.currentTarget.style.background = '#00c9a7' }}
+                  onMouseLeave={e => { if (!isbnLoading) e.currentTarget.style.background = '#1a2e4a' }}
+                >
+                  {isbnLoading ? '⏳ Recherche...' : '→ Rechercher'}
+                </button>
+              </div>
+              {errors.isbnSearch && (
+                <div style={{ color: '#e53e3e', fontSize: 12, fontWeight: 600, marginTop: 8 }}>
+                  ⚠ {errors.isbnSearch}
+                </div>
+              )}
+              {isbnFound && (
+                <div style={{
+                  marginTop: 12, background: 'white', border: '1px solid #00c9a7',
+                  borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 10
+                }}>
+                  {coverFromGoogle && (
+                    <img src={coverFromGoogle} alt="couverture" style={{ height: 60, borderRadius: 4, objectFit: 'cover' }} />
+                  )}
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#1a2e4a', fontSize: 14 }}>✅ Livre trouvé !</div>
+                    <div style={{ color: '#64748b', fontSize: 13 }}>{title}{authors ? ` — ${authors}` : ''}</div>
+                    <div style={{ color: '#a0aec0', fontSize: 12, marginTop: 2 }}>Vérifie les informations ci-dessous et complète les champs manquants.</div>
+                  </div>
+                </div>
+              )}
+            </div>
+
             <div style={{
               background: 'white', borderRadius: 14, padding: '28px',
               border: '1px solid #e2e8f0', marginBottom: 16
