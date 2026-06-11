@@ -32,7 +32,8 @@ function CreateInner() {
   const [imageInfo, setImageInfo] = useState(null)
   const [isbnSearch, setIsbnSearch] = useState('')
   const [isbnLoading, setIsbnLoading] = useState(false)
-  const [isbnFound, setIsbnFound] = useState(false)
+  const [isbnFound, setIsbnFound] = useState(false) // true = recherche manuelle
+  const [prefilled, setPrefilled] = useState(false) // true = pré-rempli via URL
   const [coverFromGoogle, setCoverFromGoogle] = useState(null)
   const sessionTokenRef = useRef(null)
   const router = useRouter()
@@ -65,8 +66,8 @@ function CreateInner() {
       setCoverFromGoogle(cover)
       setImagePreview(cover)
     }
-    // Afficher "Livre trouvé" seulement si on a isbn + titre + cover via URL (vient d'une page livre)
-    if (i && t && cover) setIsbnFound(true)
+    // Pré-rempli via URL (depuis modal marketplace) — banner discret, pas "Livre trouvé"
+    if (i && t) setPrefilled(true)
   }, [])
 
   const searchingRef = useRef(false)
@@ -344,6 +345,22 @@ function CreateInner() {
               {errors.isbnSearch && (
                 <div style={{ color: '#e53e3e', fontSize: 12, fontWeight: 600, marginTop: 8 }}>
                   ⚠ {errors.isbnSearch}
+                </div>
+              )}
+              {prefilled && !isbnFound && (
+                <div style={{
+                  marginTop: 12, background: '#f8fafc', border: '1px solid #e2e8f0',
+                  borderRadius: 8, padding: '10px 14px', display: 'flex', alignItems: 'center', gap: 12,
+                  color: '#64748b', fontSize: 13
+                }}>
+                  {coverFromGoogle && (
+                    <img src={coverFromGoogle} alt="couverture" style={{ height: 48, borderRadius: 4, objectFit: 'cover', flexShrink: 0 }} />
+                  )}
+                  <div>
+                    <div style={{ fontWeight: 700, color: '#1a2e4a', fontSize: 14 }}>📋 Informations pré-remplies</div>
+                    <div style={{ color: '#64748b', fontSize: 13 }}>{title}{authors ? ` — ${authors}` : ''}</div>
+                    <div style={{ color: '#a0aec0', fontSize: 12, marginTop: 2 }}>Vérifie et complète les champs ci-dessous.</div>
+                  </div>
                 </div>
               )}
               {isbnFound && (
