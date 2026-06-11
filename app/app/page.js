@@ -71,6 +71,7 @@ export default function Home() {
   // Filtres liste principale
   const [sortBy, setSortBy] = useState('recent')
   const [filterInstitution, setFilterInstitution] = useState('')
+  const [filterCampus, setFilterCampus] = useState('')
   const [filterEtat, setFilterEtat] = useState('')
   const [filterTransaction, setFilterTransaction] = useState('')
   const [expandedSeller, setExpandedSeller] = useState(null)
@@ -441,6 +442,9 @@ export default function Home() {
     } else if (filterInstitution) {
       const p = profilesMap[item.user_id]
       if ((item.campus || p?.institution) !== filterInstitution) return false
+    }
+    if (filterCampus) {
+      if (item.campus !== filterCampus) return false
     }
     return true
   }).sort((a, b) => {
@@ -855,8 +859,18 @@ export default function Home() {
         <main style={{ flex: 1, padding: isMobile ? '16px 14px' : '28px 36px', maxWidth: 900, width: '100%' }}>
 
           <div style={{ fontSize: 13, color: '#a0aec0', marginBottom: 8 }}>
-            Accueil / Manuels / <span style={{ color: '#1a2e4a', fontWeight: 600 }}>
-              {view === 'acheter' ? 'Acheter' : view === 'vendre' ? 'Vendre' : 'Mes annonces'}
+            <span onClick={() => setView('acheter')} style={{ cursor: 'pointer', color: '#00c9a7' }}
+              onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+              onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+            >Accueil</span>
+            {' / '}
+            <span onClick={() => setView('acheter')} style={{ cursor: 'pointer', color: '#00c9a7' }}
+              onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+              onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+            >Manuels</span>
+            {' / '}
+            <span style={{ color: '#1a2e4a', fontWeight: 600 }}>
+              {view === 'acheter' ? 'Acheter' : view === 'vendre' ? 'Vendre' : view === 'mes-annonces' ? 'Mes annonces' : view === 'favoris' ? 'Mes favoris' : 'Mes cours'}
             </span>
           </div>
 
@@ -973,9 +987,23 @@ export default function Home() {
                   </button>
                 )}
 
+                {/* Badges filtres actifs par clic */}
+                {filterInstitution && filterInstitution !== '__mes_cours__' && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#e0f7f4', color: '#00a88a', border: '1px solid #00c9a7', borderRadius: 20, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}>
+                    🏫 {filterInstitution}
+                    <span onClick={() => setFilterInstitution('')} style={{ cursor: 'pointer', marginLeft: 2, fontWeight: 900 }}>×</span>
+                  </span>
+                )}
+                {filterCampus && (
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4, background: '#e0f7f4', color: '#00a88a', border: '1px solid #00c9a7', borderRadius: 20, padding: '4px 10px', fontSize: 12, fontWeight: 700 }}>
+                    📍 {filterCampus}
+                    <span onClick={() => setFilterCampus('')} style={{ cursor: 'pointer', marginLeft: 2, fontWeight: 900 }}>×</span>
+                  </span>
+                )}
+
                 {/* Reset si filtres actifs */}
-                {(filterInstitution || filterEtat || filterTransaction || sortBy !== 'recent') && (
-                  <button onClick={() => { setFilterInstitution(''); setFilterEtat(''); setFilterTransaction(''); setSortBy('recent') }} style={{
+                {(filterInstitution || filterCampus || filterEtat || filterTransaction || sortBy !== 'recent') && (
+                  <button onClick={() => { setFilterInstitution(''); setFilterCampus(''); setFilterEtat(''); setFilterTransaction(''); setSortBy('recent') }} style={{
                     padding: '8px 12px', background: '#fff5f5', color: '#e53e3e',
                     border: '1px solid #fed7d7', borderRadius: 8,
                     fontSize: 13, cursor: 'pointer', fontWeight: 600
@@ -1042,7 +1070,12 @@ export default function Home() {
                         )}
                         {item.isbn && (
                           <div style={{ fontSize: 13, color: '#718096' }}>
-                            ISBN : <span style={{ color: '#00a88a' }}>{item.isbn}</span>
+                            ISBN : <span
+                              onClick={e => { e.stopPropagation(); router.push(`/book/${item.isbn}`) }}
+                              style={{ color: '#00a88a', cursor: 'pointer', fontWeight: 600 }}
+                              onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                              onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+                            >{item.isbn}</span>
                           </div>
                         )}
                         {item.course_code && (
@@ -1084,7 +1117,34 @@ export default function Home() {
                                 onMouseEnter={item.user_id !== user?.id ? (e => e.currentTarget.style.color = '#00c9a7') : undefined}
                                 onMouseLeave={item.user_id !== user?.id ? (e => e.currentTarget.style.color = '#4a5568') : undefined}
                               >{name}</span>
-                              {sub && <span style={{ fontSize: 11, color: '#a0aec0' }}>· {sub}</span>}
+                              {sub && (() => {
+                                const p = profilesMap[item.user_id]
+                                const institution = p?.institution
+                                const campus = item.campus
+                                return (
+                                  <span style={{ fontSize: 11, color: '#a0aec0' }}>·{' '}
+                                    {institution && (
+                                      <span
+                                        onClick={e => { e.stopPropagation(); setFilterInstitution(institution); setView('acheter') }}
+                                        style={{ cursor: 'pointer', color: '#a0aec0' }}
+                                        onMouseEnter={e => { e.currentTarget.style.color = '#00c9a7'; e.currentTarget.style.textDecoration = 'underline' }}
+                                        onMouseLeave={e => { e.currentTarget.style.color = '#a0aec0'; e.currentTarget.style.textDecoration = 'none' }}
+                                        title={`Filtrer par ${institution}`}
+                                      >{institution}</span>
+                                    )}
+                                    {institution && campus && ' · '}
+                                    {campus && (
+                                      <span
+                                        onClick={e => { e.stopPropagation(); setFilterCampus(campus); setView('acheter') }}
+                                        style={{ cursor: 'pointer', color: '#a0aec0' }}
+                                        onMouseEnter={e => { e.currentTarget.style.color = '#00c9a7'; e.currentTarget.style.textDecoration = 'underline' }}
+                                        onMouseLeave={e => { e.currentTarget.style.color = '#a0aec0'; e.currentTarget.style.textDecoration = 'none' }}
+                                        title={`Filtrer par ${campus}`}
+                                      >{campus}</span>
+                                    )}
+                                  </span>
+                                )
+                              })()}
                             </div>
                           )
                         })()}
