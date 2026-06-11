@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Logo from '../../components/Logo'
+import BadgeList from '../../components/BadgeList'
 
 function InviteSection({ userId }) {
   const [inviteCode, setInviteCode] = useState(null)
@@ -357,6 +358,9 @@ export default function Profile() {
               </div>
               <div style={{ color: '#718096', fontSize: 13 }}>{user?.email}</div>
               {institution && <div style={{ color: '#00c9a7', fontSize: 12, fontWeight: 600, marginTop: 2 }}>🏫 {institution}</div>}
+              <div style={{ marginTop: 10 }}>
+                <BadgeList userId={user?.id} size="sm" showLocked={true} />
+              </div>
               <button type="button" onClick={() => avatarInputRef.current?.click()} style={{
                 marginTop: 8, background: 'none', border: '1px solid #e2e8f0',
                 borderRadius: 8, padding: '5px 12px', fontSize: 12,

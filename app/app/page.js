@@ -5,6 +5,7 @@ import * as Sentry from '@sentry/nextjs'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Logo from '../../components/Logo'
+import BadgeList from '../../components/BadgeList'
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -1009,6 +1010,7 @@ export default function Home() {
                             </div>
                           )
                         })()}
+                        {item.user_id && <div style={{ marginTop: 4 }}><BadgeList userId={item.user_id} size="sm" /></div>}
                         <div style={{ display: 'flex', gap: 5, marginTop: 4, alignItems: 'center', flexWrap: 'wrap' }}>
                           {item.meet_campus && <span style={{ background: '#ede9fe', color: '#6c63ff', fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 20 }}>🏫</span>}
                           {item.meet_city && <span style={{ background: '#fef3c7', color: '#d97706', fontSize: 10, fontWeight: 600, padding: '1px 6px', borderRadius: 20 }}>🏙️</span>}
@@ -1321,6 +1323,7 @@ export default function Home() {
                               <span style={{ fontSize: 11, color: '#718096' }}>{sellerName}</span>
                             </div>
                           )}
+                          {item.user_id && <div style={{ marginTop: 4 }}><BadgeList userId={item.user_id} size="sm" /></div>}
                           <div style={{ display: 'flex', gap: 4, marginTop: 4 }}>
                             {item.meet_campus && <span style={{ background: '#ede9fe', color: '#6c63ff', borderRadius: 20, padding: '1px 6px', fontSize: 10, fontWeight: 600 }}>🏫</span>}
                             {item.meet_city && <span style={{ background: '#fef3c7', color: '#d97706', borderRadius: 20, padding: '1px 6px', fontSize: 10, fontWeight: 600 }}>🏙️</span>}
