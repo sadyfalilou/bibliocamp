@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from '../../../lib/supabase'
 import Logo from '../../../components/Logo'
 import BadgeList from '../../../components/BadgeList'
 
@@ -23,10 +23,6 @@ export default function SellerPage() {
   }, [])
 
   useEffect(() => {
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    )
     supabase.auth.getUser().then(({ data }) => {
       if (data?.user) setCurrentUser(data.user)
     })
