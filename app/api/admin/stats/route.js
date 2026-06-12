@@ -188,14 +188,21 @@ export async function GET(request) {
     return { new_users: new_users || 0, new_listings: new_listings || 0, new_conv: new_conv || 0 }
   }))
 
-  // Croissance 24 mois
-  const months = Array.from({ length: 24 }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
-    const start = new Date(d.getFullYear(), d.getMonth(), 1).toISOString()
-    const end   = new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString()
-    const label = d.toLocaleString('fr-CA', { month: 'short', year: '2-digit' })
-    return { start, end, label, isCurrent: i === 0 }
-  }).reverse()
+  // Croissance juin 2026 → juin 2028 (fenêtre fixe depuis le lancement)
+  const launchYear = 2026, launchMonth = 5 // juin 2026 (mois 0-indexé)
+  const endYear    = 2028, endMonth    = 6 // juillet 2028 (exclusif → affiche jusqu'à juin 2028)
+  const months = []
+  let y = launchYear, mo = launchMonth
+  while (y < endYear || (y === endYear && mo < endMonth)) {
+    const start = new Date(y, mo, 1).toISOString()
+    const end   = new Date(y, mo + 1, 1).toISOString()
+    const label = new Date(y, mo, 1).toLocaleString('fr-CA', { month: 'short', year: '2-digit' })
+    const isCurrent = y === now.getFullYear() && mo === now.getMonth()
+    const isFuture  = new Date(y, mo, 1) > now
+    months.push({ start, end, label, isCurrent, isFuture })
+    mo++
+    if (mo > 11) { mo = 0; y++ }
+  }
 
   const growth_monthly = await Promise.all(months.map(async m => {
     const [{ count: new_users }, { count: new_listings }, { count: new_conv }] = await Promise.all([
@@ -203,7 +210,7 @@ export async function GET(request) {
       supabase.from('listings').select('*', { count: 'exact', head: true }).gte('created_at', m.start).lt('created_at', m.end),
       supabase.from('conversations').select('*', { count: 'exact', head: true }).gte('created_at', m.start).lt('created_at', m.end),
     ])
-    return { label: m.label, isCurrent: m.isCurrent, new_users: new_users || 0, new_listings: new_listings || 0, new_conv: new_conv || 0 }
+    return { label: m.label, isCurrent: m.isCurrent, isFuture: m.isFuture, new_users: new_users || 0, new_listings: new_listings || 0, new_conv: new_conv || 0 }
   }))
 
   return NextResponse.json({
