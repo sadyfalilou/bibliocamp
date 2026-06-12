@@ -13,6 +13,7 @@ export default function BookPage() {
   const [loading, setLoading] = useState(true)
   const [isMobile, setIsMobile] = useState(false)
   const [userId, setUserId] = useState(null)
+  const [phoneVerified, setPhoneVerified] = useState(false)
   const [sellerProfiles, setSellerProfiles] = useState({})
 
   useEffect(() => {
@@ -23,14 +24,22 @@ export default function BookPage() {
   }, [])
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
-      if (data?.user) setUserId(data.user.id)
+    supabase.auth.getUser().then(async ({ data }) => {
+      if (!data?.user) return
+      setUserId(data.user.id)
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('phone_verified')
+        .eq('id', data.user.id)
+        .single()
+      if (profile?.phone_verified) setPhoneVerified(true)
     })
   }, [])
 
   const handleContactSeller = async (e, listing) => {
     if (e) e.stopPropagation()
     if (!userId) { router.push('/login'); return }
+    if (!phoneVerified) { router.push('/app?verify=1'); return }
     try {
       const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch('/api/conversations', {
@@ -57,8 +66,9 @@ export default function BookPage() {
     if (displayTitle && displayTitle !== 'Titre inconnu') params.set('title', displayTitle)
     if (displayAuthors) params.set('authors', displayAuthors)
     if (displayCover) params.set('cover', displayCover)
-    if (userId) router.push(`/create?${params.toString()}`)
-    else router.push(`/login?redirect=/create&${params.toString()}`)
+    if (!userId) { router.push(`/login?redirect=/create&${params.toString()}`); return }
+    if (!phoneVerified) { router.push('/app?verify=1'); return }
+    router.push(`/create?${params.toString()}`)
   }
 
   useEffect(() => {

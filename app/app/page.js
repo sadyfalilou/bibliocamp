@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef } from 'react'
 import * as Sentry from '@sentry/nextjs'
 import { supabase } from '../../lib/supabase'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Logo from '../../components/Logo'
 import BadgeList from '../../components/BadgeList'
 
@@ -92,6 +92,14 @@ export default function Home() {
   const [soldConfirmId, setSoldConfirmId] = useState(null)
   const [markingAsSold, setMarkingAsSold] = useState(false)
   const router = useRouter()
+  const searchParams = useSearchParams()
+
+  // Si ?verify=1 dans l'URL → redirigé depuis book page, ouvrir la vue vendre (contient la vérification)
+  useEffect(() => {
+    if (searchParams.get('verify') === '1' && !phoneSaved) {
+      setView('vendre')
+    }
+  }, [searchParams, phoneSaved])
 
   const fetchListings = async (offset = 0, append = false) => {
     const { data, error } = await supabase
