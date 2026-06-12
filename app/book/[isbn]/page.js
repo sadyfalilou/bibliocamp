@@ -266,11 +266,9 @@ export default function BookPage() {
                       padding: '18px 24px',
                       borderTop: idx > 0 ? '1px solid #f0f4f8' : 'none',
                       display: 'flex', alignItems: 'center', gap: 16,
-                      transition: 'background 0.15s', cursor: 'pointer'
+                      transition: 'background 0.15s',
+                      cursor: 'default'
                     }}
-                    onClick={(e) => handleContactSeller(e, listing)}
-                    onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                    onMouseLeave={e => e.currentTarget.style.background = 'white'}
                   >
                     {/* Vendeur : avatar + infos + prix */}
                     {(() => {
@@ -298,14 +296,18 @@ export default function BookPage() {
                           {/* Infos */}
                           <div style={{ flex: 1, minWidth: 0 }}>
                             <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 4 }}>
-                              <span
-                                onClick={e => { e.stopPropagation(); router.push(`/seller/${listing.user_id}`) }}
-                                style={{ cursor: 'pointer', color: '#1a2e4a' }}
-                                onMouseEnter={e => e.currentTarget.style.color = '#00c9a7'}
-                                onMouseLeave={e => e.currentTarget.style.color = '#1a2e4a'}
-                              >
-                                {name}
-                              </span>
+                              {listing.user_id === userId ? (
+                                <span style={{ color: '#1a2e4a' }}>{name}</span>
+                              ) : (
+                                <span
+                                  onClick={() => router.push(`/seller/${listing.user_id}`)}
+                                  style={{ cursor: 'pointer', color: '#1a2e4a' }}
+                                  onMouseEnter={e => e.currentTarget.style.color = '#00c9a7'}
+                                  onMouseLeave={e => e.currentTarget.style.color = '#1a2e4a'}
+                                >
+                                  {name}
+                                </span>
+                              )}
                               {campus && <span style={{ color: '#64748b', fontWeight: 500 }}> · {campus}</span>}
                             </div>
                             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -339,7 +341,6 @@ export default function BookPage() {
                             )}
                             {listing.user_id === userId ? (
                               <div
-                                onClick={e => e.stopPropagation()}
                                 style={{
                                   marginTop: 8, background: '#f0fdf9', border: '1px solid #00c9a7',
                                   borderRadius: 7, padding: '6px 14px', fontSize: 12,
