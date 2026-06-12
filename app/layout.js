@@ -15,7 +15,6 @@ const geistMono = Geist_Mono({
 export const metadata = {
   title: "BiblioCamp — Achète et vends tes manuels scolaires",
   description: "La marketplace étudiante pour acheter et vendre des manuels scolaires d'occasion entre étudiants.",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -24,6 +23,12 @@ export const metadata = {
   formatDetection: {
     telephone: false,
   },
+};
+
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 };
 
 export default function RootLayout({ children }) {
