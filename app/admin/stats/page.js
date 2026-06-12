@@ -89,10 +89,13 @@ export default function AdminStatsPage() {
     </div>
   )
 
-  const { users, listings, messages, referrals, community, growth } = data
+  const { users, listings, messages, referrals, community, growth, growth_monthly } = data
   const maxGrowthUsers    = Math.max(...growth.map(g => g.new_users), 1)
   const maxGrowthListings = Math.max(...growth.map(g => g.new_listings), 1)
   const maxGrowthConv     = Math.max(...growth.map(g => g.new_conv), 1)
+  const maxMonthUsers    = Math.max(...(growth_monthly || []).map(g => g.new_users), 1)
+  const maxMonthListings = Math.max(...(growth_monthly || []).map(g => g.new_listings), 1)
+  const maxMonthConv     = Math.max(...(growth_monthly || []).map(g => g.new_conv), 1)
   const maxInst = Math.max(...(community.top_institutions.map(i => i.count)), 1)
   const maxProg = Math.max(...(community.top_programs.map(p => p.count)), 1)
   const maxBook = Math.max(...(listings.top_books.map(b => b.count)), 1)
@@ -155,6 +158,47 @@ export default function AdminStatsPage() {
             </Card>
           </div>
         </Section>
+
+        {/* ── CROISSANCE MENSUELLE ── */}
+        {growth_monthly && (
+          <Section title="📅 Croissance mensuelle (24 mois)">
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              <Card style={{ flex: 1, minWidth: 260 }}>
+                <CardTitle>Nouveaux utilisateurs / mois</CardTitle>
+                {growth_monthly.map((m, i) => (
+                  <Bar key={i}
+                    label={m.isCurrent ? `← ${m.label}` : m.label}
+                    value={m.new_users}
+                    max={maxMonthUsers}
+                    color={m.isCurrent ? '#00c9a7' : '#a7f3e0'}
+                  />
+                ))}
+              </Card>
+              <Card style={{ flex: 1, minWidth: 260 }}>
+                <CardTitle>Nouvelles annonces / mois</CardTitle>
+                {growth_monthly.map((m, i) => (
+                  <Bar key={i}
+                    label={m.isCurrent ? `← ${m.label}` : m.label}
+                    value={m.new_listings}
+                    max={maxMonthListings}
+                    color={m.isCurrent ? '#6c63ff' : '#c4b5fd'}
+                  />
+                ))}
+              </Card>
+              <Card style={{ flex: 1, minWidth: 260 }}>
+                <CardTitle>Nouvelles conversations / mois</CardTitle>
+                {growth_monthly.map((m, i) => (
+                  <Bar key={i}
+                    label={m.isCurrent ? `← ${m.label}` : m.label}
+                    value={m.new_conv}
+                    max={maxMonthConv}
+                    color={m.isCurrent ? '#f59e0b' : '#fde68a'}
+                  />
+                ))}
+              </Card>
+            </div>
+          </Section>
+        )}
 
         {/* ── ANNONCES ── */}
         <Section title="📚 Annonces & livres">
