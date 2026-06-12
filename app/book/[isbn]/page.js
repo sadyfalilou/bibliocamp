@@ -338,11 +338,14 @@ export default function BookPage() {
                               </div>
                             )}
                             {listing.user_id === userId ? (
-                              <div style={{
-                                marginTop: 8, background: '#f0fdf9', border: '1px solid #00c9a7',
-                                borderRadius: 7, padding: '6px 14px', fontSize: 12,
-                                fontWeight: 700, color: '#00c9a7', textAlign: 'center'
-                              }}>
+                              <div
+                                onClick={e => e.stopPropagation()}
+                                style={{
+                                  marginTop: 8, background: '#f0fdf9', border: '1px solid #00c9a7',
+                                  borderRadius: 7, padding: '6px 14px', fontSize: 12,
+                                  fontWeight: 700, color: '#00c9a7', textAlign: 'center',
+                                  cursor: 'default'
+                                }}>
                                 Ton annonce
                               </div>
                             ) : (
