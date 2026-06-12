@@ -137,7 +137,8 @@ export default function Home() {
       if (initialized) return
       initialized = true
       try {
-        const user = currentUser || (await supabase.auth.getSession()).data.session?.user
+        // getUser() valide le token côté serveur et retourne le app_metadata à jour
+        const { data: { user } } = await supabase.auth.getUser()
         if (!user) { window.location.href = '/login'; return }
         setUser(user)
         Sentry.setUser({ id: user.id, email: user.email })
@@ -150,8 +151,8 @@ export default function Home() {
         if (profile) {
           setUserProfile(profile)
           setUserSubjects(profile.subjects || [])
-          // Lire phone_verified depuis profiles (persistant après reconnexion)
-          if (profile.phone_verified || user?.user_metadata?.phone_verified) {
+          // app_metadata est défini côté serveur uniquement → source de vérité
+          if (user?.app_metadata?.phone_verified || profile.phone_verified || user?.user_metadata?.phone_verified) {
             setPhoneSaved(true)
           }
         }

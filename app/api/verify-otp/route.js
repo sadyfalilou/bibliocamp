@@ -59,20 +59,20 @@ export async function POST(request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
-  // Dans la table profiles (persistant après reconnexion)
-  const { error: profileErr } = await adminClient
-    .from('profiles')
-    .update({ phone_verified: true })
-    .eq('id', user.id)
-  if (profileErr) {
-    Sentry.captureException(profileErr, { extra: { route: 'POST /api/verify-otp', action: 'updateProfile', userId: user.id } })
+  // Dans app_metadata (côté serveur uniquement, persistant dans le JWT à chaque reconnexion)
+  const { error: updateErr } = await adminClient.auth.admin.updateUserById(user.id, {
+    app_metadata: { ...user.app_metadata, phone_verified: true }
+  })
+  if (updateErr) {
+    Sentry.captureException(updateErr, { extra: { route: 'POST /api/verify-otp', action: 'updateAppMetadata', userId: user.id } })
     return Response.json({ error: 'Erreur lors de la mise à jour du profil.' }, { status: 500 })
   }
 
-  // Dans user_metadata (pour la session courante)
-  await adminClient.auth.admin.updateUserById(user.id, {
-    user_metadata: { ...user.user_metadata, phone_verified: true }
-  })
+  // Dans profiles aussi (double persistance)
+  await adminClient
+    .from('profiles')
+    .update({ phone_verified: true })
+    .eq('id', user.id)
 
   return Response.json({ ok: true })
 }
