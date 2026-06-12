@@ -414,6 +414,8 @@ export default function Home() {
         setOtpError(result.error || 'Code incorrect ou expiré. Réessaie.')
         return
       }
+      // Rafraîchir la session pour que le nouveau JWT inclue phone_verified: true
+      await supabase.auth.refreshSession()
       setPhoneSaved(true)
       router.push(verifyRedirect)
     } catch {
