@@ -916,8 +916,10 @@ export default function Home() {
 
               <div style={{ display: 'flex', gap: 24, marginBottom: 16 }}>
                 <div>
-                  <span style={{ fontSize: 22, fontWeight: 900, color: '#1a2e4a' }}>{listings.length}</span>
-                  <span style={{ fontSize: 13, color: '#718096', marginLeft: 6 }}>manuels disponibles</span>
+                  <span style={{ fontSize: 22, fontWeight: 900, color: filtered.length === 0 ? '#e53e3e' : '#1a2e4a' }}>{filtered.length}</span>
+                  <span style={{ fontSize: 13, color: '#718096', marginLeft: 6 }}>
+                    {filtered.length === 0 ? 'aucun résultat' : filtered.length === 1 ? 'manuel disponible' : 'manuels disponibles'}
+                  </span>
                 </div>
               </div>
 
