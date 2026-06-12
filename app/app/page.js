@@ -151,10 +151,8 @@ export default function Home() {
         if (profile) {
           setUserProfile(profile)
           setUserSubjects(profile.subjects || [])
-          // app_metadata est défini côté serveur uniquement → source de vérité
-          if (user?.app_metadata?.phone_verified || profile.phone_verified || user?.user_metadata?.phone_verified) {
-            setPhoneSaved(true)
-          }
+          // profiles.phone_verified est la source de vérité unique
+          if (profile.phone_verified) setPhoneSaved(true)
         }
         fetchWishlist(user.id)
         fetchUnreadMessages(user.id)

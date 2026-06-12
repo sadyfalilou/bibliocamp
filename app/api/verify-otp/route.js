@@ -43,7 +43,6 @@ export async function POST(request) {
   }
   const token = auth.replace('Bearer ', '')
 
-  // Récupérer l'utilisateur depuis le token (avec le client anon)
   const anonClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -53,26 +52,20 @@ export async function POST(request) {
     return Response.json({ error: 'Session invalide.' }, { status: 401 })
   }
 
-  // 3. Marquer phone_verified dans profiles + user_metadata (double persistance)
+  // 3. Marquer phone_verified = true dans profiles (source de vérité unique)
   const adminClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
-  // Dans app_metadata (côté serveur uniquement, persistant dans le JWT à chaque reconnexion)
-  const { error: updateErr } = await adminClient.auth.admin.updateUserById(user.id, {
-    app_metadata: { ...user.app_metadata, phone_verified: true }
-  })
-  if (updateErr) {
-    Sentry.captureException(updateErr, { extra: { route: 'POST /api/verify-otp', action: 'updateAppMetadata', userId: user.id } })
+  const { error: upsertErr } = await adminClient
+    .from('profiles')
+    .upsert({ id: user.id, phone_verified: true }, { onConflict: 'id' })
+
+  if (upsertErr) {
+    Sentry.captureException(upsertErr, { extra: { route: 'POST /api/verify-otp', userId: user.id } })
     return Response.json({ error: 'Erreur lors de la mise à jour du profil.' }, { status: 500 })
   }
-
-  // Dans profiles aussi (double persistance)
-  await adminClient
-    .from('profiles')
-    .update({ phone_verified: true })
-    .eq('id', user.id)
 
   return Response.json({ ok: true })
 }
