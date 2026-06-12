@@ -53,18 +53,26 @@ export async function POST(request) {
     return Response.json({ error: 'Session invalide.' }, { status: 401 })
   }
 
-  // 3. Marquer phone_verified via le service role (admin), sans toucher à la session
+  // 3. Marquer phone_verified dans profiles + user_metadata (double persistance)
   const adminClient = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
-  const { error: updateErr } = await adminClient.auth.admin.updateUserById(user.id, {
-    user_metadata: { ...user.user_metadata, phone_verified: true }
-  })
-  if (updateErr) {
-    Sentry.captureException(updateErr, { extra: { route: 'POST /api/verify-otp', action: 'updateUserById', userId: user.id } })
+
+  // Dans la table profiles (persistant après reconnexion)
+  const { error: profileErr } = await adminClient
+    .from('profiles')
+    .update({ phone_verified: true })
+    .eq('id', user.id)
+  if (profileErr) {
+    Sentry.captureException(profileErr, { extra: { route: 'POST /api/verify-otp', action: 'updateProfile', userId: user.id } })
     return Response.json({ error: 'Erreur lors de la mise à jour du profil.' }, { status: 500 })
   }
+
+  // Dans user_metadata (pour la session courante)
+  await adminClient.auth.admin.updateUserById(user.id, {
+    user_metadata: { ...user.user_metadata, phone_verified: true }
+  })
 
   return Response.json({ ok: true })
 }

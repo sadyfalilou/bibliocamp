@@ -141,8 +141,6 @@ export default function Home() {
         if (!user) { window.location.href = '/login'; return }
         setUser(user)
         Sentry.setUser({ id: user.id, email: user.email })
-        const savedPhone = user?.user_metadata?.phone_verified
-        if (savedPhone) setPhoneSaved(true)
         const { data: profile } = await supabase
           .from('profiles')
           .select('*')
@@ -152,6 +150,10 @@ export default function Home() {
         if (profile) {
           setUserProfile(profile)
           setUserSubjects(profile.subjects || [])
+          // Lire phone_verified depuis profiles (persistant après reconnexion)
+          if (profile.phone_verified || user?.user_metadata?.phone_verified) {
+            setPhoneSaved(true)
+          }
         }
         fetchWishlist(user.id)
         fetchUnreadMessages(user.id)

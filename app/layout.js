@@ -30,12 +30,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="fr" className={`${geistSans.variable} ${geistMono.variable}`}>
       <head>
+        <meta name="color-scheme" content="light" />
         <meta name="theme-color" content="#1a2e4a" />
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
       </head>
-      <body style={{ margin: 0, overflowX: 'hidden' }}>
+      <body style={{ margin: 0, overflowX: 'hidden', colorScheme: 'light', background: '#fff' }}>
         {children}
         <footer style={{ borderTop: '1px solid #e5e7eb', marginTop: '4rem', padding: '1.5rem', textAlign: 'center', fontSize: '0.85rem', color: '#6b7280' }}>
           <span>© {new Date().getFullYear()} BiblioCamp</span>
