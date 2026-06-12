@@ -337,18 +337,28 @@ export default function BookPage() {
                                 Save {Math.round(((listing.original_price - listing.price) / listing.original_price) * 100)}%
                               </div>
                             )}
-                            <button
-                              onClick={(e) => handleContactSeller(e, listing)}
-                              style={{
-                                marginTop: 8, background: '#1a2e4a', border: 'none',
+                            {listing.user_id === userId ? (
+                              <div style={{
+                                marginTop: 8, background: '#f0fdf9', border: '1px solid #00c9a7',
                                 borderRadius: 7, padding: '6px 14px', fontSize: 12,
-                                fontWeight: 700, color: 'white', cursor: 'pointer'
-                              }}
-                              onMouseEnter={e => e.currentTarget.style.background = '#00c9a7'}
-                              onMouseLeave={e => e.currentTarget.style.background = '#1a2e4a'}
-                            >
-                              Contacter →
-                            </button>
+                                fontWeight: 700, color: '#00c9a7', textAlign: 'center'
+                              }}>
+                                Ton annonce
+                              </div>
+                            ) : (
+                              <button
+                                onClick={(e) => handleContactSeller(e, listing)}
+                                style={{
+                                  marginTop: 8, background: '#1a2e4a', border: 'none',
+                                  borderRadius: 7, padding: '6px 14px', fontSize: 12,
+                                  fontWeight: 700, color: 'white', cursor: 'pointer'
+                                }}
+                                onMouseEnter={e => e.currentTarget.style.background = '#00c9a7'}
+                                onMouseLeave={e => e.currentTarget.style.background = '#1a2e4a'}
+                              >
+                                Contacter →
+                              </button>
+                            )}
                           </div>
                         </>
                       )
