@@ -170,7 +170,8 @@ export default function AdminStatsPage() {
                     label={m.isCurrent ? `← ${m.label}` : m.label}
                     value={m.new_users}
                     max={maxMonthUsers}
-                    color={m.isCurrent ? '#00c9a7' : '#a7f3e0'}
+                    color={m.isCurrent ? '#00c9a7' : m.isFuture ? '#e2e8f0' : '#a7f3e0'}
+                    sub={m.isFuture ? '' : undefined}
                   />
                 ))}
               </Card>
@@ -181,7 +182,7 @@ export default function AdminStatsPage() {
                     label={m.isCurrent ? `← ${m.label}` : m.label}
                     value={m.new_listings}
                     max={maxMonthListings}
-                    color={m.isCurrent ? '#6c63ff' : '#c4b5fd'}
+                    color={m.isCurrent ? '#6c63ff' : m.isFuture ? '#e2e8f0' : '#c4b5fd'}
                   />
                 ))}
               </Card>
@@ -192,7 +193,7 @@ export default function AdminStatsPage() {
                     label={m.isCurrent ? `← ${m.label}` : m.label}
                     value={m.new_conv}
                     max={maxMonthConv}
-                    color={m.isCurrent ? '#f59e0b' : '#fde68a'}
+                    color={m.isCurrent ? '#f59e0b' : m.isFuture ? '#e2e8f0' : '#fde68a'}
                   />
                 ))}
               </Card>
