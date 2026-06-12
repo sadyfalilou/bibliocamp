@@ -435,7 +435,7 @@ export default function Home() {
   }
 
   const filtered = listings?.filter(item => {
-    if (item.status === 'sold' && item.user_id !== user?.id) return false // cache les vendus sauf au proprio
+    if (item.status === 'sold') return false // cache tous les manuels vendus du marketplace
     if (search) {
       const q = search.toLowerCase().replace(/[-\s]/g, '')
       const matchTitle = item.title?.toLowerCase().includes(search.toLowerCase())
