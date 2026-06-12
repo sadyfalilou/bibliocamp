@@ -170,6 +170,10 @@ export default function Profile() {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [deleteEmail, setDeleteEmail] = useState('')
+  const [deleteError, setDeleteError] = useState('')
+  const [deleting, setDeleting] = useState(false)
   const avatarInputRef = useRef(null)
   const router = useRouter()
 
@@ -249,6 +253,30 @@ export default function Profile() {
     if (error) { alert('Erreur : ' + error.message); return }
     setSaved(true)
     setTimeout(() => setSaved(false), 3000)
+  }
+
+  const handleDeleteAccount = async () => {
+    setDeleteError('')
+    if (!deleteEmail.trim()) { setDeleteError('Entre ton adresse courriel.'); return }
+    setDeleting(true)
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/delete-account', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session ? { Authorization: `Bearer ${session.access_token}` } : {})
+        },
+        body: JSON.stringify({ email_confirm: deleteEmail })
+      })
+      const result = await res.json()
+      if (!res.ok) { setDeleteError(result.error || 'Erreur inattendue.'); setDeleting(false); return }
+      await supabase.auth.signOut()
+      router.push('/?deleted=1')
+    } catch {
+      setDeleteError('Erreur réseau. Réessaie.')
+      setDeleting(false)
+    }
   }
 
   if (loading) return (
@@ -457,7 +485,93 @@ export default function Profile() {
             {saving ? 'Sauvegarde...' : '✓ Sauvegarder le profil'}
           </button>
         </form>
+
+        {/* ── ZONE DANGER ── */}
+        <div style={{ marginTop: 32, padding: '20px 24px', background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 14 }}>
+          <h3 style={{ fontSize: 14, fontWeight: 700, color: '#c53030', margin: '0 0 8px' }}>Zone de danger</h3>
+          <p style={{ fontSize: 13, color: '#744210', margin: '0 0 14px' }}>
+            La suppression de ton compte est irréversible. Toutes tes annonces, messages et données seront effacés définitivement.
+          </p>
+          <button
+            type="button"
+            onClick={() => { setShowDeleteModal(true); setDeleteEmail(''); setDeleteError('') }}
+            style={{
+              background: 'white', border: '1px solid #e53e3e', borderRadius: 8,
+              padding: '8px 18px', fontSize: 13, fontWeight: 700,
+              color: '#e53e3e', cursor: 'pointer'
+            }}
+            onMouseEnter={e => { e.currentTarget.style.background = '#e53e3e'; e.currentTarget.style.color = 'white' }}
+            onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#e53e3e' }}
+          >
+            🗑️ Supprimer mon compte
+          </button>
+        </div>
+
       </div>
+
+      {/* ── MODAL CONFIRMATION SUPPRESSION ── */}
+      {showDeleteModal && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)',
+          zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16
+        }} onClick={() => !deleting && setShowDeleteModal(false)}>
+          <div style={{
+            background: 'white', borderRadius: 16, padding: '32px',
+            maxWidth: 420, width: '100%', boxShadow: '0 20px 60px rgba(0,0,0,0.2)'
+          }} onClick={e => e.stopPropagation()}>
+            <div style={{ fontSize: 40, textAlign: 'center', marginBottom: 12 }}>⚠️</div>
+            <h2 style={{ fontSize: 20, fontWeight: 800, color: '#1a2e4a', textAlign: 'center', margin: '0 0 8px' }}>
+              Supprimer mon compte
+            </h2>
+            <p style={{ fontSize: 14, color: '#64748b', textAlign: 'center', margin: '0 0 24px' }}>
+              Cette action est <strong>irréversible</strong>. Toutes tes annonces, conversations et données seront supprimées.
+            </p>
+
+            <label style={{ display: 'block', fontSize: 13, fontWeight: 600, color: '#1a2e4a', marginBottom: 6 }}>
+              Confirme ton adresse courriel pour continuer
+            </label>
+            <input
+              type="email"
+              value={deleteEmail}
+              onChange={e => { setDeleteEmail(e.target.value); setDeleteError('') }}
+              placeholder={user?.email}
+              disabled={deleting}
+              style={{
+                width: '100%', padding: '10px 14px', borderRadius: 8, fontSize: 14,
+                border: `1px solid ${deleteError ? '#e53e3e' : '#cbd5e0'}`,
+                outline: 'none', boxSizing: 'border-box', marginBottom: 6
+              }}
+            />
+            {deleteError && (
+              <p style={{ color: '#e53e3e', fontSize: 13, margin: '0 0 12px' }}>{deleteError}</p>
+            )}
+
+            <div style={{ display: 'flex', gap: 10, marginTop: 16 }}>
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={deleting}
+                style={{
+                  flex: 1, padding: '11px', borderRadius: 9, fontSize: 14, fontWeight: 600,
+                  background: '#f1f5f9', border: 'none', color: '#64748b', cursor: 'pointer'
+                }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+                style={{
+                  flex: 1, padding: '11px', borderRadius: 9, fontSize: 14, fontWeight: 700,
+                  background: deleting ? '#feb2b2' : '#e53e3e', border: 'none',
+                  color: 'white', cursor: deleting ? 'not-allowed' : 'pointer'
+                }}
+              >
+                {deleting ? 'Suppression...' : 'Supprimer définitivement'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
