@@ -188,6 +188,24 @@ export async function GET(request) {
     return { new_users: new_users || 0, new_listings: new_listings || 0, new_conv: new_conv || 0 }
   }))
 
+  // Croissance 24 mois
+  const months = Array.from({ length: 24 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const start = new Date(d.getFullYear(), d.getMonth(), 1).toISOString()
+    const end   = new Date(d.getFullYear(), d.getMonth() + 1, 1).toISOString()
+    const label = d.toLocaleString('fr-CA', { month: 'short', year: '2-digit' })
+    return { start, end, label, isCurrent: i === 0 }
+  }).reverse()
+
+  const growth_monthly = await Promise.all(months.map(async m => {
+    const [{ count: new_users }, { count: new_listings }, { count: new_conv }] = await Promise.all([
+      supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', m.start).lt('created_at', m.end),
+      supabase.from('listings').select('*', { count: 'exact', head: true }).gte('created_at', m.start).lt('created_at', m.end),
+      supabase.from('conversations').select('*', { count: 'exact', head: true }).gte('created_at', m.start).lt('created_at', m.end),
+    ])
+    return { label: m.label, isCurrent: m.isCurrent, new_users: new_users || 0, new_listings: new_listings || 0, new_conv: new_conv || 0 }
+  }))
+
   return NextResponse.json({
     generated_at: now.toISOString(),
     users: {
@@ -228,5 +246,6 @@ export async function GET(request) {
     referrals: { total: referred_users || 0, founders, top_inviters },
     community: { top_institutions, top_programs },
     growth,
+    growth_monthly,
   })
 }
