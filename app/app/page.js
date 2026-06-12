@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState, useRef, Suspense } from 'react'
 import * as Sentry from '@sentry/nextjs'
 import { supabase } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -46,7 +46,7 @@ function isValidPhone(phone) {
 
 const LISTINGS_PER_PAGE = 24
 
-export default function Home() {
+function HomeContent() {
   const [listings, setListings] = useState([])
   const [hasMore, setHasMore] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
@@ -2080,5 +2080,13 @@ export default function Home() {
         )
       })()}
     </div>
+  )
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={null}>
+      <HomeContent />
+    </Suspense>
   )
 }
