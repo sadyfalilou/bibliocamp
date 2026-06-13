@@ -15,6 +15,8 @@ export default function BookPage() {
   const [userId, setUserId] = useState(null)
   const [phoneVerified, setPhoneVerified] = useState(false)
   const [sellerProfiles, setSellerProfiles] = useState({})
+  const [tutors, setTutors] = useState([])
+  const [tutorsLoading, setTutorsLoading] = useState(false)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -102,6 +104,23 @@ export default function BookPage() {
         }
       }
       setLoading(false)
+
+      // Charger les tuteurs liés au cours
+      setTutorsLoading(true)
+      try {
+        const courseCode = ls[0]?.course_code || null
+        if (courseCode) {
+          const { data: tutorData } = await supabase
+            .from('tutors_with_rating')
+            .select('*')
+            .eq('is_active', true)
+            .contains('subjects', [courseCode])
+            .order('avg_rating', { ascending: false })
+            .limit(4)
+          setTutors(tutorData ?? [])
+        }
+      } catch (e) { /* silencieux */ }
+      setTutorsLoading(false)
     }
     load()
   }, [isbn])
@@ -381,6 +400,91 @@ export default function BookPage() {
                 ))
               )}
             </div>
+
+            {/* TUTEURS DISPONIBLES */}
+            {(tutorsLoading || tutors.length > 0) && (
+              <div style={{ background: 'white', borderRadius: 16, border: '1px solid #e8edf2', overflow: 'hidden', marginTop: 24 }}>
+                <div style={{ padding: '20px 24px', borderBottom: '1px solid #f0f4f8', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <div>
+                    <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, color: '#1a2e4a' }}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00c9a7" strokeWidth="2.5" style={{ verticalAlign: 'middle', marginRight: 8 }}>
+                        <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                      </svg>
+                      Tuteurs disponibles pour ce cours
+                    </h2>
+                    <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>Des étudiants peuvent t'aider à comprendre ce manuel</p>
+                  </div>
+                  <button
+                    onClick={() => router.push('/tuteurs')}
+                    style={{ background: 'none', border: '1px solid #e2e8f0', borderRadius: 8, padding: '6px 14px', fontSize: 12, fontWeight: 600, color: '#64748b', cursor: 'pointer', whiteSpace: 'nowrap' }}
+                  >
+                    Voir tous →
+                  </button>
+                </div>
+
+                {tutorsLoading ? (
+                  <div style={{ padding: '20px 24px', display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                    {[0,1,2].map(i => (
+                      <div key={i} style={{ flex: '1 1 200px', minWidth: 180, background: '#f8fafc', borderRadius: 12, padding: '16px', height: 90, animation: 'pulse 1.5s infinite' }} />
+                    ))}
+                  </div>
+                ) : (
+                  <div style={{ padding: '16px 24px', display: 'grid', gridTemplateColumns: isMobile ? '1fr' : 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+                    {tutors.map(t => {
+                      const name = `${t.first_name || ''} ${(t.last_name || '')[0] || ''}.`.trim()
+                      const stars = t.avg_rating ? '★'.repeat(Math.round(t.avg_rating)) + '☆'.repeat(5 - Math.round(t.avg_rating)) : null
+                      const meetModes = [t.meet_campus && 'Campus', t.meet_online && 'En ligne', t.meet_city && 'Ville'].filter(Boolean).join(' · ')
+                      return (
+                        <div
+                          key={t.id}
+                          onClick={() => router.push(`/tuteurs/${t.id}`)}
+                          style={{ border: '1px solid #e8edf2', borderRadius: 12, padding: '14px 16px', cursor: 'pointer', transition: 'all 0.15s', background: '#fafcff' }}
+                          onMouseEnter={e => { e.currentTarget.style.borderColor = '#00c9a7'; e.currentTarget.style.boxShadow = '0 2px 12px rgba(0,201,167,0.15)' }}
+                          onMouseLeave={e => { e.currentTarget.style.borderColor = '#e8edf2'; e.currentTarget.style.boxShadow = 'none' }}
+                        >
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+                            {t.avatar_url ? (
+                              <img src={t.avatar_url} alt={name} style={{ width: 36, height: 36, borderRadius: '50%', objectFit: 'cover' }} />
+                            ) : (
+                              <div style={{ width: 36, height: 36, borderRadius: '50%', background: 'linear-gradient(135deg,#1a2e4a,#00c9a7)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, color: 'white', fontWeight: 800 }}>
+                                {(t.first_name || '?')[0].toUpperCase()}
+                              </div>
+                            )}
+                            <div style={{ minWidth: 0 }}>
+                              <div style={{ fontWeight: 700, fontSize: 14, color: '#1a2e4a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+                              <div style={{ fontSize: 12, color: '#94a3b8' }}>{t.campus || t.institution || ''}</div>
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                            <div>
+                              {stars && (
+                                <div style={{ fontSize: 11, color: '#f59e0b', letterSpacing: 1 }}>
+                                  {stars} <span style={{ color: '#64748b', fontWeight: 600 }}>{t.avg_rating}</span>
+                                  {t.review_count > 0 && <span style={{ color: '#94a3b8' }}> ({t.review_count})</span>}
+                                </div>
+                              )}
+                              {meetModes && <div style={{ fontSize: 11, color: '#64748b', marginTop: 2 }}>{meetModes}</div>}
+                            </div>
+                            <div style={{ fontWeight: 800, fontSize: 15, color: '#00c9a7', whiteSpace: 'nowrap' }}>{t.rate_per_hour} $/h</div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                )}
+
+                <div style={{ padding: '12px 24px', borderTop: '1px solid #f0f4f8', background: '#fafcff', textAlign: 'center' }}>
+                  <button
+                    onClick={() => router.push('/tuteurs')}
+                    style={{ background: '#1a2e4a', border: 'none', borderRadius: 9, padding: '10px 24px', fontSize: 13, fontWeight: 700, color: 'white', cursor: 'pointer' }}
+                    onMouseEnter={e => e.currentTarget.style.background = '#00c9a7'}
+                    onMouseLeave={e => e.currentTarget.style.background = '#1a2e4a'}
+                  >
+                    Explorer tous les tuteurs →
+                  </button>
+                </div>
+              </div>
+            )}
           </>
         )}
       </div>
