@@ -834,6 +834,43 @@ function HomeContent() {
 
           <div style={{ height: 1, background: '#e2e8f0', margin: '16px 0' }} />
 
+          {/* Section Tuteurs */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px 4px', fontSize: 11, fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: 1 }}>
+            <span>🎓</span><span>Tuteurs</span>
+          </div>
+          <div
+            onClick={() => { router.push('/tuteurs'); if (isMobile) setSidebarOpen(false) }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 22px 10px 36px',
+              borderLeft: '3px solid transparent',
+              color: '#4a5568', fontWeight: 500,
+              fontSize: 14, cursor: 'pointer',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <span>🔍</span><span>Trouver un tuteur</span>
+          </div>
+          <div
+            onClick={() => { router.push('/tuteurs/devenir-tuteur'); if (isMobile) setSidebarOpen(false) }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 22px 10px 36px',
+              borderLeft: '3px solid transparent',
+              color: '#4a5568', fontWeight: 500,
+              fontSize: 14, cursor: 'pointer',
+              transition: 'background 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+          >
+            <span>✏️</span><span>Devenir tuteur</span>
+          </div>
+
+          <div style={{ height: 1, background: '#e2e8f0', margin: '16px 0' }} />
+
           <div style={{ padding: '0 14px' }}>
             <button onClick={() => { setVerifyRedirect('/create'); setView('vendre') }} style={{
               width: '100%', padding: '11px',
