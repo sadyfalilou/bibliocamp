@@ -6,6 +6,8 @@ import { supabase } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Logo from '../../components/Logo'
 import BadgeList from '../../components/BadgeList'
+import TuteursView from '../../components/TuteursView'
+import DevenirTuteurView from '../../components/DevenirTuteurView'
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -822,8 +824,8 @@ function HomeContent() {
               ),
               label: 'Tuteurs',
               items: [
-                { label: 'Trouver un tuteur', action: () => { router.push('/tuteurs'); if (isMobile) setSidebarOpen(false) }, active: false },
-                { label: 'Devenir tuteur', action: () => { router.push('/tuteurs/devenir-tuteur'); if (isMobile) setSidebarOpen(false) }, active: false },
+                { label: 'Trouver un tuteur', action: () => { setView('tuteurs'); if (isMobile) setSidebarOpen(false) }, active: view === 'tuteurs' },
+                { label: 'Devenir tuteur', action: () => { setView('devenir-tuteur'); if (isMobile) setSidebarOpen(false) }, active: view === 'devenir-tuteur' },
                 { label: 'FAQ', action: () => { router.push('/tuteurs/faq'); if (isMobile) setSidebarOpen(false) }, active: false },
               ]
             },
@@ -916,13 +918,22 @@ function HomeContent() {
               onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
             >Accueil</span>
             {' / '}
-            <span onClick={() => setView('acheter')} style={{ cursor: 'pointer', color: '#00c9a7' }}
-              onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-              onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-            >Manuels</span>
+            {(view === 'tuteurs' || view === 'devenir-tuteur')
+              ? <span style={{ color: '#00c9a7', fontWeight: 500 }}>Tuteurs</span>
+              : <span onClick={() => setView('acheter')} style={{ cursor: 'pointer', color: '#00c9a7' }}
+                  onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                  onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+                >Manuels</span>
+            }
             {' / '}
             <span style={{ color: '#1a2e4a', fontWeight: 600 }}>
-              {view === 'acheter' ? 'Acheter' : view === 'vendre' ? 'Vendre' : view === 'mes-annonces' ? 'Mes annonces' : view === 'favoris' ? 'Mes favoris' : 'Mes cours'}
+              {view === 'acheter' ? 'Acheter'
+                : view === 'vendre' ? 'Vendre'
+                : view === 'mes-annonces' ? 'Mes annonces'
+                : view === 'favoris' ? 'Mes favoris'
+                : view === 'tuteurs' ? 'Trouver un tuteur'
+                : view === 'devenir-tuteur' ? 'Devenir tuteur'
+                : 'Mes cours'}
             </span>
           </div>
 
@@ -1260,6 +1271,16 @@ function HomeContent() {
                 </div>
               )}
             </>
+          )}
+
+          {/* ===== VUE TUTEURS ===== */}
+          {view === 'tuteurs' && (
+            <TuteursView user={user} setView={setView} />
+          )}
+
+          {/* ===== VUE DEVENIR TUTEUR ===== */}
+          {view === 'devenir-tuteur' && (
+            <DevenirTuteurView user={user} setView={setView} />
           )}
 
           {/* ===== VUE VENDRE ===== */}
