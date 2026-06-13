@@ -112,7 +112,7 @@ export async function GET(request) {
     supabase.from('tutors').select('*', { count: 'exact', head: true }).eq('meet_campus', true),
     supabase.from('tutors').select('*', { count: 'exact', head: true }).eq('meet_city', true),
     supabase.from('tutor_reviews').select('*', { count: 'exact', head: true }),
-    supabase.from('tutors').select('rate_per_hour, domains, subjects, avg_rating').eq('is_active', true),
+    supabase.from('tutors_with_rating').select('rate_per_hour, domains, subjects, avg_rating').eq('is_active', true),
   ])
 
   // ── Calculs ─────────────────────────────────────────────────────────────

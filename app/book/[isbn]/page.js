@@ -17,6 +17,7 @@ export default function BookPage() {
   const [sellerProfiles, setSellerProfiles] = useState({})
   const [tutors, setTutors] = useState([])
   const [tutorsLoading, setTutorsLoading] = useState(false)
+  const [tutorsCourseMatch, setTutorsCourseMatch] = useState(false)
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -115,6 +116,16 @@ export default function BookPage() {
             .select('*')
             .eq('is_active', true)
             .contains('subjects', [courseCode])
+            .order('avg_rating', { ascending: false })
+            .limit(4)
+          setTutors(tutorData ?? [])
+          if ((tutorData ?? []).length > 0) setTutorsCourseMatch(true)
+        } else {
+          // Pas de code de cours — charger quelques tuteurs actifs bien notés
+          const { data: tutorData } = await supabase
+            .from('tutors_with_rating')
+            .select('*')
+            .eq('is_active', true)
             .order('avg_rating', { ascending: false })
             .limit(4)
           setTutors(tutorData ?? [])
@@ -410,9 +421,11 @@ export default function BookPage() {
                       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00c9a7" strokeWidth="2.5" style={{ verticalAlign: 'middle', marginRight: 8 }}>
                         <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
                       </svg>
-                      Tuteurs disponibles pour ce cours
+                      {tutorsCourseMatch ? 'Tuteurs disponibles pour ce cours' : 'Besoin d\'aide pour ce manuel ?'}
                     </h2>
-                    <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>Des étudiants peuvent t'aider à comprendre ce manuel</p>
+                    <p style={{ margin: '4px 0 0', fontSize: 13, color: '#64748b' }}>
+                      {tutorsCourseMatch ? 'Des étudiants peuvent t\'aider à comprendre ce manuel' : 'Trouve un tuteur et maîtrise la matière rapidement'}
+                    </p>
                   </div>
                   <button
                     onClick={() => router.push('/tuteurs')}

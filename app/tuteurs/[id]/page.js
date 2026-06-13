@@ -98,12 +98,14 @@ export default function TuteurProfilePage() {
       const { data: tutorData, error } = await supabase
         .from('tutors_with_rating').select('*').eq('id', id).single()
       if (error || !tutorData) { router.push('/tuteurs'); return }
+      // Rediriger si profil inactif et pas le propriétaire
+      if (!tutorData.is_active && user?.id !== tutorData.user_id) { router.push('/tuteurs'); return }
       setTutor(tutorData)
       setIsOwn(user?.id === tutorData.user_id)
 
-      // Incrémenter vues
+      // Incrémenter vues (atomique)
       if (user?.id !== tutorData.user_id) {
-        supabase.from('tutors').update({ views_count: (tutorData.views_count || 0) + 1 }).eq('id', id)
+        supabase.rpc('increment_tutor_views', { tutor_id: id }).then(() => {})
       }
 
       // Charger avis

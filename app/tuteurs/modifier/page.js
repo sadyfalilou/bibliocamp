@@ -164,8 +164,9 @@ export default function ModifierTuteurPage() {
   const deleteProfil = async () => {
     setDeleting(true)
     try {
-      await supabase.from('tutor_reviews').delete().eq('tutor_id', tutorId)
-      await supabase.from('tutors').delete().eq('id', tutorId)
+      // Les avis sont supprimés automatiquement via ON DELETE CASCADE
+      const { error } = await supabase.from('tutors').delete().eq('id', tutorId)
+      if (error) throw error
       router.push('/tuteurs')
     } catch {
       setErrors({ submit: 'Erreur lors de la suppression.' })
