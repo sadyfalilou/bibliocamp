@@ -90,6 +90,7 @@ function HomeContent() {
   const [verifyingCode, setVerifyingCode] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
   const [tutorsMenuOpen, setTutorsMenuOpen] = useState(false)
+  const [manualsMenuOpen, setManualsMenuOpen] = useState(true)
   const [soldConfirmId, setSoldConfirmId] = useState(null)
   const [markingAsSold, setMarkingAsSold] = useState(false)
   const router = useRouter()
@@ -790,48 +791,60 @@ function HomeContent() {
             transition: 'transform 0.25s ease', overflowY: 'auto'
           } : {})
         }}>
-          {/* Manuels — parent toujours ouvert */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '11px 22px',
-            background: '#f0fdf9',
-            borderLeft: '3px solid #00c9a7',
-            color: '#00c9a7', fontWeight: 800, fontSize: 15
-          }}>
-            <span>📖</span><span>Manuels</span>
+          {/* Manuels — accordéon */}
+          <div
+            onClick={() => setManualsMenuOpen(o => !o)}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '11px 22px',
+              background: manualsMenuOpen ? '#f0fdf9' : 'transparent',
+              borderLeft: manualsMenuOpen ? '3px solid #00c9a7' : '3px solid transparent',
+              color: manualsMenuOpen ? '#00c9a7' : '#4a5568',
+              fontWeight: manualsMenuOpen ? 800 : 600,
+              fontSize: 15, cursor: 'pointer', transition: 'all 0.15s',
+              userSelect: 'none',
+            }}
+            onMouseEnter={e => { if (!manualsMenuOpen) e.currentTarget.style.background = '#f7fafc' }}
+            onMouseLeave={e => { if (!manualsMenuOpen) e.currentTarget.style.background = 'transparent' }}
+          >
+            <span>📖</span>
+            <span style={{ flex: 1 }}>Manuels</span>
+            <span style={{ fontSize: 11, transition: 'transform 0.2s', display: 'inline-block', transform: manualsMenuOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
           </div>
 
-          {/* Sous-menus */}
-          {[
-            { key: 'acheter', icon: '🛒', label: 'Acheter' },
-            { key: 'vendre', icon: '🏷️', label: 'Vendre' },
-            { key: 'mes-annonces', icon: '📋', label: 'Mes annonces' },
-            { key: 'favoris', icon: '❤️', label: 'Mes favoris', badge: wishlist.size > 0 ? wishlist.size : null },
-            { key: 'mes-cours', icon: '📚', label: 'Mes cours', badge: userSubjects.length > 0 ? userSubjects.length : null },
-          ].map(item => (
-            <div key={item.key}
-              onClick={() => { setView(item.key); if (isMobile) setSidebarOpen(false) }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '10px 22px 10px 36px',
-                borderLeft: view === item.key ? '3px solid #00c9a7' : '3px solid transparent',
-                background: view === item.key ? '#f0fdf9' : 'transparent',
-                color: view === item.key ? '#00c9a7' : '#4a5568',
-                fontWeight: view === item.key ? 700 : 500,
-                fontSize: 14, cursor: 'pointer', transition: 'all 0.15s'
-              }}
-              onMouseEnter={e => { if (view !== item.key) e.currentTarget.style.background = '#f7fafc' }}
-              onMouseLeave={e => { if (view !== item.key) e.currentTarget.style.background = 'transparent' }}
-            >
-              <span>{item.icon}</span>
-              <span style={{ flex: 1 }}>{item.label}</span>
-              {item.badge && (
-                <span style={{ background: '#e53e3e', color: 'white', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 700 }}>
-                  {item.badge}
-                </span>
-              )}
-            </div>
-          ))}
+          {manualsMenuOpen && (
+            <>
+              {[
+                { key: 'acheter', label: 'Acheter' },
+                { key: 'vendre', label: 'Vendre' },
+                { key: 'mes-annonces', label: 'Mes annonces' },
+                { key: 'favoris', label: 'Mes favoris', badge: wishlist.size > 0 ? wishlist.size : null },
+                { key: 'mes-cours', label: 'Mes cours', badge: userSubjects.length > 0 ? userSubjects.length : null },
+              ].map(item => (
+                <div key={item.key}
+                  onClick={() => { setView(item.key); if (isMobile) setSidebarOpen(false) }}
+                  style={{
+                    display: 'flex', alignItems: 'center', gap: 10,
+                    padding: '9px 22px 9px 42px',
+                    fontSize: 13, fontWeight: view === item.key ? 700 : 500,
+                    color: view === item.key ? '#00c9a7' : '#00c9a7',
+                    background: view === item.key ? '#f0fdf9' : 'transparent',
+                    cursor: 'pointer', transition: 'background 0.15s',
+                    opacity: view === item.key ? 1 : 0.75,
+                  }}
+                  onMouseEnter={e => { if (view !== item.key) { e.currentTarget.style.background = '#f0fdf9'; e.currentTarget.style.opacity = '1' } }}
+                  onMouseLeave={e => { if (view !== item.key) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.opacity = '0.75' } }}
+                >
+                  <span style={{ flex: 1 }}>{item.label}</span>
+                  {item.badge && (
+                    <span style={{ background: '#e53e3e', color: 'white', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 700 }}>
+                      {item.badge}
+                    </span>
+                  )}
+                </div>
+              ))}
+            </>
+          )}
 
           <div style={{ height: 1, background: '#e2e8f0', margin: '16px 0' }} />
 
@@ -884,20 +897,6 @@ function HomeContent() {
           <div style={{ height: 1, background: '#e2e8f0', margin: '16px 0' }} />
 
           <div style={{ padding: '0 14px' }}>
-            <button onClick={() => { setVerifyRedirect('/create'); setView('vendre') }} style={{
-              width: '100%', padding: '11px',
-              background: '#1a2e4a', color: 'white',
-              border: 'none', borderRadius: 10,
-              fontWeight: 700, fontSize: 14, cursor: 'pointer'
-            }}
-              onMouseEnter={e => e.target.style.background = '#00c9a7'}
-              onMouseLeave={e => e.target.style.background = '#1a2e4a'}
-            >
-              + Publier un manuel
-            </button>
-
-            <div style={{ height: 1, background: '#e2e8f0', margin: '12px 0' }} />
-
             <button
               onClick={() => router.push('/profile')}
               style={{
