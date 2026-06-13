@@ -89,6 +89,7 @@ function HomeContent() {
   const [sendingCode, setSendingCode] = useState(false)
   const [verifyingCode, setVerifyingCode] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
+  const [tutorsMenuOpen, setTutorsMenuOpen] = useState(false)
   const [soldConfirmId, setSoldConfirmId] = useState(null)
   const [markingAsSold, setMarkingAsSold] = useState(false)
   const router = useRouter()
@@ -834,40 +835,51 @@ function HomeContent() {
 
           <div style={{ height: 1, background: '#e2e8f0', margin: '16px 0' }} />
 
-          {/* Section Tuteurs */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 16px 4px', fontSize: 11, fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: 1 }}>
-            <span>🎓</span><span>Tuteurs</span>
-          </div>
+          {/* Section Tuteurs — accordéon */}
           <div
-            onClick={() => { router.push('/tuteurs'); if (isMobile) setSidebarOpen(false) }}
+            onClick={() => setTutorsMenuOpen(o => !o)}
             style={{
               display: 'flex', alignItems: 'center', gap: 10,
-              padding: '10px 22px 10px 36px',
-              borderLeft: '3px solid transparent',
-              color: '#4a5568', fontWeight: 500,
-              fontSize: 14, cursor: 'pointer',
-              transition: 'background 0.15s',
+              padding: '11px 22px',
+              background: tutorsMenuOpen ? '#f0fdf9' : 'transparent',
+              borderLeft: tutorsMenuOpen ? '3px solid #00c9a7' : '3px solid transparent',
+              color: tutorsMenuOpen ? '#00c9a7' : '#4a5568',
+              fontWeight: tutorsMenuOpen ? 800 : 600,
+              fontSize: 15, cursor: 'pointer', transition: 'all 0.15s',
+              userSelect: 'none',
             }}
-            onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+            onMouseEnter={e => { if (!tutorsMenuOpen) e.currentTarget.style.background = '#f7fafc' }}
+            onMouseLeave={e => { if (!tutorsMenuOpen) e.currentTarget.style.background = 'transparent' }}
           >
-            <span>🔍</span><span>Trouver un tuteur</span>
+            <span>🎓</span>
+            <span style={{ flex: 1 }}>Tuteurs</span>
+            <span style={{ fontSize: 11, transition: 'transform 0.2s', display: 'inline-block', transform: tutorsMenuOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
           </div>
-          <div
-            onClick={() => { router.push('/tuteurs/devenir-tuteur'); if (isMobile) setSidebarOpen(false) }}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '10px 22px 10px 36px',
-              borderLeft: '3px solid transparent',
-              color: '#4a5568', fontWeight: 500,
-              fontSize: 14, cursor: 'pointer',
-              transition: 'background 0.15s',
-            }}
-            onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-            onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-          >
-            <span>✏️</span><span>Devenir tuteur</span>
-          </div>
+
+          {tutorsMenuOpen && (
+            <>
+              {[
+                { label: 'Trouver un tuteur', href: '/tuteurs' },
+                { label: 'Devenir tuteur', href: '/tuteurs/devenir-tuteur' },
+                { label: 'FAQ', href: '/tuteurs/faq' },
+              ].map(item => (
+                <div
+                  key={item.href}
+                  onClick={() => { router.push(item.href); if (isMobile) setSidebarOpen(false) }}
+                  style={{
+                    padding: '9px 22px 9px 42px',
+                    fontSize: 13, fontWeight: 500,
+                    color: '#00c9a7', cursor: 'pointer',
+                    transition: 'background 0.15s',
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.background = '#f0fdf9'}
+                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+                >
+                  {item.label}
+                </div>
+              ))}
+            </>
+          )}
 
           <div style={{ height: 1, background: '#e2e8f0', margin: '16px 0' }} />
 
