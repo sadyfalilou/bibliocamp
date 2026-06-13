@@ -791,125 +791,118 @@ function HomeContent() {
             transition: 'transform 0.25s ease', overflowY: 'auto'
           } : {})
         }}>
-          {/* Manuels — accordéon */}
-          <div
-            onClick={() => setManualsMenuOpen(o => !o)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '11px 22px',
-              background: manualsMenuOpen ? '#f0fdf9' : 'transparent',
-              borderLeft: manualsMenuOpen ? '3px solid #00c9a7' : '3px solid transparent',
-              color: manualsMenuOpen ? '#00c9a7' : '#4a5568',
-              fontWeight: manualsMenuOpen ? 800 : 600,
-              fontSize: 15, cursor: 'pointer', transition: 'all 0.15s',
-              userSelect: 'none',
-            }}
-            onMouseEnter={e => { if (!manualsMenuOpen) e.currentTarget.style.background = '#f7fafc' }}
-            onMouseLeave={e => { if (!manualsMenuOpen) e.currentTarget.style.background = 'transparent' }}
-          >
-            <span>📖</span>
-            <span style={{ flex: 1 }}>Manuels</span>
-            <span style={{ fontSize: 11, transition: 'transform 0.2s', display: 'inline-block', transform: manualsMenuOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
-          </div>
-
-          {manualsMenuOpen && (
-            <>
-              {[
-                { key: 'acheter', label: 'Acheter' },
-                { key: 'vendre', label: 'Vendre' },
-                { key: 'mes-annonces', label: 'Mes annonces' },
-                { key: 'favoris', label: 'Mes favoris', badge: wishlist.size > 0 ? wishlist.size : null },
-                { key: 'mes-cours', label: 'Mes cours', badge: userSubjects.length > 0 ? userSubjects.length : null },
-              ].map(item => (
-                <div key={item.key}
-                  onClick={() => { setView(item.key); if (isMobile) setSidebarOpen(false) }}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    padding: '9px 22px 9px 42px',
-                    fontSize: 13, fontWeight: view === item.key ? 700 : 500,
-                    color: view === item.key ? '#00c9a7' : '#00c9a7',
-                    background: view === item.key ? '#f0fdf9' : 'transparent',
-                    cursor: 'pointer', transition: 'background 0.15s',
-                    opacity: view === item.key ? 1 : 0.75,
-                  }}
-                  onMouseEnter={e => { if (view !== item.key) { e.currentTarget.style.background = '#f0fdf9'; e.currentTarget.style.opacity = '1' } }}
-                  onMouseLeave={e => { if (view !== item.key) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.opacity = '0.75' } }}
+          {/* ── Composant accordéon réutilisable ── */}
+          {[
+            {
+              id: 'manuels',
+              isOpen: manualsMenuOpen,
+              toggle: () => setManualsMenuOpen(o => !o),
+              icon: (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+              ),
+              label: 'Manuels',
+              items: [
+                { label: 'Acheter', action: () => { setView('acheter'); if (isMobile) setSidebarOpen(false) }, active: view === 'acheter' },
+                { label: 'Vendre', action: () => { setView('vendre'); if (isMobile) setSidebarOpen(false) }, active: view === 'vendre' },
+                { label: 'Mes annonces', action: () => { setView('mes-annonces'); if (isMobile) setSidebarOpen(false) }, active: view === 'mes-annonces' },
+                { label: 'Mes favoris', action: () => { setView('favoris'); if (isMobile) setSidebarOpen(false) }, active: view === 'favoris', badge: wishlist.size > 0 ? wishlist.size : null },
+                { label: 'Mes cours', action: () => { setView('mes-cours'); if (isMobile) setSidebarOpen(false) }, active: view === 'mes-cours', badge: userSubjects.length > 0 ? userSubjects.length : null },
+              ]
+            },
+            {
+              id: 'tuteurs',
+              isOpen: tutorsMenuOpen,
+              toggle: () => setTutorsMenuOpen(o => !o),
+              icon: (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                </svg>
+              ),
+              label: 'Tuteurs',
+              items: [
+                { label: 'Trouver un tuteur', action: () => { router.push('/tuteurs'); if (isMobile) setSidebarOpen(false) }, active: false },
+                { label: 'Devenir tuteur', action: () => { router.push('/tuteurs/devenir-tuteur'); if (isMobile) setSidebarOpen(false) }, active: false },
+                { label: 'FAQ', action: () => { router.push('/tuteurs/faq'); if (isMobile) setSidebarOpen(false) }, active: false },
+              ]
+            },
+          ].map(section => (
+            <div key={section.id}>
+              {/* Parent */}
+              <div
+                onClick={section.toggle}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 18px',
+                  borderLeft: section.isOpen ? '3px solid #00c9a7' : '3px solid transparent',
+                  background: section.isOpen ? '#f0fdf9' : 'transparent',
+                  color: section.isOpen ? '#00c9a7' : '#4a5568',
+                  fontWeight: 700, fontSize: 14,
+                  cursor: 'pointer', userSelect: 'none', transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { if (!section.isOpen) e.currentTarget.style.background = '#f7fafc' }}
+                onMouseLeave={e => { if (!section.isOpen) e.currentTarget.style.background = 'transparent' }}
+              >
+                <span style={{ display: 'flex', opacity: section.isOpen ? 1 : 0.5 }}>{section.icon}</span>
+                <span style={{ flex: 1 }}>{section.label}</span>
+                <svg
+                  width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                  style={{ transition: 'transform 0.2s', transform: section.isOpen ? 'rotate(90deg)' : 'rotate(0deg)', opacity: 0.4 }}
                 >
-                  <span style={{ flex: 1 }}>{item.label}</span>
-                  {item.badge && (
-                    <span style={{ background: '#e53e3e', color: 'white', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 700 }}>
-                      {item.badge}
-                    </span>
-                  )}
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </div>
+
+              {/* Sous-items */}
+              {section.isOpen && (
+                <div style={{ paddingBottom: 4 }}>
+                  {section.items.map((item, i) => (
+                    <div
+                      key={i}
+                      onClick={item.action}
+                      style={{
+                        display: 'flex', alignItems: 'center',
+                        padding: '8px 18px 8px 46px',
+                        fontSize: 13,
+                        fontWeight: item.active ? 700 : 400,
+                        color: item.active ? '#00c9a7' : '#64748b',
+                        background: item.active ? '#f0fdf9' : 'transparent',
+                        cursor: 'pointer', transition: 'all 0.12s',
+                        borderLeft: item.active ? '3px solid #00c9a7' : '3px solid transparent',
+                      }}
+                      onMouseEnter={e => { if (!item.active) { e.currentTarget.style.background = '#f7fafc'; e.currentTarget.style.color = '#1a2e4a' } }}
+                      onMouseLeave={e => { if (!item.active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#64748b' } }}
+                    >
+                      <span style={{ flex: 1 }}>{item.label}</span>
+                      {item.badge && (
+                        <span style={{ background: '#e53e3e', color: 'white', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 700 }}>{item.badge}</span>
+                      )}
+                    </div>
+                  ))}
                 </div>
-              ))}
-            </>
-          )}
+              )}
+            </div>
+          ))}
 
-          <div style={{ height: 1, background: '#e2e8f0', margin: '16px 0' }} />
+          <div style={{ height: 1, background: '#f1f5f9', margin: '8px 0' }} />
 
-          {/* Section Tuteurs — accordéon */}
-          <div
-            onClick={() => setTutorsMenuOpen(o => !o)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              padding: '11px 22px',
-              background: tutorsMenuOpen ? '#f0fdf9' : 'transparent',
-              borderLeft: tutorsMenuOpen ? '3px solid #00c9a7' : '3px solid transparent',
-              color: tutorsMenuOpen ? '#00c9a7' : '#4a5568',
-              fontWeight: tutorsMenuOpen ? 800 : 600,
-              fontSize: 15, cursor: 'pointer', transition: 'all 0.15s',
-              userSelect: 'none',
-            }}
-            onMouseEnter={e => { if (!tutorsMenuOpen) e.currentTarget.style.background = '#f7fafc' }}
-            onMouseLeave={e => { if (!tutorsMenuOpen) e.currentTarget.style.background = 'transparent' }}
-          >
-            <span>🎓</span>
-            <span style={{ flex: 1 }}>Tuteurs</span>
-            <span style={{ fontSize: 11, transition: 'transform 0.2s', display: 'inline-block', transform: tutorsMenuOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
-          </div>
-
-          {tutorsMenuOpen && (
-            <>
-              {[
-                { label: 'Trouver un tuteur', href: '/tuteurs' },
-                { label: 'Devenir tuteur', href: '/tuteurs/devenir-tuteur' },
-                { label: 'FAQ', href: '/tuteurs/faq' },
-              ].map(item => (
-                <div
-                  key={item.href}
-                  onClick={() => { router.push(item.href); if (isMobile) setSidebarOpen(false) }}
-                  style={{
-                    padding: '9px 22px 9px 42px',
-                    fontSize: 13, fontWeight: 500,
-                    color: '#00c9a7', cursor: 'pointer',
-                    transition: 'background 0.15s',
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.background = '#f0fdf9'}
-                  onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
-                >
-                  {item.label}
-                </div>
-              ))}
-            </>
-          )}
-
-          <div style={{ height: 1, background: '#e2e8f0', margin: '16px 0' }} />
-
-          <div style={{ padding: '0 14px' }}>
+          <div style={{ padding: '8px 14px' }}>
             <button
               onClick={() => router.push('/profile')}
               style={{
-                width: '100%', padding: '10px',
-                background: 'transparent', color: '#718096',
-                border: '1px solid #e2e8f0', borderRadius: 10,
+                width: '100%', padding: '9px',
+                background: 'transparent', color: '#64748b',
+                border: '1px solid #e2e8f0', borderRadius: 8,
                 fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                transition: 'all 0.15s',
               }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = '#00c9a7'; e.currentTarget.style.color = '#00c9a7' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#718096' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b' }}
             >
-              👤 Mon profil
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Mon profil
             </button>
           </div>
         </aside>
