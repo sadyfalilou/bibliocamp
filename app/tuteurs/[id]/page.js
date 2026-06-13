@@ -142,7 +142,7 @@ export default function TuteurProfilePage() {
         <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', alignItems: 'center', height: 56, gap: 16 }}>
           <button onClick={() => router.push('/tuteurs')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#64748b', padding: 4 }}>← Tuteurs</button>
           <div style={{ flex: 1 }} />
-          <Logo size={26} />
+          <Logo variant="dark" size="sm" />
         </div>
       </div>
 

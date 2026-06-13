@@ -211,7 +211,7 @@ export default function TuteursPage() {
       <div style={{ background: 'white', borderBottom: '1px solid #e2e8f0', padding: '0 20px', position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ maxWidth: 1000, margin: '0 auto', display: 'flex', alignItems: 'center', height: 56, gap: 16 }}>
           <button onClick={() => router.push('/app')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 18, color: '#64748b', padding: 4 }}>←</button>
-          <Logo size={28} />
+          <Logo variant="dark" size="sm" />
           <span style={{ fontSize: 15, fontWeight: 700, color: '#1a2e4a' }}>Tuteurs</span>
           <div style={{ flex: 1 }} />
           {user ? (
