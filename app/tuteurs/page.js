@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Logo from '../../components/Logo'
+import { BADGE_LABELS } from '../../lib/tutorBadge'
 
 const DOMAINS = ['Sciences', 'Santé', 'Droit', 'Arts', 'Éducation', 'Génie', 'Commerce', 'Autres']
 const TODAY_KEY = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'][new Date().getDay()]
@@ -62,7 +63,14 @@ function TutorCard({ tutor, onClick }) {
         </div>
 
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 700, fontSize: 15, color: '#1a2e4a', marginBottom: 2 }}>{name}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+            <div style={{ fontWeight: 700, fontSize: 15, color: '#1a2e4a' }}>{name}</div>
+            {tutor.response_badge && BADGE_LABELS[tutor.response_badge] && (
+              <span style={{ fontSize: 10, fontWeight: 700, background: BADGE_LABELS[tutor.response_badge].bg, color: BADGE_LABELS[tutor.response_badge].color, borderRadius: 20, padding: '2px 7px', whiteSpace: 'nowrap' }}>
+                {BADGE_LABELS[tutor.response_badge].label}
+              </span>
+            )}
+          </div>
           <div style={{ fontSize: 12, color: '#64748b' }}>
             {[tutor.domains?.[0], tutor.institution || tutor.campus].filter(Boolean).join(' · ')}
           </div>
@@ -146,8 +154,18 @@ export default function TuteursPage() {
         setIsTutor(!!t)
       }
       const { data } = await supabase.from('tutors_with_rating').select('*').eq('is_active', true)
-      setTutors(data || [])
+      const list = data || []
+      setTutors(list)
       setLoading(false)
+
+      if (list.length > 0) {
+        const ids = list.map(t => t.user_id).join(',')
+        const res = await fetch(`/api/tutors/badges?ids=${ids}`)
+        if (res.ok) {
+          const { badges } = await res.json()
+          setTutors(prev => prev.map(t => ({ ...t, response_badge: badges[t.user_id] ?? null })))
+        }
+      }
     }
     load()
   }, [])

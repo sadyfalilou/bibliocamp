@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import Logo from '../../../components/Logo'
+import { BADGE_LABELS } from '../../../lib/tutorBadge'
 
 const DAYS = [
   { key: 'lundi',     label: 'Lun' },
@@ -102,6 +103,14 @@ export default function TuteurProfilePage() {
       if (!tutorData.is_active && user?.id !== tutorData.user_id) { router.push('/tuteurs'); return }
       setTutor(tutorData)
       setIsOwn(user?.id === tutorData.user_id)
+
+      // Badge de réactivité
+      fetch(`/api/tutors/badges?ids=${tutorData.user_id}`)
+        .then(res => res.ok ? res.json() : null)
+        .then(json => {
+          if (json) setTutor(prev => prev ? { ...prev, response_badge: json.badges[tutorData.user_id] ?? null } : prev)
+        })
+        .catch(() => {})
 
       // Incrémenter vues (atomique)
       if (user?.id !== tutorData.user_id) {
@@ -264,6 +273,11 @@ export default function TuteurProfilePage() {
               <h1 style={{ fontSize: 20, fontWeight: 900, color: '#1a2e4a', margin: 0 }}>{name}</h1>
               {tutor.is_pro && <span style={{ fontSize: 11, fontWeight: 700, background: 'linear-gradient(135deg,#6c63ff,#a78bfa)', color: 'white', borderRadius: 8, padding: '3px 9px' }}>PRO</span>}
               {tutor.is_verified && <span style={{ fontSize: 11, fontWeight: 700, background: '#f0fdf9', color: '#00c9a7', borderRadius: 8, padding: '3px 9px', border: '1px solid #a7f3d0' }}>Vérifié</span>}
+              {tutor.response_badge && BADGE_LABELS[tutor.response_badge] && (
+                <span style={{ fontSize: 11, fontWeight: 700, background: BADGE_LABELS[tutor.response_badge].bg, color: BADGE_LABELS[tutor.response_badge].color, borderRadius: 8, padding: '3px 9px' }}>
+                  {BADGE_LABELS[tutor.response_badge].label}
+                </span>
+              )}
             </div>
 
             <div style={{ fontSize: 13, color: '#64748b', marginBottom: 10 }}>

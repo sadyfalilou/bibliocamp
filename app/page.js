@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabase'
 import Logo from '../components/Logo'
 import Carousel from '../components/Carousel'
+import { BADGE_LABELS } from '../lib/tutorBadge'
 
 export default function Landing() {
   const router = useRouter()
@@ -441,8 +442,15 @@ export default function Landing() {
                       {t.rate_per_hour} $/h
                     </div>
                   </div>
-                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>
-                    {name}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {name}
+                    </div>
+                    {t.response_badge && BADGE_LABELS[t.response_badge] && (
+                      <span style={{ fontSize: 9, fontWeight: 700, background: BADGE_LABELS[t.response_badge].bg, color: BADGE_LABELS[t.response_badge].color, borderRadius: 20, padding: '2px 6px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        {BADGE_LABELS[t.response_badge].label}
+                      </span>
+                    )}
                   </div>
                   <div style={{ fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {[t.institution || t.campus, t.subjects?.[0]].filter(Boolean).join(' · ')}
