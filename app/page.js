@@ -361,7 +361,7 @@ export default function Landing() {
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a2e4a" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
         </div>
 
-        <Carousel>
+        <Carousel onSeeAll={() => router.push('/login')} seeAllImages={listings.slice(0, 3).map(l => l.image_url)}>
           {listings.length === 0
             ? Array.from({ length: 5 }).map((_, i) => (
               <div key={i} style={{ flex: '0 0 170px', scrollSnapAlign: 'start' }}>
@@ -423,7 +423,7 @@ export default function Landing() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a2e4a" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
           </div>
 
-          <Carousel>
+          <Carousel onSeeAll={() => router.push('/login')} seeAllImages={tutors.slice(0, 3).map(t => t.avatar_url)}>
             {tutors.map((t, idx) => {
               const name = `${t.first_name || ''} ${t.last_name?.[0] || ''}.`.trim()
               return (
