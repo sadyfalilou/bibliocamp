@@ -232,7 +232,7 @@ export default function TuteurProfilePage() {
         <div style={{ maxWidth: 760, margin: '0 auto', display: 'flex', alignItems: 'center', height: 56, gap: 16 }}>
           <button onClick={() => router.push('/tuteurs')} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 15, color: '#64748b', padding: 4, display: 'flex', alignItems: 'center', gap: 4, fontWeight: 600 }}>← Tuteurs</button>
           <div style={{ flex: 1 }} />
-          <Logo variant="dark" size="sm" />
+          <Logo variant="dark" size="sm" onClick={() => router.push('/')} style={{ cursor: 'pointer' }} />
         </div>
       </div>
 
@@ -242,8 +242,8 @@ export default function TuteurProfilePage() {
         <div style={{ background: 'white', borderRadius: 16, border: '1px solid #e2e8f0', overflow: 'hidden' }}>
           <div style={{ background: 'linear-gradient(135deg,#1a2e4a,#2d4a6b)', height: 72 }} />
           <div style={{ padding: '0 24px 24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', marginTop: -34, marginBottom: 12 }}>
-              <div style={{ position: 'relative' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
+              <div style={{ position: 'relative', marginTop: -34 }}>
                 {tutor.avatar_url
                   ? <img src={tutor.avatar_url} alt={name} style={{ width: 68, height: 68, borderRadius: '50%', objectFit: 'cover', border: '3px solid white' }} />
                   : <div style={{ width: 68, height: 68, borderRadius: '50%', background: 'linear-gradient(135deg,#00c9a7,#0099ff)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 26, color: 'white', fontWeight: 700, border: '3px solid white' }}>
@@ -254,7 +254,7 @@ export default function TuteurProfilePage() {
                   <div style={{ position: 'absolute', bottom: 2, right: 2, background: '#00c9a7', borderRadius: '50%', width: 20, height: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 10, border: '2px solid white', color: 'white', fontWeight: 700 }}>✓</div>
                 )}
               </div>
-              <div style={{ textAlign: 'right' }}>
+              <div style={{ textAlign: 'right', paddingTop: 12 }}>
                 <div style={{ fontSize: 26, fontWeight: 900, color: '#00c9a7' }}>{tutor.rate_per_hour} $</div>
                 <div style={{ fontSize: 12, color: '#a0aec0' }}>par heure</div>
               </div>
