@@ -10,6 +10,7 @@ import TuteursView from '../../components/TuteursView'
 import DevenirTuteurView from '../../components/DevenirTuteurView'
 import AccueilView from '../../components/AccueilView'
 import TutorDetailPanel from '../../components/TutorDetailPanel'
+import TuteursFaqView from '../../components/TuteursFaqView'
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -116,7 +117,7 @@ function HomeContent() {
 
   // Ouvre/ferme automatiquement les accordéons sidebar selon la vue active
   const MANUELS_VIEWS = ['acheter', 'vendre', 'mes-annonces', 'favoris', 'mes-cours']
-  const TUTEURS_VIEWS = ['tuteurs', 'devenir-tuteur']
+  const TUTEURS_VIEWS = ['tuteurs', 'devenir-tuteur', 'faq']
   useEffect(() => {
     if (view === 'accueil') { setManualsMenuOpen(false); setTutorsMenuOpen(false) }
     else if (MANUELS_VIEWS.includes(view)) { setManualsMenuOpen(true); setTutorsMenuOpen(false) }
@@ -867,7 +868,7 @@ function HomeContent() {
               items: [
                 { label: 'Trouver un tuteur', action: () => { setView('tuteurs'); if (isMobile) setSidebarOpen(false) }, active: view === 'tuteurs' },
                 { label: 'Devenir tuteur', action: () => { setView('devenir-tuteur'); if (isMobile) setSidebarOpen(false) }, active: view === 'devenir-tuteur' },
-                { label: 'FAQ', action: () => { router.push('/tuteurs/faq'); if (isMobile) setSidebarOpen(false) }, active: false },
+                { label: 'FAQ', action: () => { setView('faq'); if (isMobile) setSidebarOpen(false) }, active: view === 'faq' },
               ]
             },
           ].map(section => (
@@ -1321,6 +1322,11 @@ function HomeContent() {
           {/* ===== VUE DEVENIR TUTEUR ===== */}
           {view === 'devenir-tuteur' && (
             <DevenirTuteurView user={user} setView={setView} />
+          )}
+
+          {/* ===== VUE FAQ TUTEURS ===== */}
+          {view === 'faq' && (
+            <TuteursFaqView setView={setView} />
           )}
 
           {/* ===== VUE VENDRE ===== */}

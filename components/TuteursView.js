@@ -275,7 +275,7 @@ export default function TuteursView({ user, setView, onSelectTutor }) {
             {filtered.length === 0 ? 'Aucun tuteur trouvé' : `${filtered.length} tuteur${filtered.length > 1 ? 's' : ''} disponible${filtered.length > 1 ? 's' : ''}`}
             {hasFilters && <> · <button onClick={resetFilters} style={{ background: 'none', border: 'none', color: '#00c9a7', cursor: 'pointer', fontSize: 13, fontWeight: 600, padding: 0 }}>tout voir</button></>}
           </span>
-          <button onClick={() => router.push('/tuteurs/faq')} style={{ background: 'none', border: 'none', color: '#00c9a7', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>FAQ →</button>
+          <button onClick={() => setView('faq')} style={{ background: 'none', border: 'none', color: '#00c9a7', cursor: 'pointer', fontSize: 13, fontWeight: 600 }}>FAQ →</button>
         </div>
       )}
 
