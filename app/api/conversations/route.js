@@ -49,6 +49,7 @@ export async function POST(request) {
       listing_id,
       user1_id: buyer_id,
       user2_id: seller_id,
+      context_type: 'manuel',
       last_message_at: new Date().toISOString()
     })
     .select('id')

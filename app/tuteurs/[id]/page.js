@@ -143,13 +143,16 @@ export default function TuteurProfilePage() {
     try {
       const { data: existing } = await supabase
         .from('conversations').select('id')
-        .or(`and(user1_id.eq.${user.id},user2_id.eq.${tutor.user_id}),and(user1_id.eq.${tutor.user_id},user2_id.eq.${user.id})`)
-        .single()
+        .eq('tutor_id', tutor.id)
+        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+        .maybeSingle()
 
       let convId = existing?.id
       if (!convId) {
         const { data: newConv } = await supabase
-          .from('conversations').insert({ user1_id: user.id, user2_id: tutor.user_id }).select('id').single()
+          .from('conversations')
+          .insert({ user1_id: user.id, user2_id: tutor.user_id, context_type: 'tuteur', tutor_id: tutor.id })
+          .select('id').single()
         convId = newConv?.id
       }
       router.push(`/inbox?conv=${convId}`)

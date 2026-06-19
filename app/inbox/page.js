@@ -417,7 +417,9 @@ function InboxInner() {
                     <div style={{ fontWeight: 700, color: '#1a2e4a', fontSize: 14, marginBottom: 2 }}>
                       {other?.first_name ? `${other.first_name} ${other.last_name || ''}`.trim() : 'Utilisateur'}
                     </div>
-                    {conv.listings && (
+                    {conv.context_type === 'tuteur' ? (
+                      <div style={{ fontSize: 11, color: '#00c9a7', fontWeight: 600 }}>🎓 Tuteur</div>
+                    ) : conv.listings && (
                       <div style={{ fontSize: 11, color: '#a0aec0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         📖 {conv.listings.title}
                       </div>
@@ -489,7 +491,9 @@ function InboxInner() {
                   <div style={{ fontWeight: 700, color: '#1a2e4a', fontSize: 15 }}>
                     {otherUser?.first_name ? `${otherUser.first_name} ${otherUser.last_name || ''}`.trim() : 'Utilisateur'}
                   </div>
-                  {selectedConvData?.listings && (
+                  {selectedConvData?.context_type === 'tuteur' ? (
+                    <div style={{ fontSize: 12, color: '#00c9a7', fontWeight: 600 }}>🎓 Conversation tuteur</div>
+                  ) : selectedConvData?.listings && (
                     <div style={{ fontSize: 12, color: '#a0aec0' }}>📖 {selectedConvData.listings.title} · {selectedConvData.listings.price} $</div>
                   )}
                 </div>
