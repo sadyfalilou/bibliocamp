@@ -110,7 +110,7 @@ function TutorCard({ tutor, onClick }) {
   )
 }
 
-export default function TuteursView({ user, setView }) {
+export default function TuteursView({ user, setView, onSelectTutor }) {
   const [tutors, setTutors]   = useState([])
   const [loading, setLoading] = useState(true)
   const [isTutor, setIsTutor] = useState(false)
@@ -308,7 +308,7 @@ export default function TuteursView({ user, setView }) {
       ) : (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 12 }}>
           {filtered.map(tutor => (
-            <TutorCard key={tutor.id} tutor={tutor} onClick={() => router.push(`/tuteurs/${tutor.id}`)} />
+            <TutorCard key={tutor.id} tutor={tutor} onClick={() => onSelectTutor ? onSelectTutor(tutor.id) : router.push(`/tuteurs/${tutor.id}`)} />
           ))}
         </div>
       )}

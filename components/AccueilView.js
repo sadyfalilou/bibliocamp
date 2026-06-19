@@ -21,7 +21,7 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
 }
 
-export default function AccueilView({ userProfile, router, setView, onSearch }) {
+export default function AccueilView({ userProfile, router, setView, onSearch, onSelectTutor }) {
   const [listings, setListings] = useState([])
   const [tutors, setTutors] = useState([])
   const [loading, setLoading] = useState(true)
@@ -138,7 +138,7 @@ export default function AccueilView({ userProfile, router, setView, onSearch }) 
                 return (
                   <div
                     key={t.id}
-                    onClick={() => setView('tuteurs')}
+                    onClick={() => onSelectTutor ? onSelectTutor(t.id) : setView('tuteurs')}
                     style={{ flex: '0 0 150px', scrollSnapAlign: 'start', cursor: 'pointer' }}
                   >
                     <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', height: 110, background: tutorColors[idx % tutorColors.length], marginBottom: 6, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

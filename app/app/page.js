@@ -9,6 +9,7 @@ import BadgeList from '../../components/BadgeList'
 import TuteursView from '../../components/TuteursView'
 import DevenirTuteurView from '../../components/DevenirTuteurView'
 import AccueilView from '../../components/AccueilView'
+import TutorDetailPanel from '../../components/TutorDetailPanel'
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -65,6 +66,7 @@ function HomeContent() {
   const [loading, setLoading] = useState(true)
   const [view, setView] = useState('accueil') // 'accueil' | 'acheter' | 'vendre' | 'mes-annonces' | ...
   const [selectedBook, setSelectedBook] = useState(null)
+  const [selectedTutorId, setSelectedTutorId] = useState(null)
   const [relatedListings, setRelatedListings] = useState([])
   const [reportModal, setReportModal] = useState(null) // listing_id à signaler
   const [reportReason, setReportReason] = useState('')
@@ -93,7 +95,7 @@ function HomeContent() {
   const [verifyingCode, setVerifyingCode] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
   const [tutorsMenuOpen, setTutorsMenuOpen] = useState(false)
-  const [manualsMenuOpen, setManualsMenuOpen] = useState(true)
+  const [manualsMenuOpen, setManualsMenuOpen] = useState(false)
   const [soldConfirmId, setSoldConfirmId] = useState(null)
   const [markingAsSold, setMarkingAsSold] = useState(false)
   const router = useRouter()
@@ -111,6 +113,15 @@ function HomeContent() {
     const v = searchParams.get('view')
     if (v === 'tuteurs' || v === 'devenir-tuteur') setView(v)
   }, [searchParams])
+
+  // Ouvre/ferme automatiquement les accordéons sidebar selon la vue active
+  const MANUELS_VIEWS = ['acheter', 'vendre', 'mes-annonces', 'favoris', 'mes-cours']
+  const TUTEURS_VIEWS = ['tuteurs', 'devenir-tuteur']
+  useEffect(() => {
+    if (view === 'accueil') { setManualsMenuOpen(false); setTutorsMenuOpen(false) }
+    else if (MANUELS_VIEWS.includes(view)) { setManualsMenuOpen(true); setTutorsMenuOpen(false) }
+    else if (TUTEURS_VIEWS.includes(view)) { setTutorsMenuOpen(true); setManualsMenuOpen(false) }
+  }, [view])
 
   const fetchListings = async (offset = 0, append = false) => {
     const { data, error } = await supabase
@@ -949,22 +960,8 @@ function HomeContent() {
                 onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
               >Accueil</span>
               {' / '}
-              {(view === 'tuteurs' || view === 'devenir-tuteur')
-                ? <span style={{ color: '#00c9a7', fontWeight: 500 }}>Tuteurs</span>
-                : <span onClick={() => setView('acheter')} style={{ cursor: 'pointer', color: '#00c9a7' }}
-                    onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-                    onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-                  >Manuels</span>
-              }
-              {' / '}
               <span style={{ color: '#1a2e4a', fontWeight: 600 }}>
-                {view === 'acheter' ? 'Acheter'
-                  : view === 'vendre' ? 'Vendre'
-                  : view === 'mes-annonces' ? 'Mes annonces'
-                  : view === 'favoris' ? 'Mes favoris'
-                  : view === 'tuteurs' ? 'Trouver un tuteur'
-                  : view === 'devenir-tuteur' ? 'Devenir tuteur'
-                  : 'Mes cours'}
+                {TUTEURS_VIEWS.includes(view) ? 'Tuteurs' : 'Manuels'}
               </span>
             </div>
           )}
@@ -1312,12 +1309,13 @@ function HomeContent() {
               router={router}
               setView={setView}
               onSearch={(q) => { setSearch(q); setView('acheter') }}
+              onSelectTutor={setSelectedTutorId}
             />
           )}
 
           {/* ===== VUE TUTEURS ===== */}
           {view === 'tuteurs' && (
-            <TuteursView user={user} setView={setView} />
+            <TuteursView user={user} setView={setView} onSelectTutor={setSelectedTutorId} />
           )}
 
           {/* ===== VUE DEVENIR TUTEUR ===== */}
@@ -1801,6 +1799,15 @@ function HomeContent() {
             )}
           </div>
         </div>
+      )}
+
+      {selectedTutorId && (
+        <TutorDetailPanel
+          tutorId={selectedTutorId}
+          currentUser={user}
+          onClose={() => setSelectedTutorId(null)}
+          router={router}
+        />
       )}
 
       {selectedBook && (() => {
