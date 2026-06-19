@@ -8,8 +8,10 @@ import Logo from '../components/Logo'
 export default function Landing() {
   const router = useRouter()
   const [listings, setListings] = useState([])
+  const [tutors, setTutors] = useState([])
   const [searchBuy, setSearchBuy] = useState('')
   const [searchSell, setSearchSell] = useState('')
+  const [searchTutor, setSearchTutor] = useState('')
   const [activeTab, setActiveTab] = useState('acheter')
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -26,6 +28,7 @@ export default function Landing() {
       if (res.ok) {
         const data = await res.json()
         setListings(data.listings ?? [])
+        setTutors(data.tutors ?? [])
       }
     }
     load()
@@ -51,6 +54,11 @@ export default function Landing() {
     }
   }
 
+  const handleTutorSearch = (e) => {
+    e.preventDefault()
+    router.push(`/login?redirect=/app&view=tuteurs&q=${encodeURIComponent(searchTutor)}`)
+  }
+
   const timeAgo = (dateStr) => {
     const diff = (Date.now() - new Date(dateStr)) / 1000
     if (diff < 3600) return `il y a ${Math.floor(diff / 60)} min`
@@ -67,9 +75,9 @@ export default function Landing() {
 
   const benefits = [
     { icon: '💸', title: 'Économise sur tes manuels', desc: "Jusqu'à 80% moins cher qu'en librairie" },
+    { icon: '🎓', title: 'Trouve un tuteur', desc: "Des étudiants qui ont réussi avant toi, prêts à t'aider" },
     { icon: '📦', title: 'Vends tes anciens manuels', desc: 'Transforme tes livres en argent de poche' },
-    { icon: '🎓', title: 'Entre étudiants seulement', desc: 'Une communauté de confiance au Québec' },
-    { icon: '💬', title: 'Messagerie intégrée', desc: 'Contacte les vendeurs directement' },
+    { icon: '💬', title: 'Messagerie intégrée', desc: 'Contacte vendeurs et tuteurs directement' },
   ]
 
   return (
@@ -197,6 +205,7 @@ export default function Landing() {
               {[
                 { key: 'acheter', label: '🔍 Acheter' },
                 { key: 'vendre', label: '📦 Vendre' },
+                { key: 'tuteurs', label: '🎓 Tuteurs' },
               ].map(tab => (
                 <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)} style={{
                   flex: 1, padding: '10px 8px', border: 'none',
@@ -273,6 +282,36 @@ export default function Landing() {
                     Remplis manuellement →
                   </span>
                 </p>
+              </form>
+            )}
+
+            {activeTab === 'tuteurs' && (
+              <form onSubmit={handleTutorSearch}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
+                  Matière, code de cours ou nom du tuteur
+                </label>
+                <div className="search-row" style={{ display: 'flex' }}>
+                  <input
+                    value={searchTutor}
+                    onChange={e => setSearchTutor(e.target.value)}
+                    placeholder="ex: BIO201, Calcul différentiel, Python..."
+                    style={{
+                      flex: 1, padding: '12px 14px', border: '1.5px solid #e2e8f0',
+                      borderRadius: 9, fontSize: 15, outline: 'none',
+                      transition: 'border-color 0.2s', minWidth: 0
+                    }}
+                    onFocus={e => e.target.style.borderColor = '#00c9a7'}
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  />
+                  <button type="submit" style={{
+                    background: '#00c9a7', border: 'none', borderRadius: 9,
+                    padding: '12px 20px', color: 'white', fontWeight: 800,
+                    fontSize: 15, cursor: 'pointer', whiteSpace: 'nowrap',
+                    boxShadow: '0 4px 14px rgba(0,201,167,0.35)'
+                  }}>
+                    Trouver →
+                  </button>
+                </div>
               </form>
             )}
           </div>
@@ -410,6 +449,72 @@ export default function Landing() {
           </button>
         </div>
       </section>
+
+      {/* ── TUTEURS DISPONIBLES ── */}
+      {tutors.length > 0 && (
+        <section className="listings-section" style={{ maxWidth: 860, margin: '0 auto' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 8 }}>
+            <div>
+              <h2 className="section-title" style={{ fontWeight: 900, margin: '0 0 4px', letterSpacing: -0.5 }}>
+                Tuteurs disponibles
+              </h2>
+              <p style={{ color: '#64748b', fontSize: 14, margin: 0 }}>
+                Des étudiants qui ont réussi avant toi.
+              </p>
+            </div>
+            <button onClick={() => router.push('/login')} style={{
+              background: 'transparent', border: '1.5px solid #00c9a7',
+              borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 700,
+              color: '#00c9a7', cursor: 'pointer'
+            }}>
+              Voir tout →
+            </button>
+          </div>
+
+          <div className="benefits-grid" style={{ display: 'grid' }}>
+            {tutors.map(t => {
+              const name = `${t.first_name || ''} ${t.last_name?.[0] || ''}.`.trim()
+              return (
+                <div
+                  key={t.id}
+                  onClick={() => router.push('/login')}
+                  style={{
+                    background: 'white', borderRadius: 14, padding: '18px 20px',
+                    border: '1px solid #e8edf2', cursor: 'pointer', transition: 'box-shadow 0.2s',
+                    boxShadow: '0 1px 4px rgba(0,0,0,0.04)'
+                  }}
+                  onMouseEnter={e => e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.08)'}
+                  onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'}
+                >
+                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 10 }}>
+                    {t.avatar_url
+                      ? <img src={t.avatar_url} alt={name} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
+                      : <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#1a2e4a,#0d4f6b)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, color: 'white', fontWeight: 700, flexShrink: 0 }}>
+                          {(t.first_name?.[0] || '?').toUpperCase()}
+                        </div>
+                    }
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#1a2e4a' }}>{name}</div>
+                      <div style={{ fontSize: 12, color: '#64748b' }}>{t.institution || t.campus || ''}</div>
+                    </div>
+                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                      <div style={{ fontSize: 17, fontWeight: 900, color: '#00c9a7' }}>{t.rate_per_hour} $</div>
+                      <div style={{ fontSize: 10, color: '#a0aec0' }}>/heure</div>
+                    </div>
+                  </div>
+                  {t.subjects?.length > 0 && (
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      {t.subjects.slice(0, 3).map(s => (
+                        <span key={s} style={{ fontSize: 11, fontWeight: 600, background: '#f0f9ff', color: '#0369a1', borderRadius: 6, padding: '3px 8px' }}>{s}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        </section>
+      )}
 
       {/* ── AVANTAGES ── */}
       <section className="advantages-section" style={{ background: '#f8fafc' }}>

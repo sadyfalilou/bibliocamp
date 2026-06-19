@@ -36,9 +36,18 @@ function LoginInner() {
     return () => window.removeEventListener('resize', check)
   }, [])
 
+  const getRedirectTarget = () => {
+    const base = searchParams.get('redirect') || '/app'
+    const extra = new URLSearchParams()
+    if (searchParams.get('view')) extra.set('view', searchParams.get('view'))
+    if (searchParams.get('q')) extra.set('q', searchParams.get('q'))
+    const qs = extra.toString()
+    return qs ? `${base}?${qs}` : base
+  }
+
   useEffect(() => {
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (session?.user) router.push('/app')
+      if (session?.user) router.push(getRedirectTarget())
     })
     return () => listener.subscription.unsubscribe()
   }, [])
@@ -64,7 +73,7 @@ function LoginInner() {
       if (!isUserError(error.message)) Sentry.captureException(error, { extra: { context: 'login', email } })
       setErrorMsg(friendlyError(error.message)); return
     }
-    router.push('/app')
+    router.push(getRedirectTarget())
   }
 
   const handleReset = async (e) => {

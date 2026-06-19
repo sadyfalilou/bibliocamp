@@ -105,6 +105,12 @@ function HomeContent() {
     }
   }, [searchParams, phoneSaved])
 
+  // Si ?view=tuteurs dans l'URL → redirigé depuis la landing page (recherche tuteur)
+  useEffect(() => {
+    const v = searchParams.get('view')
+    if (v === 'tuteurs' || v === 'devenir-tuteur') setView(v)
+  }, [searchParams])
+
   const fetchListings = async (offset = 0, append = false) => {
     const { data, error } = await supabase
       .from('listings')
