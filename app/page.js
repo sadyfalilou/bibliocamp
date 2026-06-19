@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabase'
 import Logo from '../components/Logo'
+import Carousel from '../components/Carousel'
 
 export default function Landing() {
   const router = useRouter()
@@ -72,6 +73,16 @@ export default function Landing() {
     'McGill', 'Concordia', 'Université Laval',
     'Polytechnique', 'ÉTS', 'Université de Sherbrooke',
   ]
+
+  const coverGradients = [
+    'linear-gradient(135deg,#1a2e4a,#0d4f6b)',
+    'linear-gradient(135deg,#993c1d,#d85a30)',
+    'linear-gradient(135deg,#534ab7,#7f77dd)',
+    'linear-gradient(135deg,#0f6e56,#1d9e75)',
+    'linear-gradient(135deg,#854f0b,#ef9f27)',
+  ]
+
+  const tutorColors = ['#1a2e4a', '#993c1d', '#0f6e56', '#534ab7', '#854f0b']
 
   const benefits = [
     { icon: '💸', title: 'Économise sur tes manuels', desc: "Jusqu'à 80% moins cher qu'en librairie" },
@@ -339,180 +350,107 @@ export default function Landing() {
       </section>
 
       {/* ── ANNONCES RÉCENTES ── */}
-      <section className="listings-section" style={{ maxWidth: 860, margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 8 }}>
-          <div>
-            <h2 className="section-title" style={{ fontWeight: 900, margin: '0 0 4px', letterSpacing: -0.5 }}>
-              Derniers manuels ajoutés
-            </h2>
-            <p style={{ color: '#64748b', fontSize: 14, margin: 0 }}>
-              Parcours, contacte, économise.
-            </p>
-          </div>
-          <button onClick={() => router.push('/login')} style={{
-            background: 'transparent', border: '1.5px solid #00c9a7',
-            borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 700,
-            color: '#00c9a7', cursor: 'pointer'
-          }}>
-            Voir tout →
-          </button>
+      <section className="listings-section" style={{ maxWidth: 1000, margin: '0 auto' }}>
+        <div
+          onClick={() => router.push('/login')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', marginBottom: 16 }}
+        >
+          <h2 className="section-title" style={{ fontWeight: 900, margin: 0, letterSpacing: -0.5 }}>
+            Derniers manuels ajoutés
+          </h2>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a2e4a" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Carousel>
           {listings.length === 0
-            ? Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} style={{ background: '#f8fafc', borderRadius: 10, height: 76, marginBottom: 1 }} />
+            ? Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} style={{ flex: '0 0 170px', scrollSnapAlign: 'start' }}>
+                <div style={{ background: '#f1f5f9', borderRadius: 12, height: 130, marginBottom: 8 }} />
+                <div style={{ background: '#f1f5f9', borderRadius: 6, height: 12, width: '80%', marginBottom: 6 }} />
+                <div style={{ background: '#f1f5f9', borderRadius: 6, height: 10, width: '50%' }} />
+              </div>
             ))
             : listings.map((listing, idx) => (
               <div
                 key={listing.id}
                 onClick={() => router.push('/login')}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '12px 14px',
-                  background: 'white',
-                  borderRadius: idx === 0 ? '12px 12px 0 0' : idx === listings.length - 1 ? '0 0 12px 12px' : 0,
-                  border: '1px solid #e8edf2',
-                  borderTop: idx === 0 ? '1px solid #e8edf2' : 'none',
-                  cursor: 'pointer', transition: 'background 0.15s'
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                style={{ flex: '0 0 170px', scrollSnapAlign: 'start', cursor: 'pointer' }}
               >
-                {/* Cover */}
-                <div style={{ flexShrink: 0, width: 40, height: 52 }}>
-                  {listing.image_url
-                    ? <img src={listing.image_url} alt={listing.title} style={{ width: 40, height: 52, objectFit: 'cover', borderRadius: 4 }} />
-                    : <div style={{
-                        width: 40, height: 52, borderRadius: 4,
-                        background: 'linear-gradient(135deg, #1a2e4a, #0d4f6b)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18
-                      }}>📖</div>
-                  }
-                </div>
-
-                {/* Infos */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontWeight: 700, fontSize: 14, color: '#1a2e4a',
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 3
-                  }}>
-                    {listing.title}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    {listing.authors && (
-                      <span style={{ fontSize: 12, color: '#64748b' }}>{listing.authors}</span>
-                    )}
-                    <span style={{
-                      fontSize: 11, fontWeight: 600, padding: '1px 7px', borderRadius: 20,
-                      background: listing.meet_campus ? '#ede9fe' : listing.post ? '#dbeafe' : '#fef3c7',
-                      color: listing.meet_campus ? '#6c63ff' : listing.post ? '#2563eb' : '#d97706'
-                    }}>
-                      {listing.meet_campus ? '🏫 Campus' : listing.post ? '📦 Envoi' : '🏙️ Ville'}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 11, color: '#cbd5e0', marginTop: 2 }}>
-                    {listing.created_at ? timeAgo(listing.created_at) : ''}
-                  </div>
-                </div>
-
-                {/* Prix */}
-                <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                  <div style={{ fontSize: 17, fontWeight: 900, color: '#1a2e4a' }}>
-                    {listing.price ? `${listing.price} $` : '—'}
-                  </div>
+                <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 130, background: coverGradients[idx % coverGradients.length], marginBottom: 8 }}>
+                  {listing.image_url && (
+                    <img src={listing.image_url} alt={listing.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                  )}
+                  {!listing.image_url && (
+                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: 30, opacity: 0.5 }}>📖</div>
+                  )}
                   {listing.original_price && listing.original_price > listing.price && (
-                    <div style={{
-                      background: '#00c9a7', color: 'white',
-                      borderRadius: 20, padding: '2px 7px',
-                      fontSize: 11, fontWeight: 700, marginTop: 2
-                    }}>
+                    <div style={{ position: 'absolute', top: 8, left: 8, background: 'white', fontSize: 10, fontWeight: 700, color: '#1a2e4a', padding: '3px 8px', borderRadius: 20 }}>
                       -{Math.round(((listing.original_price - listing.price) / listing.original_price) * 100)}%
                     </div>
                   )}
+                  <div
+                    onClick={e => { e.stopPropagation(); router.push('/login') }}
+                    style={{ position: 'absolute', top: 8, right: 8, width: 24, height: 24, borderRadius: '50%', background: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1a2e4a" strokeWidth="2.3"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>
+                  {listing.title}
+                </div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>
+                  {listing.meet_campus ? 'Campus' : listing.post ? 'Envoi' : 'Ville'} · {listing.created_at ? timeAgo(listing.created_at) : ''}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a' }}>
+                  {listing.price ? `${listing.price} $` : '—'}
                 </div>
               </div>
             ))
           }
-        </div>
-
-        <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <button onClick={() => router.push('/login')} style={{
-            background: 'white', border: '2px solid #1a2e4a',
-            borderRadius: 10, padding: '12px 32px', fontSize: 15, fontWeight: 700,
-            color: '#1a2e4a', cursor: 'pointer', transition: 'all 0.2s'
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#1a2e4a'; e.currentTarget.style.color = 'white' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#1a2e4a' }}
-          >
-            Voir toutes les annonces →
-          </button>
-        </div>
+        </Carousel>
       </section>
 
       {/* ── TUTEURS DISPONIBLES ── */}
       {tutors.length > 0 && (
-        <section className="listings-section" style={{ maxWidth: 860, margin: '0 auto' }}>
-          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 8 }}>
-            <div>
-              <h2 className="section-title" style={{ fontWeight: 900, margin: '0 0 4px', letterSpacing: -0.5 }}>
-                Tuteurs disponibles
-              </h2>
-              <p style={{ color: '#64748b', fontSize: 14, margin: 0 }}>
-                Des étudiants qui ont réussi avant toi.
-              </p>
-            </div>
-            <button onClick={() => router.push('/login')} style={{
-              background: 'transparent', border: '1.5px solid #00c9a7',
-              borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 700,
-              color: '#00c9a7', cursor: 'pointer'
-            }}>
-              Voir tout →
-            </button>
+        <section className="listings-section" style={{ maxWidth: 1000, margin: '0 auto' }}>
+          <div
+            onClick={() => router.push('/login')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', marginBottom: 16 }}
+          >
+            <h2 className="section-title" style={{ fontWeight: 900, margin: 0, letterSpacing: -0.5 }}>
+              Tuteurs disponibles
+            </h2>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a2e4a" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
           </div>
 
-          <div className="benefits-grid" style={{ display: 'grid' }}>
-            {tutors.map(t => {
+          <Carousel>
+            {tutors.map((t, idx) => {
               const name = `${t.first_name || ''} ${t.last_name?.[0] || ''}.`.trim()
               return (
                 <div
                   key={t.id}
                   onClick={() => router.push('/login')}
-                  style={{
-                    background: 'white', borderRadius: 14, padding: '18px 20px',
-                    border: '1px solid #e8edf2', cursor: 'pointer', transition: 'box-shadow 0.2s',
-                    boxShadow: '0 1px 4px rgba(0,0,0,0.04)'
-                  }}
-                  onMouseEnter={e => e.currentTarget.style.boxShadow = '0 6px 20px rgba(0,0,0,0.08)'}
-                  onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,0.04)'}
+                  style={{ flex: '0 0 170px', scrollSnapAlign: 'start', cursor: 'pointer' }}
                 >
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 10 }}>
+                  <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 130, background: tutorColors[idx % tutorColors.length], marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                     {t.avatar_url
-                      ? <img src={t.avatar_url} alt={name} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
-                      : <div style={{ width: 44, height: 44, borderRadius: '50%', background: 'linear-gradient(135deg,#1a2e4a,#0d4f6b)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 17, color: 'white', fontWeight: 700, flexShrink: 0 }}>
-                          {(t.first_name?.[0] || '?').toUpperCase()}
-                        </div>
+                      ? <img src={t.avatar_url} alt={name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span style={{ fontSize: 36, fontWeight: 800, color: 'rgba(255,255,255,0.85)' }}>{(t.first_name?.[0] || '?').toUpperCase()}</span>
                     }
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: '#1a2e4a' }}>{name}</div>
-                      <div style={{ fontSize: 12, color: '#64748b' }}>{t.institution || t.campus || ''}</div>
-                    </div>
-                    <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                      <div style={{ fontSize: 17, fontWeight: 900, color: '#00c9a7' }}>{t.rate_per_hour} $</div>
-                      <div style={{ fontSize: 10, color: '#a0aec0' }}>/heure</div>
+                    <div style={{ position: 'absolute', bottom: 8, left: 8, background: 'white', fontSize: 10, fontWeight: 700, color: '#00c9a7', padding: '3px 8px', borderRadius: 20 }}>
+                      {t.rate_per_hour} $/h
                     </div>
                   </div>
-                  {t.subjects?.length > 0 && (
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      {t.subjects.slice(0, 3).map(s => (
-                        <span key={s} style={{ fontSize: 11, fontWeight: 600, background: '#f0f9ff', color: '#0369a1', borderRadius: 6, padding: '3px 8px' }}>{s}</span>
-                      ))}
-                    </div>
-                  )}
+                  <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>
+                    {name}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {[t.institution || t.campus, t.subjects?.[0]].filter(Boolean).join(' · ')}
+                  </div>
                 </div>
               )
             })}
-          </div>
+          </Carousel>
         </section>
       )}
 
