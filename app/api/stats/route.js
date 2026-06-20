@@ -11,7 +11,7 @@ export async function GET() {
 
   const { data: listings } = await supabase
     .from('listings')
-    .select('id, title, authors, isbn, price, original_price, description, image_url, course_code, meet_campus, meet_city, post, created_at')
+    .select('id, user_id, title, authors, isbn, price, original_price, description, image_url, course_code, meet_campus, meet_city, post, created_at')
     .eq('status', 'active')
     .order('created_at', { ascending: false })
     .limit(8)
