@@ -103,7 +103,14 @@ export default function RoommatesView({ user, setView }) {
               border: '1px solid #e2e8f0', display: 'flex', gap: 14, alignItems: 'center'
             }}>
               {item.image_url ? (
-                <img src={item.image_url} alt={item.title} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, flexShrink: 0 }} />
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <img src={item.image_url} alt={item.title} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8 }} />
+                  {item.image_urls?.length > 1 && (
+                    <div style={{ position: 'absolute', bottom: 2, right: 2, background: 'rgba(0,0,0,0.65)', color: 'white', fontSize: 9, fontWeight: 700, padding: '1px 5px', borderRadius: 20 }}>
+                      +{item.image_urls.length - 1}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div style={{ width: 64, height: 64, background: 'linear-gradient(135deg,#1a2e4a,#0d4f6b)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, flexShrink: 0 }}>🏠</div>
               )}

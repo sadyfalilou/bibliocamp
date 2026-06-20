@@ -77,7 +77,14 @@ export default function MesColocsView({ user, setView }) {
               opacity: item.status === 'rented' ? 0.75 : 1
             }}>
               {item.image_url ? (
-                <img src={item.image_url} alt={item.title} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6, flexShrink: 0 }} />
+                <div style={{ position: 'relative', flexShrink: 0 }}>
+                  <img src={item.image_url} alt={item.title} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }} />
+                  {item.image_urls?.length > 1 && (
+                    <div style={{ position: 'absolute', bottom: 1, right: 1, background: 'rgba(0,0,0,0.65)', color: 'white', fontSize: 8, fontWeight: 700, padding: '1px 4px', borderRadius: 20 }}>
+                      +{item.image_urls.length - 1}
+                    </div>
+                  )}
+                </div>
               ) : (
                 <div style={{ width: 48, height: 48, background: 'linear-gradient(135deg,#1a2e4a,#0d4f6b)', borderRadius: 6, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>🏠</div>
               )}

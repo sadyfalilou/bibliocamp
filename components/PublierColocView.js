@@ -14,18 +14,30 @@ export default function PublierColocView({ setView }) {
     title: '', description: '', rent_price: '', room_type: 'chambre_privee',
     campus: '', city: '', available_from: '', num_spots: 1,
   })
-  const [imageFile, setImageFile] = useState(null)
-  const [imagePreview, setImagePreview] = useState(null)
+  const [imageFiles, setImageFiles] = useState([])
+  const [imagePreviews, setImagePreviews] = useState([])
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const fileInputRef = useRef(null)
 
+  const MAX_IMAGES = 6
+
   const handleChange = (field) => (e) => setForm(prev => ({ ...prev, [field]: e.target.value }))
 
   const handleImageChange = (e) => {
-    const file = e.target.files?.[0] || null
-    setImageFile(file)
-    setImagePreview(file ? URL.createObjectURL(file) : null)
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+    setError('')
+    const combined = [...imageFiles, ...files].slice(0, MAX_IMAGES)
+    setImageFiles(combined)
+    setImagePreviews(combined.map(f => URL.createObjectURL(f)))
+    e.target.value = ''
+  }
+
+  const removeImage = (idx) => {
+    const next = imageFiles.filter((_, i) => i !== idx)
+    setImageFiles(next)
+    setImagePreviews(next.map(f => URL.createObjectURL(f)))
   }
 
   const inputStyle = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 14, boxSizing: 'border-box' }
@@ -39,7 +51,7 @@ export default function PublierColocView({ setView }) {
 
     const body = new FormData()
     Object.entries(form).forEach(([key, value]) => body.append(key, value))
-    if (imageFile) body.append('image', imageFile)
+    imageFiles.forEach(file => body.append('images', file))
 
     const res = await fetch('/api/roommates', {
       method: 'POST',
@@ -100,21 +112,30 @@ export default function PublierColocView({ setView }) {
           </div>
         </div>
         <div>
-          <label style={labelStyle}>Photo (optionnel)</label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            {imagePreview && (
-              <img src={imagePreview} alt="aperçu" style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }} />
-            )}
-            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
-            <button
-              type="button"
-              onClick={() => fileInputRef.current?.click()}
-              style={{ background: '#f8fafc', color: '#1a2e4a', border: '1px solid #e2e8f0', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
-            >
-              {imageFile ? 'Changer la photo' : 'Choisir une photo'}
-            </button>
-            {imageFile && <span style={{ fontSize: 12, color: '#718096' }}>{imageFile.name}</span>}
+          <label style={labelStyle}>Photos (optionnel, max {MAX_IMAGES})</label>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: imagePreviews.length ? 10 : 0 }}>
+            {imagePreviews.map((src, idx) => (
+              <div key={idx} style={{ position: 'relative', width: 64, height: 64 }}>
+                <img src={src} alt={`aperçu ${idx + 1}`} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }} />
+                <button
+                  type="button"
+                  onClick={() => removeImage(idx)}
+                  style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#1a2e4a', color: 'white', border: 'none', fontSize: 12, lineHeight: '20px', cursor: 'pointer' }}
+                  aria-label="Retirer cette photo"
+                >×</button>
+              </div>
+            ))}
           </div>
+          <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageChange} style={{ display: 'none' }} />
+          <button
+            type="button"
+            disabled={imageFiles.length >= MAX_IMAGES}
+            onClick={() => fileInputRef.current?.click()}
+            style={{ background: '#f8fafc', color: '#1a2e4a', border: '1px solid #e2e8f0', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: imageFiles.length >= MAX_IMAGES ? 'not-allowed' : 'pointer', opacity: imageFiles.length >= MAX_IMAGES ? 0.5 : 1 }}
+          >
+            {imageFiles.length > 0 ? 'Ajouter d\'autres photos' : 'Choisir des photos'}
+          </button>
+          {imageFiles.length > 0 && <span style={{ fontSize: 12, color: '#718096', marginLeft: 10 }}>{imageFiles.length}/{MAX_IMAGES}</span>}
         </div>
 
         {error && <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', color: '#e53e3e', borderRadius: 8, padding: 12, fontSize: 13 }}>{error}</div>}

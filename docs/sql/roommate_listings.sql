@@ -49,3 +49,8 @@ alter table conversations
 
 alter table conversations
   add column if not exists roommate_listing_id bigint references roommate_listings(id) on delete set null;
+
+-- Permet de publier plusieurs photos par annonce. image_url reste la
+-- premiere photo (miniature/carrousel), image_urls contient la liste complete.
+alter table roommate_listings
+  add column if not exists image_urls text[] not null default '{}';

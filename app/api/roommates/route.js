@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/nextjs'
 const VALID_ROOM_TYPES = ['chambre_privee', 'chambre_partagee', 'appartement_complet']
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5 MB
+const MAX_IMAGES = 6
 
 function validate({ title, rent_price, room_type }) {
   if (!title || title.trim().length === 0) return 'Le titre est obligatoire.'
@@ -71,24 +72,28 @@ export async function POST(request) {
   const err = validate(fields)
   if (err) return Response.json({ error: err }, { status: 400 })
 
-  let imageUrl = null
-  const imageFile = formData.get('image')
-  if (imageFile && imageFile.size > 0) {
+  const imageFiles = formData.getAll('images').filter(f => f && f.size > 0)
+  if (imageFiles.length > MAX_IMAGES) {
+    return Response.json({ error: `Maximum ${MAX_IMAGES} photos par annonce.` }, { status: 400 })
+  }
+
+  const imageUrls = []
+  for (const imageFile of imageFiles) {
     if (!ALLOWED_TYPES.includes(imageFile.type)) {
       return Response.json({ error: 'Format image non supporté. Utilise JPG, PNG ou WebP.' }, { status: 400 })
     }
     if (imageFile.size > MAX_IMAGE_SIZE) {
-      return Response.json({ error: "L'image ne peut pas dépasser 5 MB." }, { status: 400 })
+      return Response.json({ error: "Chaque image ne peut pas dépasser 5 MB." }, { status: 400 })
     }
-    const fileName = `coloc-${Date.now()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+    const fileName = `coloc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
     const bytes = await imageFile.arrayBuffer()
     const { error: uploadErr } = await supabase.storage.from('images').upload(fileName, bytes, { contentType: imageFile.type })
     if (uploadErr) {
       Sentry.captureException(uploadErr, { extra: { route: 'POST /api/roommates', action: 'image-upload', userId: user.id } })
-      return Response.json({ error: "Erreur lors de l'upload de l'image." }, { status: 500 })
+      return Response.json({ error: "Erreur lors de l'upload d'une image." }, { status: 500 })
     }
     const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName)
-    imageUrl = urlData.publicUrl
+    imageUrls.push(urlData.publicUrl)
   }
 
   const { data, error } = await supabase.from('roommate_listings').insert([{
@@ -100,7 +105,8 @@ export async function POST(request) {
     city: fields.city.trim() || null,
     available_from: fields.available_from || null,
     num_spots: Number(fields.num_spots) || 1,
-    image_url: imageUrl,
+    image_url: imageUrls[0] || null,
+    image_urls: imageUrls,
     user_id: user.id,
   }]).select().single()
 
@@ -145,17 +151,16 @@ export async function DELETE(request) {
   const supabase = adminClient()
   const { data: listing, error: fetchErr } = await supabase
     .from('roommate_listings')
-    .select('id, image_url, user_id')
+    .select('id, image_url, image_urls, user_id')
     .eq('id', id)
     .eq('user_id', user.id)
     .single()
 
   if (fetchErr || !listing) return Response.json({ error: 'Annonce introuvable ou accès refusé.' }, { status: 403 })
 
-  if (listing.image_url) {
-    const fileName = listing.image_url.split('/').pop()
-    if (fileName) await supabase.storage.from('images').remove([fileName])
-  }
+  const urls = listing.image_urls?.length ? listing.image_urls : (listing.image_url ? [listing.image_url] : [])
+  const fileNames = urls.map(u => u.split('/').pop()).filter(Boolean)
+  if (fileNames.length) await supabase.storage.from('images').remove(fileNames)
 
   const { error: deleteErr } = await supabase.from('roommate_listings').delete().eq('id', id).eq('user_id', user.id)
   if (deleteErr) {
