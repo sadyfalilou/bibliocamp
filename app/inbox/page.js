@@ -430,7 +430,7 @@ function InboxInner() {
                       {other?.first_name ? `${other.first_name} ${other.last_name || ''}`.trim() : 'Utilisateur'}
                     </div>
                     {conv.context_type === 'admin' ? (
-                      <div style={{ fontSize: 11, color: '#b45309', fontWeight: 600 }}>🛠️ BiblioCamp</div>
+                      <div style={{ fontSize: 11, color: '#b45309', fontWeight: 600 }}>Équipe support</div>
                     ) : conv.context_type === 'tuteur' ? (
                       <div style={{ fontSize: 11, color: '#00c9a7', fontWeight: 600 }}>🎓 Tuteur</div>
                     ) : conv.listings && (
