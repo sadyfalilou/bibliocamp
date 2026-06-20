@@ -107,6 +107,7 @@ function HomeContent() {
   const [tutorsMenuOpen, setTutorsMenuOpen] = useState(false)
   const [manualsMenuOpen, setManualsMenuOpen] = useState(false)
   const [colocsMenuOpen, setColocsMenuOpen] = useState(false)
+  const [editingRoommateId, setEditingRoommateId] = useState(null)
   const [soldConfirmId, setSoldConfirmId] = useState(null)
   const [markingAsSold, setMarkingAsSold] = useState(false)
   const router = useRouter()
@@ -134,6 +135,7 @@ function HomeContent() {
     else if (MANUELS_VIEWS.includes(view)) { setManualsMenuOpen(true); setTutorsMenuOpen(false); setColocsMenuOpen(false) }
     else if (TUTEURS_VIEWS.includes(view)) { setTutorsMenuOpen(true); setManualsMenuOpen(false); setColocsMenuOpen(false) }
     else if (COLOCS_VIEWS.includes(view)) { setColocsMenuOpen(true); setManualsMenuOpen(false); setTutorsMenuOpen(false) }
+    if (view !== 'publier-coloc') setEditingRoommateId(null)
   }, [view])
 
   const fetchListings = async (offset = 0, append = false) => {
@@ -1373,12 +1375,16 @@ function HomeContent() {
 
           {/* ===== VUE PUBLIER COLOC ===== */}
           {view === 'publier-coloc' && (
-            <PublierColocView setView={setView} />
+            <PublierColocView setView={setView} editId={editingRoommateId} />
           )}
 
           {/* ===== VUE MES COLOCS ===== */}
           {view === 'mes-colocs' && (
-            <MesColocsView user={user} setView={setView} />
+            <MesColocsView
+              user={user}
+              setView={setView}
+              onEdit={(id) => { setEditingRoommateId(id); setView('publier-coloc') }}
+            />
           )}
 
           {/* ===== VUE VENDRE ===== */}

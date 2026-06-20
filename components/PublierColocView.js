@@ -1,6 +1,6 @@
 'use client'
 
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const ROOM_TYPES = [
@@ -9,18 +9,42 @@ const ROOM_TYPES = [
   { value: 'appartement_complet', label: 'Appartement complet' },
 ]
 
-export default function PublierColocView({ setView }) {
+const MAX_IMAGES = 6
+
+export default function PublierColocView({ setView, editId }) {
   const [form, setForm] = useState({
     title: '', description: '', rent_price: '', room_type: 'chambre_privee',
     campus: '', city: '', available_from: '', num_spots: 1,
   })
-  const [imageFiles, setImageFiles] = useState([])
+  const [existingImages, setExistingImages] = useState([]) // urls deja en ligne, conservees
+  const [imageFiles, setImageFiles] = useState([]) // nouveaux fichiers a uploader
   const [imagePreviews, setImagePreviews] = useState([])
+  const [loadingEdit, setLoadingEdit] = useState(!!editId)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const fileInputRef = useRef(null)
 
-  const MAX_IMAGES = 6
+  useEffect(() => {
+    if (!editId) { setLoadingEdit(false); return }
+    let active = true
+    const load = async () => {
+      setLoadingEdit(true)
+      const { data } = await supabase.from('roommate_listings').select('*').eq('id', editId).single()
+      if (active && data) {
+        setForm({
+          title: data.title || '', description: data.description || '', rent_price: data.rent_price ?? '',
+          room_type: data.room_type || 'chambre_privee', campus: data.campus || '', city: data.city || '',
+          available_from: data.available_from || '', num_spots: data.num_spots ?? 1,
+        })
+        setExistingImages(data.image_urls?.length ? data.image_urls : (data.image_url ? [data.image_url] : []))
+      }
+      setLoadingEdit(false)
+    }
+    load()
+    return () => { active = false }
+  }, [editId])
+
+  const totalImages = existingImages.length + imageFiles.length
 
   const handleChange = (field) => (e) => setForm(prev => ({ ...prev, [field]: e.target.value }))
 
@@ -28,16 +52,21 @@ export default function PublierColocView({ setView }) {
     const files = Array.from(e.target.files || [])
     if (files.length === 0) return
     setError('')
-    const combined = [...imageFiles, ...files].slice(0, MAX_IMAGES)
+    const room = Math.max(MAX_IMAGES - existingImages.length, 0)
+    const combined = [...imageFiles, ...files].slice(0, room)
     setImageFiles(combined)
     setImagePreviews(combined.map(f => URL.createObjectURL(f)))
     e.target.value = ''
   }
 
-  const removeImage = (idx) => {
+  const removeNewImage = (idx) => {
     const next = imageFiles.filter((_, i) => i !== idx)
     setImageFiles(next)
     setImagePreviews(next.map(f => URL.createObjectURL(f)))
+  }
+
+  const removeExistingImage = (idx) => {
+    setExistingImages(prev => prev.filter((_, i) => i !== idx))
   }
 
   const inputStyle = { width: '100%', padding: '10px 12px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 14, boxSizing: 'border-box' }
@@ -53,21 +82,36 @@ export default function PublierColocView({ setView }) {
     Object.entries(form).forEach(([key, value]) => body.append(key, value))
     imageFiles.forEach(file => body.append('images', file))
 
-    const res = await fetch('/api/roommates', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${session?.access_token}` },
-      body
-    })
+    let res
+    if (editId) {
+      body.append('id', editId)
+      existingImages.forEach(url => body.append('keepImages', url))
+      res = await fetch('/api/roommates', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+        body
+      })
+    } else {
+      res = await fetch('/api/roommates', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${session?.access_token}` },
+        body
+      })
+    }
     const json = await res.json()
     setSaving(false)
-    if (!res.ok) { setError(json.error || 'Erreur lors de la publication.'); return }
-    setView('colocs')
+    if (!res.ok) { setError(json.error || 'Erreur lors de l\'enregistrement.'); return }
+    setView(editId ? 'mes-colocs' : 'colocs')
+  }
+
+  if (loadingEdit) {
+    return <p style={{ color: '#94a3b8' }}>Chargement...</p>
   }
 
   return (
     <div style={{ maxWidth: 560 }}>
       <h1 style={{ fontSize: 26, fontWeight: 900, color: '#1a2e4a', margin: '0 0 20px' }}>
-        Publier une annonce
+        {editId ? 'Modifier mon annonce' : 'Publier une annonce'}
       </h1>
 
       <form onSubmit={handleSubmit} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 14, padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
@@ -113,13 +157,24 @@ export default function PublierColocView({ setView }) {
         </div>
         <div>
           <label style={labelStyle}>Photos (optionnel, max {MAX_IMAGES})</label>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: imagePreviews.length ? 10 : 0 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: (existingImages.length || imagePreviews.length) ? 10 : 0 }}>
+            {existingImages.map((src, idx) => (
+              <div key={`existing-${idx}`} style={{ position: 'relative', width: 64, height: 64 }}>
+                <img src={src} alt={`photo ${idx + 1}`} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }} />
+                <button
+                  type="button"
+                  onClick={() => removeExistingImage(idx)}
+                  style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#1a2e4a', color: 'white', border: 'none', fontSize: 12, lineHeight: '20px', cursor: 'pointer' }}
+                  aria-label="Retirer cette photo"
+                >×</button>
+              </div>
+            ))}
             {imagePreviews.map((src, idx) => (
-              <div key={idx} style={{ position: 'relative', width: 64, height: 64 }}>
+              <div key={`new-${idx}`} style={{ position: 'relative', width: 64, height: 64 }}>
                 <img src={src} alt={`aperçu ${idx + 1}`} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }} />
                 <button
                   type="button"
-                  onClick={() => removeImage(idx)}
+                  onClick={() => removeNewImage(idx)}
                   style={{ position: 'absolute', top: -6, right: -6, width: 20, height: 20, borderRadius: '50%', background: '#1a2e4a', color: 'white', border: 'none', fontSize: 12, lineHeight: '20px', cursor: 'pointer' }}
                   aria-label="Retirer cette photo"
                 >×</button>
@@ -129,13 +184,13 @@ export default function PublierColocView({ setView }) {
           <input ref={fileInputRef} type="file" accept="image/*" multiple onChange={handleImageChange} style={{ display: 'none' }} />
           <button
             type="button"
-            disabled={imageFiles.length >= MAX_IMAGES}
+            disabled={totalImages >= MAX_IMAGES}
             onClick={() => fileInputRef.current?.click()}
-            style={{ background: '#f8fafc', color: '#1a2e4a', border: '1px solid #e2e8f0', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: imageFiles.length >= MAX_IMAGES ? 'not-allowed' : 'pointer', opacity: imageFiles.length >= MAX_IMAGES ? 0.5 : 1 }}
+            style={{ background: '#f8fafc', color: '#1a2e4a', border: '1px solid #e2e8f0', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: totalImages >= MAX_IMAGES ? 'not-allowed' : 'pointer', opacity: totalImages >= MAX_IMAGES ? 0.5 : 1 }}
           >
-            {imageFiles.length > 0 ? 'Ajouter d\'autres photos' : 'Choisir des photos'}
+            {totalImages > 0 ? 'Ajouter d\'autres photos' : 'Choisir des photos'}
           </button>
-          {imageFiles.length > 0 && <span style={{ fontSize: 12, color: '#718096', marginLeft: 10 }}>{imageFiles.length}/{MAX_IMAGES}</span>}
+          {totalImages > 0 && <span style={{ fontSize: 12, color: '#718096', marginLeft: 10 }}>{totalImages}/{MAX_IMAGES}</span>}
         </div>
 
         {error && <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', color: '#e53e3e', borderRadius: 8, padding: 12, fontSize: 13 }}>{error}</div>}
@@ -144,7 +199,7 @@ export default function PublierColocView({ setView }) {
           background: saving ? '#a0aec0' : '#1a2e4a', color: 'white', border: 'none',
           borderRadius: 8, padding: '12px', fontWeight: 700, fontSize: 14, cursor: saving ? 'not-allowed' : 'pointer'
         }}>
-          {saving ? 'Publication...' : '+ Publier l\'annonce'}
+          {saving ? 'Enregistrement...' : (editId ? 'Enregistrer les modifications' : '+ Publier l\'annonce')}
         </button>
       </form>
     </div>

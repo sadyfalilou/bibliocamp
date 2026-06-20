@@ -9,7 +9,7 @@ const ROOM_TYPE_LABELS = {
   appartement_complet: 'Appartement complet',
 }
 
-export default function MesColocsView({ user, setView }) {
+export default function MesColocsView({ user, setView, onEdit }) {
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [actingId, setActingId] = useState(null)
@@ -96,6 +96,13 @@ export default function MesColocsView({ user, setView }) {
                 <div style={{ fontSize: 12, color: '#718096' }}>{ROOM_TYPE_LABELS[item.room_type]} · {item.rent_price} $/mois</div>
               </div>
               <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                <button
+                  disabled={actingId === item.id}
+                  onClick={() => onEdit?.(item.id)}
+                  style={{ background: '#f8fafc', color: '#1a2e4a', border: '1px solid #e2e8f0', padding: '6px 12px', borderRadius: 7, cursor: 'pointer', fontSize: 12, fontWeight: 600 }}
+                >
+                  Modifier
+                </button>
                 <button
                   disabled={actingId === item.id}
                   onClick={() => toggleStatus(item)}
