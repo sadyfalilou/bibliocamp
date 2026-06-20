@@ -51,7 +51,11 @@ export default function AdminReportsPage() {
       body: JSON.stringify({ sellerId })
     })
     const json = await res.json()
-    if (res.ok) window.location.href = `/inbox?conv=${json.conversation_id}`
+    if (res.ok) {
+      window.location.href = `/inbox?conv=${json.conversation_id}`
+    } else {
+      alert(`Erreur : ${json.error || 'inconnue'}`)
+    }
   }
 
   return (
