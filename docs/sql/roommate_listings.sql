@@ -23,25 +23,29 @@ create index if not exists roommate_listings_user_id_idx on roommate_listings(us
 
 alter table roommate_listings enable row level security;
 
+drop policy if exists "Lecture publique des annonces actives" on roommate_listings;
 create policy "Lecture publique des annonces actives"
   on roommate_listings for select
   using (status = 'active' or auth.uid() = user_id);
 
+drop policy if exists "Le proprietaire peut creer son annonce" on roommate_listings;
 create policy "Le proprietaire peut creer son annonce"
   on roommate_listings for insert
   with check (auth.uid() = user_id);
 
+drop policy if exists "Le proprietaire peut modifier son annonce" on roommate_listings;
 create policy "Le proprietaire peut modifier son annonce"
   on roommate_listings for update
   using (auth.uid() = user_id);
 
+drop policy if exists "Le proprietaire peut supprimer son annonce" on roommate_listings;
 create policy "Le proprietaire peut supprimer son annonce"
   on roommate_listings for delete
   using (auth.uid() = user_id);
 
 -- Permet de contacter le proprietaire via la messagerie existante,
 -- comme pour les manuels et les tuteurs.
-alter table conversations drop constraint conversations_context_type_check;
+alter table conversations drop constraint if exists conversations_context_type_check;
 
 alter table conversations
   add constraint conversations_context_type_check
