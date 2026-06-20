@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useRouter } from 'next/navigation'
+import Footer from '../../../components/Footer'
 
 const DOMAINS = ['Sciences', 'Santé', 'Droit', 'Arts', 'Éducation', 'Génie', 'Commerce', 'Autres']
 const LANGUAGES = ['Français', 'Anglais', 'Espagnol', 'Arabe', 'Portugais', 'Mandarin']
@@ -401,6 +402,8 @@ export default function ModifierTuteurPage() {
         </div>
 
       </div>
+
+      <Footer />
     </div>
   )
 }

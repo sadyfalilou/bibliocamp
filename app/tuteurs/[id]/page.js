@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import Logo from '../../../components/Logo'
+import Footer from '../../../components/Footer'
 import { BADGE_LABELS } from '../../../lib/tutorBadge'
 
 const DAYS = [
@@ -516,6 +517,8 @@ export default function TuteurProfilePage() {
         </div>
 
       </div>
+
+      <Footer />
     </div>
   )
 }

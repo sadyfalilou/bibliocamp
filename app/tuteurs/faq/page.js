@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Footer from '../../../components/Footer'
 
 const FAQ = [
   {
@@ -145,6 +146,8 @@ export default function TuteursFaqPage() {
         </div>
 
       </div>
+
+      <Footer />
     </div>
   )
 }

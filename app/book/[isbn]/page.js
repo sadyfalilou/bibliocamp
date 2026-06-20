@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '../../../lib/supabase'
 import Logo from '../../../components/Logo'
+import Footer from '../../../components/Footer'
 
 export default function BookPage() {
   const router = useRouter()
@@ -501,6 +502,8 @@ export default function BookPage() {
           </>
         )}
       </div>
+
+      <Footer />
     </div>
   )
 }

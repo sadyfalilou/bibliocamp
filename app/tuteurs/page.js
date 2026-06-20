@@ -4,6 +4,7 @@ import { useEffect, useState, useMemo } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Logo from '../../components/Logo'
+import Footer from '../../components/Footer'
 import { BADGE_LABELS } from '../../lib/tutorBadge'
 
 const DOMAINS = ['Sciences', 'Santé', 'Droit', 'Arts', 'Éducation', 'Génie', 'Commerce', 'Autres']
@@ -397,6 +398,8 @@ export default function TuteursPage() {
         )}
 
       </div>
+
+      <Footer />
     </div>
   )
 }

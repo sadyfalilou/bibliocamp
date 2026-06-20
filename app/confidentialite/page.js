@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Footer from '../../components/Footer'
 
 export const metadata = {
   title: 'Politique de confidentialité — BiblioCamp',
@@ -235,18 +236,7 @@ export default function ConfidentialitePage() {
         </div>
       </main>
 
-      {/* ── FOOTER ── */}
-      <footer style={{ borderTop: '1px solid #e5e7eb', padding: '24px', textAlign: 'center' }}>
-        <div style={{ maxWidth: 720, margin: '0 auto', display: 'flex', flexWrap: 'wrap', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-          <span style={{ fontSize: 13, color: '#9ca3af' }}>© 2026 BiblioCamp</span>
-          <div style={{ display: 'flex', gap: 20 }}>
-            <Link href="/" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none' }}>Accueil</Link>
-            <Link href="/cgu" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none' }}>{"Conditions d'utilisation"}</Link>
-            <Link href="/confidentialite" style={{ fontSize: 13, color: '#111', fontWeight: 600, textDecoration: 'none' }}>Confidentialité</Link>
-          </div>
-        </div>
-      </footer>
-
+      <Footer />
     </div>
   )
 }
