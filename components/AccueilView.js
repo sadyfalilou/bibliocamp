@@ -21,7 +21,7 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
 }
 
-export default function AccueilView({ userProfile, router, setView, onSearch, onSelectTutor }) {
+export default function AccueilView({ userProfile, router, setView, onSearch, onSelectTutor, onSelectListing }) {
   const [listings, setListings] = useState([])
   const [tutors, setTutors] = useState([])
   const [loading, setLoading] = useState(true)
@@ -89,7 +89,7 @@ export default function AccueilView({ userProfile, router, setView, onSearch, on
           : listings.map((listing, idx) => (
             <div
               key={listing.id}
-              onClick={() => setView('acheter')}
+              onClick={() => onSelectListing ? onSelectListing(listing) : setView('acheter')}
               style={{ flex: '0 0 150px', scrollSnapAlign: 'start', cursor: 'pointer' }}
             >
               <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', height: 110, background: coverGradients[idx % coverGradients.length], marginBottom: 6 }}>

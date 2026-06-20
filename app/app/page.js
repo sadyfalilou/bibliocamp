@@ -1312,6 +1312,7 @@ function HomeContent() {
               setView={setView}
               onSearch={(q) => { setSearch(q); setView('acheter') }}
               onSelectTutor={setSelectedTutorId}
+              onSelectListing={setSelectedBook}
             />
           )}
 
