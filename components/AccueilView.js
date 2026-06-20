@@ -21,7 +21,7 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
 }
 
-export default function AccueilView({ userProfile, router, setView, onSearch, onSelectTutor, onSelectListing }) {
+export default function AccueilView({ userProfile, router, setView, onSearch, onSearchTutor, onSelectTutor, onSelectListing }) {
   const [listings, setListings] = useState([])
   const [tutors, setTutors] = useState([])
   const [loading, setLoading] = useState(true)
@@ -42,7 +42,28 @@ export default function AccueilView({ userProfile, router, setView, onSearch, on
 
   const handleSearch = (e) => {
     e.preventDefault()
-    onSearch?.(query)
+    const q = query.trim()
+    if (!q) return
+    const qLower = q.toLowerCase()
+
+    const matchesTutor = tutors.some(t =>
+      `${t.first_name || ''} ${t.last_name || ''}`.toLowerCase().includes(qLower) ||
+      t.institution?.toLowerCase().includes(qLower) ||
+      t.campus?.toLowerCase().includes(qLower) ||
+      t.subjects?.some(s => s.toLowerCase().includes(qLower)) ||
+      t.domains?.some(d => d.toLowerCase().includes(qLower))
+    )
+    const matchesListing = listings.some(l =>
+      l.title?.toLowerCase().includes(qLower) ||
+      l.authors?.toLowerCase().includes(qLower) ||
+      l.course_code?.toLowerCase().includes(qLower)
+    )
+
+    if (matchesTutor && !matchesListing) {
+      onSearchTutor?.(q)
+    } else {
+      onSearch?.(q)
+    }
   }
 
   return (

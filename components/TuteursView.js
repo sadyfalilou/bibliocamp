@@ -110,11 +110,11 @@ function TutorCard({ tutor, onClick }) {
   )
 }
 
-export default function TuteursView({ user, setView, onSelectTutor }) {
+export default function TuteursView({ user, setView, onSelectTutor, initialSearch }) {
   const [tutors, setTutors]   = useState([])
   const [loading, setLoading] = useState(true)
   const [isTutor, setIsTutor] = useState(false)
-  const [search, setSearch]   = useState('')
+  const [search, setSearch]   = useState(initialSearch || '')
   const [filterDomain, setFilterDomain] = useState('')
   const [filterMode, setFilterMode]     = useState('')
   const [filterPrice, setFilterPrice]   = useState('')
