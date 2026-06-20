@@ -43,6 +43,17 @@ export default function AdminReportsPage() {
     setActingId(null)
   }
 
+  const handleContact = async (sellerId) => {
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/admin/contact-seller', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ sellerId })
+    })
+    const json = await res.json()
+    if (res.ok) window.location.href = `/inbox?conv=${json.conversation_id}`
+  }
+
   return (
     <main style={{ maxWidth: 900, margin: '0 auto', padding: '2rem', fontFamily: "'Segoe UI', sans-serif" }}>
       <h1 style={{ marginBottom: 4 }}>🚩 Annonces signalées</h1>
@@ -118,6 +129,11 @@ export default function AdminReportsPage() {
                     × {g.reportCount} signalements
                   </span>
                 )}
+                {g.priorWarnings > 0 && (
+                  <span style={{ background: '#fffbeb', color: '#b45309', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>
+                    ⚠️ déjà averti {g.priorWarnings} fois
+                  </span>
+                )}
               </div>
               {g.listing?.price != null && <div style={{ color: '#6b7280', fontSize: 14 }}>{g.listing.price} $</div>}
               <div style={{ marginTop: 6, fontSize: 14 }}>
@@ -129,7 +145,14 @@ export default function AdminReportsPage() {
               </div>
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12, flexWrap: 'wrap' }}>
+            <button
+              disabled={actingId === g.listing_id || !g.listing?.user_id}
+              onClick={() => handleContact(g.listing.user_id)}
+              style={{ flex: 1, padding: '8px 14px', background: '#f0fdf9', color: '#00a88a', border: '1px solid #6ee7b7', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 13 }}
+            >
+              ✉️ Contacter
+            </button>
             <button
               disabled={actingId === g.listing_id}
               onClick={() => handleAction(g.listing_id, 'dismiss')}

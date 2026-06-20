@@ -12,6 +12,7 @@ import AccueilView from '../../components/AccueilView'
 import TutorDetailPanel from '../../components/TutorDetailPanel'
 import TuteursFaqView from '../../components/TuteursFaqView'
 import ManuelsFaqView from '../../components/ManuelsFaqView'
+import RemovedListingNotices from '../../components/RemovedListingNotices'
 import Footer from '../../components/Footer'
 
 function timeAgo(dateStr) {
@@ -1700,6 +1701,8 @@ function HomeContent() {
               <h1 style={{ fontSize: 26, fontWeight: 900, color: '#1a2e4a', margin: '0 0 20px' }}>
                 Mes annonces
               </h1>
+
+              <RemovedListingNotices userId={user?.id} />
 
               {myListings.length === 0 ? (
                 <div style={{

@@ -57,12 +57,28 @@ export async function GET(request) {
 
   const listingsById = Object.fromEntries((listings || []).map(l => [l.id, l]))
 
+  // Historique : combien de fois chaque vendeur concerné a déjà été averti
+  const sellerIds = [...new Set((listings || []).map(l => l.user_id).filter(Boolean))]
+  const warningsBySeller = {}
+  if (sellerIds.length > 0) {
+    const { data: pastWarnings } = await supabase
+      .from('removed_listings_notices')
+      .select('user_id')
+      .eq('type', 'warning')
+      .in('user_id', sellerIds)
+    for (const w of pastWarnings || []) {
+      warningsBySeller[w.user_id] = (warningsBySeller[w.user_id] || 0) + 1
+    }
+  }
+
   const grouped = new Map()
   for (const r of reports) {
     if (!grouped.has(r.listing_id)) {
+      const listing = listingsById[r.listing_id] || null
       grouped.set(r.listing_id, {
         listing_id: r.listing_id,
-        listing: listingsById[r.listing_id] || null,
+        listing,
+        priorWarnings: listing?.user_id ? (warningsBySeller[listing.user_id] || 0) : 0,
         reports: [],
       })
     }
