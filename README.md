@@ -16,6 +16,8 @@
 - 📱 Vérification téléphone canadien (+1, anti-VoIP via Twilio)
 - 🔔 Notifications sonores et badge en temps réel
 - 🛡️ Page admin signalements + gestion invitations
+- 🏠 Colocs — annonces de chambre/coloc (publication, recherche/filtres, panneau de détail, signalement)
+- 📚 Catalogue maison de manuels (Coop UQAM, Chenelière) prioritaire avant les APIs externes
 
 ## 🛡️ Sécurité
 
@@ -75,8 +77,10 @@ app/
 │   ├── book/            # Infos manuel (Google Books)
 │   ├── badges/          # Calcul et récupération badges
 │   ├── stats/           # Statistiques utilisateur
-│   └── admin/           # Rapports et invitations (admin)
-├── app/                 # Dashboard / Marketplace (protégé)
+│   ├── roommates/       # CRUD annonces colocs + contact propriétaire
+│   └── admin/           # Rapports (manuels + colocs), invitations, stats, catalogue manuel
+├── app/                 # Dashboard / Marketplace (protégé) — manuels, tuteurs, colocs
+├── admin/roommate-reports/ # Signalements d'annonces colocs (admin)
 ├── book/[isbn]/         # Fiche manuel publique
 ├── seller/[id]/         # Profil vendeur public
 ├── invite/[code]/       # Page d'invitation parrainage
@@ -107,7 +111,7 @@ proxy.js                 # Middleware Next.js — protection des routes
 ## 🧪 Tests
 
 ```bash
-# Tests unitaires (105 tests, 6 suites)
+# Tests unitaires (137 tests, 8 suites)
 npm test
 
 # Tests E2E Playwright (serveur local requis)

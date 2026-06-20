@@ -5,7 +5,7 @@ et les lire, sans aide extérieure.
 
 ---
 
-## 1. Tests unitaires / API (Jest) — 105 tests, 6 suites
+## 1. Tests unitaires / API (Jest) — 137 tests, 8 suites
 
 Vérifient la logique isolée : routes API, validation, rate limiting.
 
@@ -15,8 +15,8 @@ npm test
 
 Résultat attendu :
 ```
-Test Suites: 6 passed, 6 total
-Tests:       105 passed, 105 total
+Test Suites: 8 passed, 8 total
+Tests:       137 passed, 137 total
 ```
 
 ### Suites actuelles
@@ -29,6 +29,8 @@ Tests:       105 passed, 105 total
 | `__tests__/api.invite.test.js` | 6 | GET/POST parrainage : code, 404 parrain introuvable, 400 auto-parrainage |
 | `__tests__/api.conversations.test.js` | 7 | POST conversation : auth, 400 auto-contact, conv existante, nouvelle conv (par `tutor_id` + `context_type`) |
 | `__tests__/api.check-phone.test.js` | 7 | Vérification SMS du numéro de téléphone |
+| `__tests__/api.roommates.test.js` | 25 | GET liste/filtres, POST publication, PATCH statut (JSON) + édition complète (multipart, photos), DELETE — auth, validation, 403/500 |
+| `__tests__/api.roommates.contact.test.js` | 7 | POST contact coloc : auth, 400 auto-contact, conv existante (par `roommate_listing_id`), nouvelle conv |
 
 ### Règles de validation testées
 
@@ -66,10 +68,11 @@ npm run test:e2e
 
 | Fichier | Ce qui est couvert |
 |---|---|
-| `e2e/navigation.spec.js` | `/` (accueil publique) et `/login`/CGU/Confidentialité accessibles sans auth, routes privées (`/create`, `/inbox`, `/profile`, `/app`) redirigent vers /login, en-têtes HTTP |
+| `e2e/navigation.spec.js` | `/` (accueil publique) et `/login`/CGU/Confidentialité accessibles sans auth, routes privées (`/create`, `/inbox`, `/profile`, `/app`, `/admin/roommate-reports`) redirigent vers /login, en-têtes HTTP |
 | `e2e/public-pages.spec.js` | `/book/[isbn]`, `/seller/[id]`, `/invite/[code]` sans auth — breadcrumbs, boutons Se connecter/Rejoindre |
 | `e2e/listing-form.spec.js` | Redirection vers /login sans auth, structure des tests avec auth (skip) |
 | `e2e/auth.spec.js` | Formulaire de connexion, erreur sur identifiants invalides (affichée inline, pas via `window.alert`), inscription complète (signup → connexion auto → redirection `/app`) |
+| `e2e/colocs.spec.js` | `/app?view=colocs` et `/admin/roommate-reports` redirigent vers /login sans auth ; structure des tests avec auth (skip) — liste annonces, validation formulaire, panneau de détail |
 
 > Note : `/` n'exige plus d'authentification depuis la refonte de la
 > page d'accueil publique — elle affiche un aperçu (manuels, tuteurs)

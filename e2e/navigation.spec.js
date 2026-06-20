@@ -25,7 +25,7 @@ test.describe('Navigation et pages publiques', () => {
   })
 
   test.describe('protection des routes privées', () => {
-    const protectedRoutes = ['/create', '/inbox', '/profile', '/app']
+    const protectedRoutes = ['/create', '/inbox', '/profile', '/app', '/admin/roommate-reports']
 
     for (const route of protectedRoutes) {
       test(`${route} redirige vers /login si non authentifié`, async ({ page }) => {
