@@ -11,11 +11,14 @@ export default function RemovedListingNotices({ userId }) {
     const load = async () => {
       const { data } = await supabase
         .from('removed_listings_notices')
-        .select('id, listing_title, reason, type, removed_at')
+        .select('id, listing_title, reason, type, listing_id, removed_at')
         .eq('user_id', userId)
         .eq('read', false)
         .order('removed_at', { ascending: false })
-      setNotices(data || [])
+      // Les avertissements rattachés à une annonce encore active sont
+      // affichés directement sur la carte de l'annonce (ListingWarningBadge),
+      // pas besoin de les dupliquer ici.
+      setNotices((data || []).filter(n => !(n.type === 'warning' && n.listing_id)))
     }
     load()
   }, [userId])

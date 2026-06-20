@@ -128,6 +128,10 @@ export async function DELETE(request) {
         listing_title: listing.title || 'Annonce',
         reason: reasons,
         type: action === 'remove-listing' ? 'removed' : 'warning',
+        // Pour 'remove-listing', l'annonce sera supprimée juste après —
+        // la colonne repassera à NULL automatiquement (ON DELETE SET NULL),
+        // ce qui est correct puisqu'il n'y a plus de carte à laquelle l'attacher.
+        listing_id: listingId,
       })
     }
 

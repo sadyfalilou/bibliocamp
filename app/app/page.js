@@ -13,6 +13,7 @@ import TutorDetailPanel from '../../components/TutorDetailPanel'
 import TuteursFaqView from '../../components/TuteursFaqView'
 import ManuelsFaqView from '../../components/ManuelsFaqView'
 import RemovedListingNotices from '../../components/RemovedListingNotices'
+import ListingWarningBadge from '../../components/ListingWarningBadge'
 import Footer from '../../components/Footer'
 
 function timeAgo(dateStr) {
@@ -1724,10 +1725,13 @@ function HomeContent() {
                   {myListings.map(item => (
                     <div key={item.id} style={{
                       background: item.status === 'sold' ? '#f8fafc' : 'white', borderRadius: 10, padding: '14px',
+                      border: '1px solid #e2e8f0',
+                      opacity: item.status === 'sold' ? 0.75 : 1
+                    }}>
+                    <div style={{
                       display: 'flex', flexDirection: isMobile ? 'column' : 'row',
                       alignItems: isMobile ? 'flex-start' : 'center',
-                      gap: isMobile ? 10 : 16, border: '1px solid #e2e8f0',
-                      opacity: item.status === 'sold' ? 0.75 : 1
+                      gap: isMobile ? 10 : 16,
                     }}>
                       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1, minWidth: 0 }}>
                         <div style={{ flexShrink: 0, position: 'relative' }}>
@@ -1768,6 +1772,8 @@ function HomeContent() {
                           )}
                         </div>
                       </div>
+                    </div>
+                      <ListingWarningBadge userId={user?.id} listingId={item.id} />
                     </div>
                   ))}
                 </div>
