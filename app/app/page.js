@@ -1761,12 +1761,10 @@ function HomeContent() {
             </>
           )}
 
-          <div style={{ marginTop: 48, marginLeft: isMobile ? -14 : -36, marginRight: isMobile ? -14 : -36 }}>
-            <Footer />
-          </div>
-
         </main>
       </div>
+
+      <Footer />
 
       {/* ===== SLIDE-OVER ===== */}
       {/* MODAL SIGNALEMENT */}
