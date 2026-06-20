@@ -12,6 +12,9 @@ import AccueilView from '../../components/AccueilView'
 import TutorDetailPanel from '../../components/TutorDetailPanel'
 import TuteursFaqView from '../../components/TuteursFaqView'
 import ManuelsFaqView from '../../components/ManuelsFaqView'
+import RoommatesView from '../../components/RoommatesView'
+import PublierColocView from '../../components/PublierColocView'
+import MesColocsView from '../../components/MesColocsView'
 import RemovedListingNotices from '../../components/RemovedListingNotices'
 import ListingWarningBadge from '../../components/ListingWarningBadge'
 import ListingReportBadge from '../../components/ListingReportBadge'
@@ -103,6 +106,7 @@ function HomeContent() {
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
   const [tutorsMenuOpen, setTutorsMenuOpen] = useState(false)
   const [manualsMenuOpen, setManualsMenuOpen] = useState(false)
+  const [colocsMenuOpen, setColocsMenuOpen] = useState(false)
   const [soldConfirmId, setSoldConfirmId] = useState(null)
   const [markingAsSold, setMarkingAsSold] = useState(false)
   const router = useRouter()
@@ -124,10 +128,12 @@ function HomeContent() {
   // Ouvre/ferme automatiquement les accordéons sidebar selon la vue active
   const MANUELS_VIEWS = ['acheter', 'vendre', 'mes-annonces', 'favoris', 'mes-cours', 'faq-manuels']
   const TUTEURS_VIEWS = ['tuteurs', 'devenir-tuteur', 'faq']
+  const COLOCS_VIEWS = ['colocs', 'publier-coloc', 'mes-colocs']
   useEffect(() => {
-    if (view === 'accueil') { setManualsMenuOpen(false); setTutorsMenuOpen(false) }
-    else if (MANUELS_VIEWS.includes(view)) { setManualsMenuOpen(true); setTutorsMenuOpen(false) }
-    else if (TUTEURS_VIEWS.includes(view)) { setTutorsMenuOpen(true); setManualsMenuOpen(false) }
+    if (view === 'accueil') { setManualsMenuOpen(false); setTutorsMenuOpen(false); setColocsMenuOpen(false) }
+    else if (MANUELS_VIEWS.includes(view)) { setManualsMenuOpen(true); setTutorsMenuOpen(false); setColocsMenuOpen(false) }
+    else if (TUTEURS_VIEWS.includes(view)) { setTutorsMenuOpen(true); setManualsMenuOpen(false); setColocsMenuOpen(false) }
+    else if (COLOCS_VIEWS.includes(view)) { setColocsMenuOpen(true); setManualsMenuOpen(false); setTutorsMenuOpen(false) }
   }, [view])
 
   const fetchListings = async (offset = 0, append = false) => {
@@ -878,6 +884,22 @@ function HomeContent() {
                 { label: 'FAQ', action: () => { setView('faq'); if (isMobile) setSidebarOpen(false) }, active: view === 'faq' },
               ]
             },
+            {
+              id: 'colocs',
+              isOpen: colocsMenuOpen,
+              toggle: () => setColocsMenuOpen(o => !o),
+              icon: (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/>
+                </svg>
+              ),
+              label: 'Colocs',
+              items: [
+                { label: 'Trouver un coloc', action: () => { setView('colocs'); if (isMobile) setSidebarOpen(false) }, active: view === 'colocs' },
+                { label: 'Publier une annonce', action: () => { setView('publier-coloc'); if (isMobile) setSidebarOpen(false) }, active: view === 'publier-coloc' },
+                { label: 'Mes annonces', action: () => { setView('mes-colocs'); if (isMobile) setSidebarOpen(false) }, active: view === 'mes-colocs' },
+              ]
+            },
           ].map(section => (
             <div key={section.id}>
               {/* Parent */}
@@ -1342,6 +1364,21 @@ function HomeContent() {
           {/* ===== VUE FAQ MANUELS ===== */}
           {view === 'faq-manuels' && (
             <ManuelsFaqView setView={setView} />
+          )}
+
+          {/* ===== VUE COLOCS ===== */}
+          {view === 'colocs' && (
+            <RoommatesView user={user} setView={setView} />
+          )}
+
+          {/* ===== VUE PUBLIER COLOC ===== */}
+          {view === 'publier-coloc' && (
+            <PublierColocView setView={setView} />
+          )}
+
+          {/* ===== VUE MES COLOCS ===== */}
+          {view === 'mes-colocs' && (
+            <MesColocsView user={user} setView={setView} />
           )}
 
           {/* ===== VUE VENDRE ===== */}
