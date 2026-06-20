@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 export async function GET(request) {
   const isbn = new URL(request.url).searchParams.get('isbn')
@@ -7,7 +8,35 @@ export async function GET(request) {
     return NextResponse.json({ error: 'ISBN invalide' }, { status: 400 })
   }
 
-  // 1. Essayer Google Books
+  // 1. Catalogue maison (Coop UQAM, Chenelière) — prioritaire, car
+  // mieux couvert que les API généralistes pour les manuels québécois
+  try {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )
+    const { data: catalogBook } = await supabase
+      .from('book_catalog')
+      .select('title, authors, publisher, course_code, cover_url')
+      .eq('isbn', cleaned)
+      .maybeSingle()
+
+    if (catalogBook) {
+      return NextResponse.json({
+        found: true,
+        book: {
+          title: catalogBook.title,
+          authors: catalogBook.authors || '',
+          publisher: catalogBook.publisher || '',
+          publishedDate: '',
+          course: catalogBook.course_code || '',
+          cover: catalogBook.cover_url || null,
+        }
+      })
+    }
+  } catch { /* passe au fallback */ }
+
+  // 2. Essayer Google Books
   try {
     const res = await fetch(`https://www.googleapis.com/books/v1/volumes?q=isbn:${cleaned}`)
     const data = await res.json()
@@ -17,7 +46,7 @@ export async function GET(request) {
     }
   } catch { /* passe au fallback */ }
 
-  // 2. Fallback : Open Library (meilleure couverture francophone)
+  // 3. Fallback : Open Library (meilleure couverture francophone)
   try {
     const res = await fetch(`https://openlibrary.org/api/books?bibkeys=ISBN:${cleaned}&format=json&jscmd=data`)
     const data = await res.json()
