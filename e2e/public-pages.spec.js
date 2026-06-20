@@ -15,8 +15,8 @@ test.describe('Pages publiques', () => {
 
     test('affiche le breadcrumb Accueil / Manuels', async ({ page }) => {
       await page.goto('/book/9780134685991', { waitUntil: 'domcontentloaded' })
-      await expect(page.getByText('Accueil')).toBeVisible({ timeout: 10000 })
-      await expect(page.getByText('Manuels')).toBeVisible()
+      await expect(page.getByText('Accueil').first()).toBeVisible({ timeout: 10000 })
+      await expect(page.getByText('Manuels').first()).toBeVisible()
     })
 
     test('affiche les boutons Se connecter et Rejoindre si non authentifié', async ({ page }) => {
@@ -27,7 +27,7 @@ test.describe('Pages publiques', () => {
 
     test('affiche le bouton Vendre mon exemplaire', async ({ page }) => {
       await page.goto('/book/9780134685991', { waitUntil: 'domcontentloaded' })
-      await expect(page.getByRole('button', { name: /vendre mon exemplaire/i })).toBeVisible({ timeout: 10000 })
+      await expect(page.getByRole('button', { name: /vendre mon exemplaire/i }).first()).toBeVisible({ timeout: 10000 })
     })
 
     test('ISBN inexistant — affiche 0 vendeur', async ({ page }) => {

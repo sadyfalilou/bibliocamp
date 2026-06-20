@@ -23,12 +23,12 @@ Tests:       105 passed, 105 total
 
 | Fichier | Tests | Ce qui est couvert |
 |---|---|---|
-| `__tests__/validation.test.js` | 20 | Validation champs (isbn, prix, état, transaction, titre…) |
-| `__tests__/api.listings.test.js` | 11 | POST/PATCH annonces : auth, ISBN requis, état requis, transaction requise |
+| `__tests__/validation.test.js` | 60 | Validation champs (isbn, prix, état, transaction, titre…) |
+| `__tests__/api.listings.test.js` | 18 | POST/PATCH annonces : auth, ISBN requis, état requis, transaction requise |
 | `__tests__/api.listings.status.test.js` | 7 | PATCH statut annonce : 401, 400, 404, 403, 200 |
 | `__tests__/api.invite.test.js` | 6 | GET/POST parrainage : code, 404 parrain introuvable, 400 auto-parrainage |
-| `__tests__/api.conversations.test.js` | 7 | POST conversation : auth, 400 auto-contact, conv existante, nouvelle conv |
-| `__tests__/api.rate-limit.test.js` | 54 | Rate limiting sur toutes les routes sensibles |
+| `__tests__/api.conversations.test.js` | 7 | POST conversation : auth, 400 auto-contact, conv existante, nouvelle conv (par `tutor_id` + `context_type`) |
+| `__tests__/api.check-phone.test.js` | 7 | Vérification SMS du numéro de téléphone |
 
 ### Règles de validation testées
 
@@ -52,13 +52,28 @@ npm run dev
 npm run test:e2e
 ```
 
+Si un serveur de dev tourne déjà sur un port différent de 3000 (ex. port
+auto-attribué par l'outil de preview), pointe directement les tests
+vers lui au lieu d'en relancer un — `playwright.config.js` désactive
+son `webServer` interne dès que `BASE_URL` est défini :
+
+```powershell
+$env:BASE_URL = "http://localhost:3383"
+npm run test:e2e
+```
+
 ### Suites E2E
 
 | Fichier | Ce qui est couvert |
 |---|---|
-| `e2e/navigation.spec.js` | Pages publiques accessibles, routes privées redirigent vers /login, en-têtes HTTP |
+| `e2e/navigation.spec.js` | `/` (accueil publique) et `/login`/CGU/Confidentialité accessibles sans auth, routes privées (`/create`, `/inbox`, `/profile`, `/app`) redirigent vers /login, en-têtes HTTP |
 | `e2e/public-pages.spec.js` | `/book/[isbn]`, `/seller/[id]`, `/invite/[code]` sans auth — breadcrumbs, boutons Se connecter/Rejoindre |
 | `e2e/listing-form.spec.js` | Redirection vers /login sans auth, structure des tests avec auth (skip) |
+| `e2e/auth.spec.js` | Formulaire de connexion, erreur sur identifiants invalides (affichée inline, pas via `window.alert`), inscription complète (signup → connexion auto → redirection `/app`) |
+
+> Note : `/` n'exige plus d'authentification depuis la refonte de la
+> page d'accueil publique — elle affiche un aperçu (manuels, tuteurs)
+> et un panneau de connexion, mais ne redirige plus vers `/login`.
 
 ### Mode interface graphique (recommandé pour déboguer)
 
