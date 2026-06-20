@@ -92,7 +92,7 @@ export default function RoommatesView({ user, setView, initialSearch }) {
         <input
           value={city}
           onChange={e => setCity(e.target.value)}
-          placeholder="Ville / secteur"
+          placeholder="Ville, secteur ou mot-clé"
           style={{ flex: '1 1 160px', padding: '9px 12px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 14 }}
         />
         <input

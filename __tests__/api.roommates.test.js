@@ -21,6 +21,7 @@ jest.mock('@supabase/supabase-js', () => ({
         chain.eq = jest.fn(() => chain)
         chain.ilike = jest.fn(() => chain)
         chain.lte = jest.fn(() => chain)
+        chain.or = jest.fn(() => chain)
         chain.order = jest.fn(() => chain)
         chain.single = mockReadSingle
         chain.then = (resolve, reject) => mockReadList().then(resolve, reject)
