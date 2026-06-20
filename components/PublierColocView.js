@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
 const ROOM_TYPES = [
@@ -18,6 +18,7 @@ export default function PublierColocView({ setView }) {
   const [imagePreview, setImagePreview] = useState(null)
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
+  const fileInputRef = useRef(null)
 
   const handleChange = (field) => (e) => setForm(prev => ({ ...prev, [field]: e.target.value }))
 
@@ -104,7 +105,15 @@ export default function PublierColocView({ setView }) {
             {imagePreview && (
               <img src={imagePreview} alt="aperçu" style={{ width: 56, height: 56, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }} />
             )}
-            <input type="file" accept="image/*" onChange={handleImageChange} style={{ fontSize: 13 }} />
+            <input ref={fileInputRef} type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} />
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              style={{ background: '#f8fafc', color: '#1a2e4a', border: '1px solid #e2e8f0', borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}
+            >
+              {imageFile ? 'Changer la photo' : 'Choisir une photo'}
+            </button>
+            {imageFile && <span style={{ fontSize: 12, color: '#718096' }}>{imageFile.name}</span>}
           </div>
         </div>
 

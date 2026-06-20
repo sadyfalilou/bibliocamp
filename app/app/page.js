@@ -991,7 +991,7 @@ function HomeContent() {
               >Accueil</span>
               {' / '}
               <span style={{ color: '#1a2e4a', fontWeight: 600 }}>
-                {TUTEURS_VIEWS.includes(view) ? 'Tuteurs' : 'Manuels'}
+                {TUTEURS_VIEWS.includes(view) ? 'Tuteurs' : COLOCS_VIEWS.includes(view) ? 'Colocs' : 'Manuels'}
               </span>
             </div>
           )}

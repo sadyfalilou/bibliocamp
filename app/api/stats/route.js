@@ -26,5 +26,12 @@ export async function GET() {
   const badges = await computeTutorBadges(supabase, (tutorsRaw ?? []).map(t => t.user_id))
   const tutors = (tutorsRaw ?? []).map(t => ({ ...t, response_badge: badges[t.user_id] ?? null }))
 
-  return NextResponse.json({ listings: listings ?? [], tutors })
+  const { data: roommates } = await supabase
+    .from('roommate_listings')
+    .select('id, user_id, title, rent_price, room_type, campus, city, image_url, created_at')
+    .eq('status', 'active')
+    .order('created_at', { ascending: false })
+    .limit(8)
+
+  return NextResponse.json({ listings: listings ?? [], tutors, roommates: roommates ?? [] })
 }
