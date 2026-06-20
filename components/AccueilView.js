@@ -93,8 +93,14 @@ export default function AccueilView({ userProfile, router, setView, onSearch, on
               style={{ flex: '0 0 150px', scrollSnapAlign: 'start', cursor: 'pointer' }}
             >
               <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', height: 110, background: coverGradients[idx % coverGradients.length], marginBottom: 6 }}>
-                {listing.image_url && (
+                {listing.image_url ? (
                   <img src={listing.image_url} alt={listing.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                ) : (
+                  <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 12px', textAlign: 'center' }}>
+                    <span style={{ color: 'rgba(255,255,255,0.92)', fontSize: 12, fontWeight: 700, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                      {listing.title}
+                    </span>
+                  </div>
                 )}
                 {listing.original_price && listing.original_price > listing.price && (
                   <div style={{ position: 'absolute', top: 6, left: 6, background: 'white', fontSize: 9, fontWeight: 700, color: '#1a2e4a', padding: '2px 7px', borderRadius: 20 }}>
