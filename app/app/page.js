@@ -1767,7 +1767,7 @@ function HomeContent() {
         </main>
       </div>
 
-      <Footer />
+      <Footer onManuelsClick={() => setView('acheter')} onTuteursClick={() => setView('tuteurs')} />
 
       {/* ===== SLIDE-OVER ===== */}
       {/* MODAL SIGNALEMENT */}
