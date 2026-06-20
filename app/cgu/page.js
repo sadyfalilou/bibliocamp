@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Footer from '../../components/Footer'
+import AuthAwareLoginButton from '../../components/AuthAwareLoginButton'
 
 export const metadata = {
   title: "Conditions générales d'utilisation — BiblioCamp",
@@ -17,9 +18,7 @@ export default function CguPage() {
         </Link>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
           <Link href="/confidentialite" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none' }}>Confidentialité</Link>
-          <Link href="/login" style={{ fontSize: 13, fontWeight: 600, color: '#1a2e4a', textDecoration: 'none', border: '1px solid #d1d5db', borderRadius: 6, padding: '6px 14px' }}>
-            Se connecter
-          </Link>
+          <AuthAwareLoginButton />
         </div>
       </header>
 
