@@ -6,31 +6,6 @@ import Footer from '../../components/Footer'
 
 const FAQ = [
   {
-    section: 'Manuels scolaires',
-    items: [
-      {
-        q: 'Comment acheter un manuel ?',
-        a: 'Cherche par ISBN, titre ou code de cours sur la page d\'accueil. Tu verras tous les vendeurs disponibles avec leur prix — contacte celui qui t\'intéresse directement via la messagerie BiblioCamp.'
-      },
-      {
-        q: 'Comment vendre mon manuel ?',
-        a: 'Connecte-toi, clique sur "Vendre", entre l\'ISBN (au dos du livre) pour auto-remplir les infos, fixe ton prix et publie. C\'est en ligne immédiatement.'
-      },
-      {
-        q: 'Est-ce que BiblioCamp prend une commission ?',
-        a: 'Non. BiblioCamp est 100% gratuit — aucune commission sur les ventes. Le paiement se fait directement entre toi et l\'autre étudiant.'
-      },
-      {
-        q: 'Comment se passe la transaction ?',
-        a: 'Vous vous entendez directement avec le vendeur ou l\'acheteur sur le mode de rencontre (campus, ville, envoi postal) et le paiement. Nous recommandons les lieux publics et le paiement en personne.'
-      },
-      {
-        q: 'Que faire si une annonce semble suspecte ?',
-        a: 'Utilise le bouton "Signaler cette annonce" visible sur chaque annonce une fois connecté. Notre équipe examine chaque signalement rapidement.'
-      },
-    ]
-  },
-  {
     section: 'Compte et sécurité',
     items: [
       {
@@ -102,6 +77,18 @@ export default function FaqPage() {
             </div>
           </div>
         ))}
+
+        {/* Pointeur vers FAQ manuels */}
+        <div style={{ background: 'white', borderRadius: 14, border: '1px solid #e2e8f0', padding: '20px 24px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ fontSize: 28 }}>📚</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#1a2e4a' }}>Des questions sur les manuels ?</div>
+            <div style={{ fontSize: 13, color: '#64748b' }}>Consulte la FAQ dédiée à l'achat et la vente de manuels.</div>
+          </div>
+          <Link href="/manuels/faq" style={{ fontSize: 13, fontWeight: 700, color: '#00c9a7', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            Voir →
+          </Link>
+        </div>
 
         {/* Pointeur vers FAQ tuteurs */}
         <div style={{ background: 'white', borderRadius: 14, border: '1px solid #e2e8f0', padding: '20px 24px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 14 }}>

@@ -11,6 +11,7 @@ import DevenirTuteurView from '../../components/DevenirTuteurView'
 import AccueilView from '../../components/AccueilView'
 import TutorDetailPanel from '../../components/TutorDetailPanel'
 import TuteursFaqView from '../../components/TuteursFaqView'
+import ManuelsFaqView from '../../components/ManuelsFaqView'
 import Footer from '../../components/Footer'
 
 function timeAgo(dateStr) {
@@ -114,11 +115,11 @@ function HomeContent() {
   // Si ?view=tuteurs dans l'URL → redirigé depuis la landing page (recherche tuteur)
   useEffect(() => {
     const v = searchParams.get('view')
-    if (v === 'tuteurs' || v === 'devenir-tuteur') setView(v)
+    if (['tuteurs', 'devenir-tuteur', 'acheter', 'vendre', 'faq', 'faq-manuels'].includes(v)) setView(v)
   }, [searchParams])
 
   // Ouvre/ferme automatiquement les accordéons sidebar selon la vue active
-  const MANUELS_VIEWS = ['acheter', 'vendre', 'mes-annonces', 'favoris', 'mes-cours']
+  const MANUELS_VIEWS = ['acheter', 'vendre', 'mes-annonces', 'favoris', 'mes-cours', 'faq-manuels']
   const TUTEURS_VIEWS = ['tuteurs', 'devenir-tuteur', 'faq']
   useEffect(() => {
     if (view === 'accueil') { setManualsMenuOpen(false); setTutorsMenuOpen(false) }
@@ -855,6 +856,7 @@ function HomeContent() {
                 { label: 'Mes annonces', action: () => { setView('mes-annonces'); if (isMobile) setSidebarOpen(false) }, active: view === 'mes-annonces' },
                 { label: 'Mes favoris', action: () => { setView('favoris'); if (isMobile) setSidebarOpen(false) }, active: view === 'favoris', badge: wishlist.size > 0 ? wishlist.size : null },
                 { label: 'Mes cours', action: () => { setView('mes-cours'); if (isMobile) setSidebarOpen(false) }, active: view === 'mes-cours', badge: userSubjects.length > 0 ? userSubjects.length : null },
+                { label: 'FAQ', action: () => { setView('faq-manuels'); if (isMobile) setSidebarOpen(false) }, active: view === 'faq-manuels' },
               ]
             },
             {
@@ -1331,6 +1333,11 @@ function HomeContent() {
           {/* ===== VUE FAQ TUTEURS ===== */}
           {view === 'faq' && (
             <TuteursFaqView setView={setView} />
+          )}
+
+          {/* ===== VUE FAQ MANUELS ===== */}
+          {view === 'faq-manuels' && (
+            <ManuelsFaqView setView={setView} />
           )}
 
           {/* ===== VUE VENDRE ===== */}
