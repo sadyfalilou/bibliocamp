@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Logo from '../../components/Logo'
+import LogoIcon from '../../components/LogoIcon'
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -414,8 +415,8 @@ function InboxInner() {
                   <div onClick={() => setSelectedConv(conv.id)} style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1, minWidth: 0, cursor: 'pointer' }}>
                   {/* Avatar */}
                   {other?.isSystem ? (
-                    <div style={{ width: 44, height: 44, background: 'linear-gradient(135deg,#92400e,#d97706)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, flexShrink: 0 }}>
-                      🛠️
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'white', border: '1px solid #e2e8f0' }}>
+                      <LogoIcon size={28} />
                     </div>
                   ) : other?.avatar_url ? (
                     <img src={other.avatar_url} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
@@ -494,8 +495,8 @@ function InboxInner() {
               {/* Header conversation */}
               <div style={{ padding: '12px 16px', background: 'white', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, position: 'sticky', top: 0, zIndex: 10 }}>
                 {otherUser?.isSystem ? (
-                  <div style={{ width: 40, height: 40, background: 'linear-gradient(135deg,#92400e,#d97706)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 16 }}>
-                    🛠️
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white', border: '1px solid #e2e8f0' }}>
+                    <LogoIcon size={26} />
                   </div>
                 ) : otherUser?.avatar_url ? (
                   <img src={otherUser.avatar_url} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
