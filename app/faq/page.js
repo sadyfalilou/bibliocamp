@@ -1,8 +1,9 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Footer from '../../components/Footer'
+import { supabase } from '../../lib/supabase'
 
 const FAQ = [
   {
@@ -45,6 +46,12 @@ function AccordionItem({ question, answer }) {
 }
 
 export default function FaqPage() {
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUser(data?.user ?? null))
+  }, [])
+
   return (
     <div style={{ fontFamily: "'Segoe UI', sans-serif", minHeight: '100vh', background: '#f5f7fa', colorScheme: 'light' }}>
 
@@ -106,12 +113,14 @@ export default function FaqPage() {
         <div style={{ background: 'linear-gradient(135deg,#1a2e4a,#2d4a6b)', borderRadius: 14, padding: '24px', textAlign: 'center' }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: 'white', marginBottom: 8 }}>Tu as une autre question ?</div>
           <p style={{ fontSize: 13, color: '#a0c4d8', margin: '0 0 16px' }}>
-            Connecte-toi et utilise le bouton "Signaler" sur une annonce, ou écris-nous à{' '}
+            Écris-nous à{' '}
             <a href="mailto:info@bibliocamp.ca" style={{ color: 'white', fontWeight: 600 }}>info@bibliocamp.ca</a>.
           </p>
-          <Link href="/login" style={{ padding: '10px 20px', background: '#00c9a7', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
-            Se connecter →
-          </Link>
+          {!user && (
+            <Link href="/login" style={{ padding: '10px 20px', background: '#00c9a7', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
+              Se connecter →
+            </Link>
+          )}
         </div>
 
       </div>
