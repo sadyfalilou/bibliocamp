@@ -11,6 +11,7 @@ import DevenirTuteurView from '../../components/DevenirTuteurView'
 import AccueilView from '../../components/AccueilView'
 import TutorDetailPanel from '../../components/TutorDetailPanel'
 import TuteursFaqView from '../../components/TuteursFaqView'
+import Footer from '../../components/Footer'
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -1759,6 +1760,10 @@ function HomeContent() {
               )}
             </>
           )}
+
+          <div style={{ marginTop: 48, marginLeft: isMobile ? -14 : -36, marginRight: isMobile ? -14 : -36 }}>
+            <Footer />
+          </div>
 
         </main>
       </div>
