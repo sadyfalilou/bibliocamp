@@ -22,9 +22,16 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
 }
 
+const ROOM_TYPE_LABELS = {
+  chambre_privee: 'Chambre privée',
+  chambre_partagee: 'Chambre partagée',
+  appartement_complet: 'Appartement complet',
+}
+
 export default function AccueilView({ userProfile, userId, router, setView, onSearch, onSearchTutor, onSelectTutor, onSelectListing }) {
   const [listings, setListings] = useState([])
   const [tutors, setTutors] = useState([])
+  const [roommates, setRoommates] = useState([])
   const [loading, setLoading] = useState(true)
   const [query, setQuery] = useState('')
 
@@ -35,6 +42,7 @@ export default function AccueilView({ userProfile, userId, router, setView, onSe
         const data = await res.json()
         setListings(data.listings ?? [])
         setTutors(data.tutors ?? [])
+        setRoommates(data.roommates ?? [])
       }
       setLoading(false)
     }
@@ -201,6 +209,57 @@ export default function AccueilView({ userProfile, userId, router, setView, onSe
                   </div>
                 )
               })
+            }
+          </Carousel>
+        </>
+      )}
+
+      {/* Colocs */}
+      {(loading || roommates.length > 0) && (
+        <>
+          <div
+            onClick={() => setView('colocs')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', marginTop: 28, marginBottom: 14 }}
+          >
+            <h2 style={{ fontSize: 17, fontWeight: 900, color: '#1a2e4a', margin: 0 }}>Annonces colocs</h2>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#1a2e4a" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+
+          <Carousel onSeeAll={() => setView('colocs')} seeAllImages={roommates.slice(0, 3).map(r => r.image_url)}>
+            {loading
+              ? Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} style={{ flex: '0 0 150px', scrollSnapAlign: 'start' }}>
+                  <div style={{ background: '#f1f5f9', borderRadius: 10, height: 110, marginBottom: 6 }} />
+                  <div style={{ background: '#f1f5f9', borderRadius: 6, height: 10, width: '80%', marginBottom: 5 }} />
+                  <div style={{ background: '#f1f5f9', borderRadius: 6, height: 9, width: '50%' }} />
+                </div>
+              ))
+              : roommates.map((r, idx) => (
+                <div
+                  key={r.id}
+                  onClick={() => setView('colocs')}
+                  style={{ flex: '0 0 150px', scrollSnapAlign: 'start', cursor: 'pointer' }}
+                >
+                  <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', height: 110, background: coverGradients[idx % coverGradients.length], marginBottom: 6 }}>
+                    {r.image_url ? (
+                      <img src={r.image_url} alt={r.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28 }}>🏠</div>
+                    )}
+                    {r.city && (
+                      <div style={{ position: 'absolute', bottom: 6, left: 6, background: 'white', fontSize: 9, fontWeight: 700, color: '#00a88a', padding: '2px 7px', borderRadius: 20 }}>
+                        {r.city}
+                      </div>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2e4a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 1 }}>
+                    {r.title}
+                  </div>
+                  <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2e4a' }}>
+                    {r.rent_price} $/mois
+                  </div>
+                </div>
+              ))
             }
           </Carousel>
         </>
