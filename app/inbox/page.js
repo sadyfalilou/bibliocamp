@@ -116,7 +116,7 @@ function InboxInner() {
   const fetchConversations = async (userId) => {
     const { data: allConvs } = await supabase
       .from('conversations')
-      .select('*, listings(title, price, image_url)')
+      .select('*, listings(title, price, image_url), roommate_listings(title, rent_price, image_url)')
       .or(`user1_id.eq.${userId},user2_id.eq.${userId}`)
       .order('last_message_at', { ascending: false })
 
@@ -433,6 +433,10 @@ function InboxInner() {
                       <div style={{ fontSize: 11, color: '#b45309', fontWeight: 600 }}>Équipe support</div>
                     ) : conv.context_type === 'tuteur' ? (
                       <div style={{ fontSize: 11, color: '#00c9a7', fontWeight: 600 }}>🎓 Tuteur</div>
+                    ) : conv.context_type === 'colocation' ? (
+                      <div style={{ fontSize: 11, color: '#0d4f6b', fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        🏠 {conv.roommate_listings?.title || 'Coloc'}
+                      </div>
                     ) : conv.listings && (
                       <div style={{ fontSize: 11, color: '#a0aec0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         📖 {conv.listings.title}
@@ -513,6 +517,10 @@ function InboxInner() {
                     <div style={{ fontSize: 12, color: '#b45309', fontWeight: 600 }}>🛠️ Message de l'équipe BiblioCamp</div>
                   ) : selectedConvData?.context_type === 'tuteur' ? (
                     <div style={{ fontSize: 12, color: '#00c9a7', fontWeight: 600 }}>🎓 Conversation tuteur</div>
+                  ) : selectedConvData?.context_type === 'colocation' ? (
+                    <div style={{ fontSize: 12, color: '#0d4f6b', fontWeight: 600 }}>
+                      🏠 {selectedConvData.roommate_listings?.title || 'Coloc'}{selectedConvData.roommate_listings?.rent_price ? ` · ${selectedConvData.roommate_listings.rent_price} $/mois` : ''}
+                    </div>
                   ) : selectedConvData?.listings && (
                     <div style={{ fontSize: 12, color: '#a0aec0' }}>📖 {selectedConvData.listings.title} · {selectedConvData.listings.price} $</div>
                   )}
