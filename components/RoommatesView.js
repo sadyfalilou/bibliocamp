@@ -19,10 +19,10 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
 }
 
-export default function RoommatesView({ user, setView }) {
+export default function RoommatesView({ user, setView, initialSearch }) {
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
-  const [city, setCity] = useState('')
+  const [city, setCity] = useState(initialSearch || '')
   const [maxPrice, setMaxPrice] = useState('')
   const [roomType, setRoomType] = useState('')
   const [reportModal, setReportModal] = useState(null) // listing id
@@ -92,7 +92,7 @@ export default function RoommatesView({ user, setView }) {
         <input
           value={city}
           onChange={e => setCity(e.target.value)}
-          placeholder="Ville / secteur"
+          placeholder="Ville, secteur ou mot-clé"
           style={{ flex: '1 1 160px', padding: '9px 12px', borderRadius: 8, border: '1px solid #e2e8f0', fontSize: 14 }}
         />
         <input

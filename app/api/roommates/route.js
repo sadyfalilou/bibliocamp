@@ -54,7 +54,7 @@ async function uploadImages(supabase, imageFiles, userId, route) {
 // GET /api/roommates — liste publique des annonces actives, avec filtres optionnels
 export async function GET(request) {
   const url = new URL(request.url)
-  const city = url.searchParams.get('city')
+  const q = url.searchParams.get('city') // champ "Ville / secteur" — sert aussi de recherche libre
   const maxPrice = url.searchParams.get('maxPrice')
   const roomType = url.searchParams.get('roomType')
 
@@ -65,7 +65,7 @@ export async function GET(request) {
     .eq('status', 'active')
     .order('created_at', { ascending: false })
 
-  if (city) query = query.ilike('city', `%${city}%`)
+  if (q) query = query.or(`title.ilike.%${q}%,city.ilike.%${q}%,campus.ilike.%${q}%`)
   if (maxPrice) query = query.lte('rent_price', Number(maxPrice))
   if (roomType) query = query.eq('room_type', roomType)
 

@@ -77,6 +77,7 @@ function HomeContent() {
   const [selectedBook, setSelectedBook] = useState(null)
   const [selectedTutorId, setSelectedTutorId] = useState(null)
   const [tutorSearchQuery, setTutorSearchQuery] = useState('')
+  const [roommateSearchQuery, setRoommateSearchQuery] = useState('')
   const [relatedListings, setRelatedListings] = useState([])
   const [reportModal, setReportModal] = useState(null) // listing_id à signaler
   const [reportReason, setReportReason] = useState('')
@@ -1343,6 +1344,7 @@ function HomeContent() {
               setView={setView}
               onSearch={(q) => { setSearch(q); setView('acheter') }}
               onSearchTutor={(q) => { setTutorSearchQuery(q); setView('tuteurs') }}
+              onSearchColoc={(q) => { setRoommateSearchQuery(q); setView('colocs') }}
               onSelectTutor={setSelectedTutorId}
               onSelectListing={setSelectedBook}
             />
@@ -1370,7 +1372,7 @@ function HomeContent() {
 
           {/* ===== VUE COLOCS ===== */}
           {view === 'colocs' && (
-            <RoommatesView user={user} setView={setView} />
+            <RoommatesView user={user} setView={setView} initialSearch={roommateSearchQuery} />
           )}
 
           {/* ===== VUE PUBLIER COLOC ===== */}

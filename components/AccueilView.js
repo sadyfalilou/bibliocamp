@@ -28,7 +28,7 @@ const ROOM_TYPE_LABELS = {
   appartement_complet: 'Appartement complet',
 }
 
-export default function AccueilView({ userProfile, userId, router, setView, onSearch, onSearchTutor, onSelectTutor, onSelectListing }) {
+export default function AccueilView({ userProfile, userId, router, setView, onSearch, onSearchTutor, onSearchColoc, onSelectTutor, onSelectListing }) {
   const [listings, setListings] = useState([])
   const [tutors, setTutors] = useState([])
   const [roommates, setRoommates] = useState([])
@@ -67,9 +67,19 @@ export default function AccueilView({ userProfile, userId, router, setView, onSe
       l.authors?.toLowerCase().includes(qLower) ||
       l.course_code?.toLowerCase().includes(qLower)
     )
+    const matchesRoommate = roommates.some(r =>
+      r.title?.toLowerCase().includes(qLower) ||
+      r.city?.toLowerCase().includes(qLower) ||
+      r.campus?.toLowerCase().includes(qLower) ||
+      ROOM_TYPE_LABELS[r.room_type]?.toLowerCase().includes(qLower)
+    )
 
-    if (matchesTutor && !matchesListing) {
+    if (matchesListing) {
+      onSearch?.(q)
+    } else if (matchesTutor) {
       onSearchTutor?.(q)
+    } else if (matchesRoommate) {
+      onSearchColoc?.(q)
     } else {
       onSearch?.(q)
     }
@@ -91,7 +101,7 @@ export default function AccueilView({ userProfile, userId, router, setView, onSe
           <input
             value={query}
             onChange={e => setQuery(e.target.value)}
-            placeholder="Cherche un manuel, un cours, un tuteur..."
+            placeholder="Cherche un manuel, un cours, un tuteur, une chambre..."
             style={{ flex: 1, border: 'none', borderRadius: 9, padding: '10px 14px', fontSize: 13, outline: 'none', boxSizing: 'border-box' }}
           />
           <button type="submit" style={{ background: '#00c9a7', border: 'none', borderRadius: 9, padding: '0 18px', color: 'white', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
