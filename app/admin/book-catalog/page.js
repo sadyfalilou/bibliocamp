@@ -3,10 +3,12 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 
-const EMPTY_FORM = { isbn: '', title: '', authors: '', publisher: '', course_code: '', cover_url: '', source: 'coop_uqam' }
+const EMPTY_FORM = { isbn: '', title: '', authors: '', publisher: '', course_code: '', source: 'coop_uqam' }
 
 export default function BookCatalogPage() {
   const [form, setForm] = useState(EMPTY_FORM)
+  const [coverFile, setCoverFile] = useState(null)
+  const [coverPreview, setCoverPreview] = useState(null)
   const [books, setBooks] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -36,22 +38,35 @@ export default function BookCatalogPage() {
 
   const handleChange = (field) => (e) => setForm(prev => ({ ...prev, [field]: e.target.value }))
 
+  const handleCoverChange = (e) => {
+    const file = e.target.files?.[0] || null
+    setCoverFile(file)
+    setCoverPreview(file ? URL.createObjectURL(file) : null)
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSaving(true)
     setSavedMsg('')
     setError('')
     const { data: { session } } = await supabase.auth.getSession()
+
+    const body = new FormData()
+    Object.entries(form).forEach(([key, value]) => body.append(key, value))
+    if (coverFile) body.append('cover', coverFile)
+
     const res = await fetch('/api/admin/book-catalog', {
       method: 'POST',
-      headers: { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
+      headers: { Authorization: `Bearer ${session?.access_token}` },
+      body
     })
     const json = await res.json()
     setSaving(false)
     if (!res.ok) { setError(json.error || 'Erreur lors de l\'ajout.'); return }
     setSavedMsg(`✅ « ${form.title} » ajouté au catalogue.`)
     setForm({ ...EMPTY_FORM, source: form.source }) // garde la source sélectionnée pour la prochaine saisie
+    setCoverFile(null)
+    setCoverPreview(null)
     fetchBooks()
   }
 
@@ -97,8 +112,13 @@ export default function BookCatalogPage() {
           <input style={inputStyle} value={form.course_code} onChange={handleChange('course_code')} placeholder="MKG435" />
         </div>
         <div>
-          <label style={labelStyle}>URL de la couverture (optionnel)</label>
-          <input style={inputStyle} value={form.cover_url} onChange={handleChange('cover_url')} placeholder="https://..." />
+          <label style={labelStyle}>Couverture (optionnel)</label>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            {coverPreview && (
+              <img src={coverPreview} alt="aperçu" style={{ width: 48, height: 64, objectFit: 'cover', borderRadius: 6, border: '1px solid #e2e8f0', flexShrink: 0 }} />
+            )}
+            <input type="file" accept="image/*" onChange={handleCoverChange} style={{ fontSize: 13 }} />
+          </div>
         </div>
         <div>
           <label style={labelStyle}>Source</label>
