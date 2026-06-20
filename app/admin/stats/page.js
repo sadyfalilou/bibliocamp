@@ -89,7 +89,7 @@ export default function AdminStatsPage() {
     </div>
   )
 
-  const { users, listings, messages, referrals, community, growth, growth_monthly } = data
+  const { users, listings, messages, referrals, community, growth, growth_monthly, tutors } = data
   const maxGrowthUsers    = Math.max(...growth.map(g => g.new_users), 1)
   const maxGrowthListings = Math.max(...growth.map(g => g.new_listings), 1)
   const maxGrowthConv     = Math.max(...growth.map(g => g.new_conv), 1)
@@ -294,6 +294,83 @@ export default function AdminStatsPage() {
             )}
           </div>
         </Section>
+
+        {/* ── TUTEURS ── */}
+        {tutors && (
+          <Section title="🎓 Tuteurs">
+            {/* KPIs tuteurs */}
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+              <Stat icon="🎓" label="Tuteurs inscrits" value={tutors.total} sub={`+${tutors.week} cette semaine`} color="#1a2e4a" highlight />
+              <Stat icon="✅" label="Tuteurs actifs" value={tutors.active} sub={`${tutors.inactive} inactifs`} color="#16a34a" highlight />
+              <Stat icon="⭐" label="Note plateforme" value={tutors.platform_avg_rating ? `${tutors.platform_avg_rating} / 5` : '—'} sub={`${tutors.total_reviews} avis au total`} color="#f59e0b" highlight />
+              <Stat icon="💰" label="Tarif moyen" value={tutors.avg_rate ? `${tutors.avg_rate} $/h` : '—'} sub={`${tutors.min_rate} $ → ${tutors.max_rate} $/h`} color="#6c63ff" highlight />
+            </div>
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+              <Stat icon="🏅" label="Tuteurs Pro" value={tutors.pro} sub="badge premium" color="#f59e0b" />
+              <Stat icon="✔️" label="Tuteurs vérifiés" value={tutors.verified} sub="profil validé" color="#16a34a" />
+              <Stat icon="🏫" label="Mode campus" value={tutors.meet_campus} sub="disponibles" color="#6c63ff" />
+              <Stat icon="💻" label="Mode en ligne" value={tutors.meet_online} sub="disponibles" color="#2563eb" />
+              <Stat icon="🏙️" label="Mode ville" value={tutors.meet_city} sub="disponibles" color="#f59e0b" />
+            </div>
+
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+              {/* Top domaines */}
+              {tutors.top_domains.length > 0 && (
+                <Card style={{ flex: 1, minWidth: 260 }}>
+                  <CardTitle>Top domaines enseignés</CardTitle>
+                  {tutors.top_domains.map(d => (
+                    <Bar key={d.name} label={d.name} value={d.count} max={tutors.top_domains[0].count} color="#00c9a7" sub=" tuteurs" />
+                  ))}
+                </Card>
+              )}
+
+              {/* Fourchettes de tarifs */}
+              <Card style={{ flex: 1, minWidth: 220 }}>
+                <CardTitle>Fourchettes de tarifs</CardTitle>
+                {Object.entries(tutors.rate_ranges).map(([range, count]) => (
+                  <Bar key={range} label={range} value={count} max={Math.max(...Object.values(tutors.rate_ranges), 1)} color="#6c63ff" />
+                ))}
+                <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f1f5f9', display: 'flex', gap: 16 }}>
+                  {[
+                    { label: 'Min', val: `${tutors.min_rate} $/h`, color: '#16a34a' },
+                    { label: 'Moy.', val: `${tutors.avg_rate} $/h`, color: '#00c9a7' },
+                    { label: 'Max', val: `${tutors.max_rate} $/h`, color: '#e53e3e' },
+                  ].map(r => (
+                    <div key={r.label} style={{ textAlign: 'center', flex: 1 }}>
+                      <div style={{ fontSize: 16, fontWeight: 800, color: r.color }}>{r.val}</div>
+                      <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2 }}>{r.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Taux activation tuteurs */}
+              <Card style={{ flex: 1, minWidth: 200 }}>
+                <CardTitle>Activation tuteurs</CardTitle>
+                {[
+                  { label: 'Actifs', value: tutors.active, total: tutors.total, color: '#00c9a7' },
+                  { label: 'Inactifs', value: tutors.inactive, total: tutors.total, color: '#e2e8f0' },
+                  { label: 'Pro', value: tutors.pro, total: tutors.total, color: '#f59e0b' },
+                  { label: 'Vérifiés', value: tutors.verified, total: tutors.total, color: '#16a34a' },
+                ].map(r => (
+                  <div key={r.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderBottom: '1px solid #f1f5f9' }}>
+                    <span style={{ fontSize: 13, color: '#64748b' }}>{r.label}</span>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ fontSize: 13, fontWeight: 700, color: r.color }}>{r.value}</span>
+                      <span style={{ fontSize: 11, color: '#a0aec0' }}>({r.total > 0 ? Math.round(r.value / r.total * 100) : 0}%)</span>
+                    </div>
+                  </div>
+                ))}
+                <div style={{ marginTop: 12, textAlign: 'center' }}>
+                  <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 6 }}>% tuteurs actifs / total utilisateurs</div>
+                  <div style={{ fontSize: 22, fontWeight: 900, color: '#1a2e4a' }}>
+                    {users.total > 0 ? (tutors.active / users.total * 100).toFixed(1) : 0}%
+                  </div>
+                </div>
+              </Card>
+            </div>
+          </Section>
+        )}
 
         {/* ── TOP PARRAINS ── */}
         {referrals.top_inviters.length > 0 && (

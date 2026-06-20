@@ -61,6 +61,18 @@ export async function GET(request) {
     { data: institutions_raw },
     { data: programs_raw },
     { data: wishlist_raw },
+
+    // ── Tuteurs ──
+    { count: total_tutors },
+    { count: tutors_active },
+    { count: tutors_week },
+    { count: tutors_pro },
+    { count: tutors_verified },
+    { count: tutors_online },
+    { count: tutors_campus },
+    { count: tutors_city },
+    { count: total_reviews },
+    { data: tutors_raw },
   ] = await Promise.all([
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
     supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString()),
@@ -89,6 +101,18 @@ export async function GET(request) {
     supabase.from('profiles').select('institution').not('institution', 'is', null),
     supabase.from('profiles').select('program').not('program', 'is', null),
     supabase.from('listings').select('isbn, title').eq('status', 'active'),
+
+    // Tuteurs
+    supabase.from('tutors').select('*', { count: 'exact', head: true }),
+    supabase.from('tutors').select('*', { count: 'exact', head: true }).eq('is_active', true),
+    supabase.from('tutors').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString()),
+    supabase.from('tutors').select('*', { count: 'exact', head: true }).eq('is_pro', true),
+    supabase.from('tutors').select('*', { count: 'exact', head: true }).eq('is_verified', true),
+    supabase.from('tutors').select('*', { count: 'exact', head: true }).eq('meet_online', true),
+    supabase.from('tutors').select('*', { count: 'exact', head: true }).eq('meet_campus', true),
+    supabase.from('tutors').select('*', { count: 'exact', head: true }).eq('meet_city', true),
+    supabase.from('tutor_reviews').select('*', { count: 'exact', head: true }),
+    supabase.from('tutors_with_rating').select('rate_per_hour, domains, subjects, avg_rating').eq('is_active', true),
   ])
 
   // ── Calculs ─────────────────────────────────────────────────────────────
@@ -213,6 +237,37 @@ export async function GET(request) {
     return { label: m.label, isCurrent: m.isCurrent, isFuture: m.isFuture, new_users: new_users || 0, new_listings: new_listings || 0, new_conv: new_conv || 0 }
   }))
 
+  // ── Stats tuteurs ────────────────────────────────────────────────────────
+  const tutorRates = (tutors_raw || []).map(t => Number(t.rate_per_hour)).filter(Boolean)
+  const avg_rate   = tutorRates.length ? Math.round(tutorRates.reduce((a,b) => a+b,0) / tutorRates.length) : 0
+  const min_rate   = tutorRates.length ? Math.min(...tutorRates) : 0
+  const max_rate   = tutorRates.length ? Math.max(...tutorRates) : 0
+
+  // Top domaines
+  const domainCounts = {}
+  ;(tutors_raw || []).forEach(t => {
+    (t.domains || []).forEach(d => { domainCounts[d] = (domainCounts[d] || 0) + 1 })
+  })
+  const top_domains = Object.entries(domainCounts)
+    .sort((a,b) => b[1]-a[1]).slice(0, 8)
+    .map(([name, count]) => ({ name, count }))
+
+  // Fourchettes de tarifs
+  const rate_ranges = { '10-20$/h': 0, '21-40$/h': 0, '41-60$/h': 0, '61-100$/h': 0, '100$+/h': 0 }
+  tutorRates.forEach(r => {
+    if      (r <= 20)  rate_ranges['10-20$/h']++
+    else if (r <= 40)  rate_ranges['21-40$/h']++
+    else if (r <= 60)  rate_ranges['41-60$/h']++
+    else if (r <= 100) rate_ranges['61-100$/h']++
+    else               rate_ranges['100$+/h']++
+  })
+
+  // Taux d'avis moyen global
+  const rated_tutors = (tutors_raw || []).filter(t => t.avg_rating && Number(t.avg_rating) > 0)
+  const platform_avg_rating = rated_tutors.length
+    ? (rated_tutors.reduce((s,t) => s + Number(t.avg_rating), 0) / rated_tutors.length).toFixed(1)
+    : null
+
   return NextResponse.json({
     generated_at: now.toISOString(),
     users: {
@@ -254,5 +309,23 @@ export async function GET(request) {
     community: { top_institutions, top_programs },
     growth,
     growth_monthly,
+    tutors: {
+      total:     total_tutors    || 0,
+      active:    tutors_active   || 0,
+      week:      tutors_week     || 0,
+      pro:       tutors_pro      || 0,
+      verified:  tutors_verified || 0,
+      meet_online:  tutors_online  || 0,
+      meet_campus:  tutors_campus  || 0,
+      meet_city:    tutors_city    || 0,
+      total_reviews: total_reviews || 0,
+      avg_rate,
+      min_rate,
+      max_rate,
+      top_domains,
+      rate_ranges,
+      platform_avg_rating,
+      inactive: (total_tutors || 0) - (tutors_active || 0),
+    },
   })
 }

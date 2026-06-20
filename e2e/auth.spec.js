@@ -8,37 +8,32 @@ const TEST_PASSWORD = 'TestPassword123!'
 test.describe('Authentification', () => {
   test('affiche le formulaire de connexion par défaut', async ({ page }) => {
     await page.goto('/login')
-    await expect(page.getByPlaceholder('ton@email.com')).toBeVisible()
-    await expect(page.getByPlaceholder('••••••••')).toBeVisible()
-  })
-
-  test('redirige vers /login si non authentifié', async ({ page }) => {
-    await page.goto('/')
-    await expect(page).toHaveURL(/\/login/)
+    await expect(page.getByPlaceholder('alexandre@uqam.ca')).toBeVisible()
+    await expect(page.getByPlaceholder('••••••••').first()).toBeVisible()
   })
 
   test('affiche une erreur sur identifiants invalides', async ({ page }) => {
     await page.goto('/login')
-    await page.getByPlaceholder('ton@email.com').fill('inexistant@bibliocamp-test.ca')
-    await page.getByPlaceholder('••••••••').fill('mauvaisMotDePasse123')
+    await page.getByPlaceholder('alexandre@uqam.ca').fill('inexistant@bibliocamp-test.ca')
+    await page.getByPlaceholder('••••••••').first().fill('mauvaisMotDePasse123')
 
-    // L'appli affiche les erreurs via window.alert()
-    const dialogPromise = page.waitForEvent('dialog', { timeout: 20000 })
+    // L'appli affiche les erreurs inline (pas de window.alert())
     await page.getByRole('button', { name: 'Se connecter', exact: true }).click()
-    const dialog = await dialogPromise
-    expect(dialog.message().length).toBeGreaterThan(0)
-    await dialog.accept()
+    await expect(page.getByText('⚠️').locator('..')).toBeVisible({ timeout: 20000 })
   })
 
   test('permet de créer un compte (signup)', async ({ page }) => {
     await page.goto('/login')
     await page.getByRole('button', { name: 'Créer un compte', exact: true }).first().click()
 
-    await page.getByPlaceholder('ton@email.com').fill(uniqueEmail())
-    await page.getByPlaceholder('••••••••').fill(TEST_PASSWORD)
+    await page.getByPlaceholder('Alexandre', { exact: true }).fill('E2E')
+    await page.getByPlaceholder('Tremblay', { exact: true }).fill('Test')
+    await page.getByPlaceholder('alexandre@uqam.ca').fill(uniqueEmail())
+    await page.getByPlaceholder('••••••••').nth(0).fill(TEST_PASSWORD)
+    await page.getByPlaceholder('••••••••').nth(1).fill(TEST_PASSWORD)
     await page.getByRole('button', { name: 'Créer mon compte', exact: true }).click()
 
-    // Confirmation visuelle attendue après inscription
-    await expect(page.getByText(/compte créé/i)).toBeVisible({ timeout: 10000 })
+    // Le compte créé connecte automatiquement et redirige vers le dashboard
+    await page.waitForURL(/\/app/, { timeout: 15000 })
   })
 })

@@ -7,19 +7,25 @@ test.describe('Navigation et pages publiques', () => {
   test('la page de connexion est accessible sans authentification', async ({ page }) => {
     await page.goto('/login')
     await expect(page).toHaveURL(/\/login/)
-    await expect(page.getByText('📚 BIBLIOCAMP')).toBeVisible()
+    await expect(page.getByText('BiblioCamp').first()).toBeVisible()
   })
 
   test('les pages légales sont accessibles sans authentification', async ({ page }) => {
     await page.goto('/confidentialite', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: /confidentialité/i })).toBeVisible({ timeout: 15000 })
+    await expect(page.getByRole('heading', { name: /confidentialité/i, level: 1 })).toBeVisible({ timeout: 15000 })
 
     await page.goto('/cgu', { waitUntil: 'domcontentloaded' })
-    await expect(page.getByRole('heading', { name: /conditions/i })).toBeVisible({ timeout: 15000 })
+    await expect(page.getByRole('heading', { name: /conditions/i, level: 1 })).toBeVisible({ timeout: 15000 })
+  })
+
+  test('la page d\'accueil publique est accessible sans authentification', async ({ page }) => {
+    await page.goto('/', { waitUntil: 'domcontentloaded' })
+    await expect(page).not.toHaveURL(/\/login/)
+    await expect(page.getByText('BiblioCamp').first()).toBeVisible({ timeout: 10000 })
   })
 
   test.describe('protection des routes privées', () => {
-    const protectedRoutes = ['/', '/create', '/inbox', '/profile', '/app']
+    const protectedRoutes = ['/create', '/inbox', '/profile', '/app']
 
     for (const route of protectedRoutes) {
       test(`${route} redirige vers /login si non authentifié`, async ({ page }) => {

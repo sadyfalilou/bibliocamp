@@ -4,12 +4,17 @@ import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { supabase } from '../lib/supabase'
 import Logo from '../components/Logo'
+import Carousel from '../components/Carousel'
+import Footer from '../components/Footer'
+import { BADGE_LABELS } from '../lib/tutorBadge'
 
 export default function Landing() {
   const router = useRouter()
   const [listings, setListings] = useState([])
+  const [tutors, setTutors] = useState([])
   const [searchBuy, setSearchBuy] = useState('')
   const [searchSell, setSearchSell] = useState('')
+  const [searchTutor, setSearchTutor] = useState('')
   const [activeTab, setActiveTab] = useState('acheter')
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -26,6 +31,7 @@ export default function Landing() {
       if (res.ok) {
         const data = await res.json()
         setListings(data.listings ?? [])
+        setTutors(data.tutors ?? [])
       }
     }
     load()
@@ -51,6 +57,11 @@ export default function Landing() {
     }
   }
 
+  const handleTutorSearch = (e) => {
+    e.preventDefault()
+    router.push(`/login?redirect=/app&view=tuteurs&q=${encodeURIComponent(searchTutor)}`)
+  }
+
   const timeAgo = (dateStr) => {
     const diff = (Date.now() - new Date(dateStr)) / 1000
     if (diff < 3600) return `il y a ${Math.floor(diff / 60)} min`
@@ -65,11 +76,21 @@ export default function Landing() {
     'Polytechnique', 'ÉTS', 'Université de Sherbrooke',
   ]
 
+  const coverGradients = [
+    'linear-gradient(135deg,#1a2e4a,#0d4f6b)',
+    'linear-gradient(135deg,#993c1d,#d85a30)',
+    'linear-gradient(135deg,#534ab7,#7f77dd)',
+    'linear-gradient(135deg,#0f6e56,#1d9e75)',
+    'linear-gradient(135deg,#854f0b,#ef9f27)',
+  ]
+
+  const tutorColors = ['#1a2e4a', '#993c1d', '#0f6e56', '#534ab7', '#854f0b']
+
   const benefits = [
     { icon: '💸', title: 'Économise sur tes manuels', desc: "Jusqu'à 80% moins cher qu'en librairie" },
+    { icon: '🎓', title: 'Trouve un tuteur', desc: "Des étudiants qui ont réussi avant toi, prêts à t'aider" },
     { icon: '📦', title: 'Vends tes anciens manuels', desc: 'Transforme tes livres en argent de poche' },
-    { icon: '🎓', title: 'Entre étudiants seulement', desc: 'Une communauté de confiance au Québec' },
-    { icon: '💬', title: 'Messagerie intégrée', desc: 'Contacte les vendeurs directement' },
+    { icon: '💬', title: 'Messagerie intégrée', desc: 'Contacte vendeurs et tuteurs directement' },
   ]
 
   return (
@@ -197,6 +218,7 @@ export default function Landing() {
               {[
                 { key: 'acheter', label: '🔍 Acheter' },
                 { key: 'vendre', label: '📦 Vendre' },
+                { key: 'tuteurs', label: '🎓 Tuteurs' },
               ].map(tab => (
                 <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)} style={{
                   flex: 1, padding: '10px 8px', border: 'none',
@@ -275,6 +297,36 @@ export default function Landing() {
                 </p>
               </form>
             )}
+
+            {activeTab === 'tuteurs' && (
+              <form onSubmit={handleTutorSearch}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
+                  Matière, code de cours ou nom du tuteur
+                </label>
+                <div className="search-row" style={{ display: 'flex' }}>
+                  <input
+                    value={searchTutor}
+                    onChange={e => setSearchTutor(e.target.value)}
+                    placeholder="ex: BIO201, Calcul différentiel, Python..."
+                    style={{
+                      flex: 1, padding: '12px 14px', border: '1.5px solid #e2e8f0',
+                      borderRadius: 9, fontSize: 15, outline: 'none',
+                      transition: 'border-color 0.2s', minWidth: 0
+                    }}
+                    onFocus={e => e.target.style.borderColor = '#00c9a7'}
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  />
+                  <button type="submit" style={{
+                    background: '#00c9a7', border: 'none', borderRadius: 9,
+                    padding: '12px 20px', color: 'white', fontWeight: 800,
+                    fontSize: 15, cursor: 'pointer', whiteSpace: 'nowrap',
+                    boxShadow: '0 4px 14px rgba(0,201,167,0.35)'
+                  }}>
+                    Trouver →
+                  </button>
+                </div>
+              </form>
+            )}
           </div>
         </div>
       </section>
@@ -300,116 +352,116 @@ export default function Landing() {
       </section>
 
       {/* ── ANNONCES RÉCENTES ── */}
-      <section className="listings-section" style={{ maxWidth: 860, margin: '0 auto' }}>
-        <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 24, flexWrap: 'wrap', gap: 8 }}>
-          <div>
-            <h2 className="section-title" style={{ fontWeight: 900, margin: '0 0 4px', letterSpacing: -0.5 }}>
-              Derniers manuels ajoutés
-            </h2>
-            <p style={{ color: '#64748b', fontSize: 14, margin: 0 }}>
-              Parcours, contacte, économise.
-            </p>
-          </div>
-          <button onClick={() => router.push('/login')} style={{
-            background: 'transparent', border: '1.5px solid #00c9a7',
-            borderRadius: 8, padding: '7px 16px', fontSize: 13, fontWeight: 700,
-            color: '#00c9a7', cursor: 'pointer'
-          }}>
-            Voir tout →
-          </button>
+      <section id="manuels" className="listings-section" style={{ maxWidth: 1000, margin: '0 auto' }}>
+        <div
+          onClick={() => router.push('/login')}
+          style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', marginBottom: 16 }}
+        >
+          <h2 className="section-title" style={{ fontWeight: 900, margin: 0, letterSpacing: -0.5 }}>
+            Derniers manuels ajoutés
+          </h2>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a2e4a" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <Carousel onSeeAll={() => router.push('/login')} seeAllImages={listings.slice(0, 3).map(l => l.image_url)}>
           {listings.length === 0
-            ? Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} style={{ background: '#f8fafc', borderRadius: 10, height: 76, marginBottom: 1 }} />
+            ? Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} style={{ flex: '0 0 170px', scrollSnapAlign: 'start' }}>
+                <div style={{ background: '#f1f5f9', borderRadius: 12, height: 130, marginBottom: 8 }} />
+                <div style={{ background: '#f1f5f9', borderRadius: 6, height: 12, width: '80%', marginBottom: 6 }} />
+                <div style={{ background: '#f1f5f9', borderRadius: 6, height: 10, width: '50%' }} />
+              </div>
             ))
             : listings.map((listing, idx) => (
               <div
                 key={listing.id}
                 onClick={() => router.push('/login')}
-                style={{
-                  display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '12px 14px',
-                  background: 'white',
-                  borderRadius: idx === 0 ? '12px 12px 0 0' : idx === listings.length - 1 ? '0 0 12px 12px' : 0,
-                  border: '1px solid #e8edf2',
-                  borderTop: idx === 0 ? '1px solid #e8edf2' : 'none',
-                  cursor: 'pointer', transition: 'background 0.15s'
-                }}
-                onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
-                onMouseLeave={e => e.currentTarget.style.background = 'white'}
+                style={{ flex: '0 0 170px', scrollSnapAlign: 'start', cursor: 'pointer' }}
               >
-                {/* Cover */}
-                <div style={{ flexShrink: 0, width: 40, height: 52 }}>
-                  {listing.image_url
-                    ? <img src={listing.image_url} alt={listing.title} style={{ width: 40, height: 52, objectFit: 'cover', borderRadius: 4 }} />
-                    : <div style={{
-                        width: 40, height: 52, borderRadius: 4,
-                        background: 'linear-gradient(135deg, #1a2e4a, #0d4f6b)',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18
-                      }}>📖</div>
-                  }
-                </div>
-
-                {/* Infos */}
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{
-                    fontWeight: 700, fontSize: 14, color: '#1a2e4a',
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 3
-                  }}>
-                    {listing.title}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                    {listing.authors && (
-                      <span style={{ fontSize: 12, color: '#64748b' }}>{listing.authors}</span>
-                    )}
-                    <span style={{
-                      fontSize: 11, fontWeight: 600, padding: '1px 7px', borderRadius: 20,
-                      background: listing.meet_campus ? '#ede9fe' : listing.post ? '#dbeafe' : '#fef3c7',
-                      color: listing.meet_campus ? '#6c63ff' : listing.post ? '#2563eb' : '#d97706'
-                    }}>
-                      {listing.meet_campus ? '🏫 Campus' : listing.post ? '📦 Envoi' : '🏙️ Ville'}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 11, color: '#cbd5e0', marginTop: 2 }}>
-                    {listing.created_at ? timeAgo(listing.created_at) : ''}
-                  </div>
-                </div>
-
-                {/* Prix */}
-                <div style={{ flexShrink: 0, textAlign: 'right' }}>
-                  <div style={{ fontSize: 17, fontWeight: 900, color: '#1a2e4a' }}>
-                    {listing.price ? `${listing.price} $` : '—'}
-                  </div>
+                <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 130, background: coverGradients[idx % coverGradients.length], marginBottom: 8 }}>
+                  {listing.image_url && (
+                    <img src={listing.image_url} alt={listing.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                  )}
+                  {!listing.image_url && (
+                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: 30, opacity: 0.5 }}>📖</div>
+                  )}
                   {listing.original_price && listing.original_price > listing.price && (
-                    <div style={{
-                      background: '#00c9a7', color: 'white',
-                      borderRadius: 20, padding: '2px 7px',
-                      fontSize: 11, fontWeight: 700, marginTop: 2
-                    }}>
+                    <div style={{ position: 'absolute', top: 8, left: 8, background: 'white', fontSize: 10, fontWeight: 700, color: '#1a2e4a', padding: '3px 8px', borderRadius: 20 }}>
                       -{Math.round(((listing.original_price - listing.price) / listing.original_price) * 100)}%
                     </div>
                   )}
+                  <div
+                    onClick={e => { e.stopPropagation(); router.push('/login') }}
+                    style={{ position: 'absolute', top: 8, right: 8, width: 24, height: 24, borderRadius: '50%', background: 'rgba(255,255,255,0.85)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#1a2e4a" strokeWidth="2.3"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+                  </div>
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>
+                  {listing.title}
+                </div>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>
+                  {listing.meet_campus ? 'Campus' : listing.post ? 'Envoi' : 'Ville'} · {listing.created_at ? timeAgo(listing.created_at) : ''}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a' }}>
+                  {listing.price ? `${listing.price} $` : '—'}
                 </div>
               </div>
             ))
           }
-        </div>
-
-        <div style={{ textAlign: 'center', marginTop: 24 }}>
-          <button onClick={() => router.push('/login')} style={{
-            background: 'white', border: '2px solid #1a2e4a',
-            borderRadius: 10, padding: '12px 32px', fontSize: 15, fontWeight: 700,
-            color: '#1a2e4a', cursor: 'pointer', transition: 'all 0.2s'
-          }}
-            onMouseEnter={e => { e.currentTarget.style.background = '#1a2e4a'; e.currentTarget.style.color = 'white' }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'white'; e.currentTarget.style.color = '#1a2e4a' }}
-          >
-            Voir toutes les annonces →
-          </button>
-        </div>
+        </Carousel>
       </section>
+
+      {/* ── TUTEURS DISPONIBLES ── */}
+      {tutors.length > 0 && (
+        <section id="tuteurs" className="listings-section" style={{ maxWidth: 1000, margin: '0 auto' }}>
+          <div
+            onClick={() => router.push('/login')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', marginBottom: 16 }}
+          >
+            <h2 className="section-title" style={{ fontWeight: 900, margin: 0, letterSpacing: -0.5 }}>
+              Tuteurs disponibles
+            </h2>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a2e4a" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+
+          <Carousel onSeeAll={() => router.push('/login')} seeAllImages={tutors.slice(0, 3).map(t => t.avatar_url)}>
+            {tutors.map((t, idx) => {
+              const name = `${t.first_name || ''} ${t.last_name?.[0] || ''}.`.trim()
+              return (
+                <div
+                  key={t.id}
+                  onClick={() => router.push('/login')}
+                  style={{ flex: '0 0 170px', scrollSnapAlign: 'start', cursor: 'pointer' }}
+                >
+                  <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 130, background: tutorColors[idx % tutorColors.length], marginBottom: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {t.avatar_url
+                      ? <img src={t.avatar_url} alt={name} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                      : <span style={{ fontSize: 36, fontWeight: 800, color: 'rgba(255,255,255,0.85)' }}>{(t.first_name?.[0] || '?').toUpperCase()}</span>
+                    }
+                    <div style={{ position: 'absolute', bottom: 8, left: 8, background: 'white', fontSize: 10, fontWeight: 700, color: '#00c9a7', padding: '3px 8px', borderRadius: 20 }}>
+                      {t.rate_per_hour} $/h
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      {name}
+                    </div>
+                    {t.response_badge && BADGE_LABELS[t.response_badge] && (
+                      <span style={{ fontSize: 9, fontWeight: 700, background: BADGE_LABELS[t.response_badge].bg, color: BADGE_LABELS[t.response_badge].color, borderRadius: 20, padding: '2px 6px', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                        {BADGE_LABELS[t.response_badge].label}
+                      </span>
+                    )}
+                  </div>
+                  <div style={{ fontSize: 11, color: '#94a3b8', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {[t.institution || t.campus, t.subjects?.[0]].filter(Boolean).join(' · ')}
+                  </div>
+                </div>
+              )
+            })}
+          </Carousel>
+        </section>
+      )}
 
       {/* ── AVANTAGES ── */}
       <section className="advantages-section" style={{ background: '#f8fafc' }}>
@@ -480,15 +532,7 @@ export default function Landing() {
         </button>
       </section>
 
-      {/* ── FOOTER ── */}
-      <footer style={{ background: '#0f1f35', padding: '32px 20px', textAlign: 'center', color: 'rgba(255,255,255,0.4)', fontSize: 13 }}>
-        <Logo variant="light" size="sm" style={{ marginBottom: 12, opacity: 0.7 }} />
-        <p style={{ margin: '10px 0 8px' }}>© 2026 BiblioCamp — Fait pour les étudiants, par des étudiants</p>
-        <div style={{ display: 'flex', gap: 20, justifyContent: 'center', marginTop: 8, flexWrap: 'wrap' }}>
-          <a href="/cgu" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Conditions d'utilisation</a>
-          <a href="/confidentialite" style={{ color: 'rgba(255,255,255,0.5)', textDecoration: 'none' }}>Confidentialité</a>
-        </div>
-      </footer>
+      <Footer />
 
     </div>
   )

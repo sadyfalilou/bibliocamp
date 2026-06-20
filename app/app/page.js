@@ -6,6 +6,16 @@ import { supabase } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Logo from '../../components/Logo'
 import BadgeList from '../../components/BadgeList'
+import TuteursView from '../../components/TuteursView'
+import DevenirTuteurView from '../../components/DevenirTuteurView'
+import AccueilView from '../../components/AccueilView'
+import TutorDetailPanel from '../../components/TutorDetailPanel'
+import TuteursFaqView from '../../components/TuteursFaqView'
+import ManuelsFaqView from '../../components/ManuelsFaqView'
+import RemovedListingNotices from '../../components/RemovedListingNotices'
+import ListingWarningBadge from '../../components/ListingWarningBadge'
+import ListingReportBadge from '../../components/ListingReportBadge'
+import Footer from '../../components/Footer'
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -60,8 +70,10 @@ function HomeContent() {
   const userIdRef = useRef(null)
   const [profilesMap, setProfilesMap] = useState({})
   const [loading, setLoading] = useState(true)
-  const [view, setView] = useState('acheter') // 'acheter' | 'vendre' | 'mes-annonces'
+  const [view, setView] = useState('accueil') // 'accueil' | 'acheter' | 'vendre' | 'mes-annonces' | ...
   const [selectedBook, setSelectedBook] = useState(null)
+  const [selectedTutorId, setSelectedTutorId] = useState(null)
+  const [tutorSearchQuery, setTutorSearchQuery] = useState('')
   const [relatedListings, setRelatedListings] = useState([])
   const [reportModal, setReportModal] = useState(null) // listing_id à signaler
   const [reportReason, setReportReason] = useState('')
@@ -89,6 +101,8 @@ function HomeContent() {
   const [sendingCode, setSendingCode] = useState(false)
   const [verifyingCode, setVerifyingCode] = useState(false)
   const [deleteConfirmId, setDeleteConfirmId] = useState(null)
+  const [tutorsMenuOpen, setTutorsMenuOpen] = useState(false)
+  const [manualsMenuOpen, setManualsMenuOpen] = useState(false)
   const [soldConfirmId, setSoldConfirmId] = useState(null)
   const [markingAsSold, setMarkingAsSold] = useState(false)
   const router = useRouter()
@@ -100,6 +114,21 @@ function HomeContent() {
       setView('vendre')
     }
   }, [searchParams, phoneSaved])
+
+  // Si ?view=tuteurs dans l'URL → redirigé depuis la landing page (recherche tuteur)
+  useEffect(() => {
+    const v = searchParams.get('view')
+    if (['tuteurs', 'devenir-tuteur', 'acheter', 'vendre', 'faq', 'faq-manuels'].includes(v)) setView(v)
+  }, [searchParams])
+
+  // Ouvre/ferme automatiquement les accordéons sidebar selon la vue active
+  const MANUELS_VIEWS = ['acheter', 'vendre', 'mes-annonces', 'favoris', 'mes-cours', 'faq-manuels']
+  const TUTEURS_VIEWS = ['tuteurs', 'devenir-tuteur', 'faq']
+  useEffect(() => {
+    if (view === 'accueil') { setManualsMenuOpen(false); setTutorsMenuOpen(false) }
+    else if (MANUELS_VIEWS.includes(view)) { setManualsMenuOpen(true); setTutorsMenuOpen(false) }
+    else if (TUTEURS_VIEWS.includes(view)) { setTutorsMenuOpen(true); setManualsMenuOpen(false) }
+  }, [view])
 
   const fetchListings = async (offset = 0, append = false) => {
     const { data, error } = await supabase
@@ -645,7 +674,7 @@ function HomeContent() {
               <div style={{ width: 20, height: 2, background: 'white', borderRadius: 2 }} />
             </button>
           )}
-          <Logo variant="light" size="sm" onClick={() => setView('acheter')} style={{ cursor: 'pointer' }} />
+          <Logo variant="light" size="sm" onClick={() => setView('accueil')} style={{ cursor: 'pointer' }} />
         </div>
         {/* Menu profil style Airbnb */}
         <div style={{ position: 'relative' }}>
@@ -789,79 +818,142 @@ function HomeContent() {
             transition: 'transform 0.25s ease', overflowY: 'auto'
           } : {})
         }}>
-          {/* Manuels — parent toujours ouvert */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '11px 22px',
-            background: '#f0fdf9',
-            borderLeft: '3px solid #00c9a7',
-            color: '#00c9a7', fontWeight: 800, fontSize: 15
-          }}>
-            <span>📖</span><span>Manuels</span>
+          {/* ── Accueil ── */}
+          <div
+            onClick={() => { setView('accueil'); if (isMobile) setSidebarOpen(false) }}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 18px', marginBottom: 6,
+              borderLeft: view === 'accueil' ? '3px solid #00c9a7' : '3px solid transparent',
+              background: view === 'accueil' ? '#f0fdf9' : 'transparent',
+              color: view === 'accueil' ? '#00c9a7' : '#4a5568',
+              fontWeight: 700, fontSize: 14,
+              cursor: 'pointer', userSelect: 'none', transition: 'all 0.15s',
+            }}
+            onMouseEnter={e => { if (view !== 'accueil') e.currentTarget.style.background = '#f7fafc' }}
+            onMouseLeave={e => { if (view !== 'accueil') e.currentTarget.style.background = 'transparent' }}
+          >
+            <span style={{ display: 'flex', opacity: view === 'accueil' ? 1 : 0.5 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/>
+              </svg>
+            </span>
+            <span>Accueil</span>
           </div>
 
-          {/* Sous-menus */}
+          {/* ── Composant accordéon réutilisable ── */}
           {[
-            { key: 'acheter', icon: '🛒', label: 'Acheter' },
-            { key: 'vendre', icon: '🏷️', label: 'Vendre' },
-            { key: 'mes-annonces', icon: '📋', label: 'Mes annonces' },
-            { key: 'favoris', icon: '❤️', label: 'Mes favoris', badge: wishlist.size > 0 ? wishlist.size : null },
-            { key: 'mes-cours', icon: '📚', label: 'Mes cours', badge: userSubjects.length > 0 ? userSubjects.length : null },
-          ].map(item => (
-            <div key={item.key}
-              onClick={() => { setView(item.key); if (isMobile) setSidebarOpen(false) }}
-              style={{
-                display: 'flex', alignItems: 'center', gap: 10,
-                padding: '10px 22px 10px 36px',
-                borderLeft: view === item.key ? '3px solid #00c9a7' : '3px solid transparent',
-                background: view === item.key ? '#f0fdf9' : 'transparent',
-                color: view === item.key ? '#00c9a7' : '#4a5568',
-                fontWeight: view === item.key ? 700 : 500,
-                fontSize: 14, cursor: 'pointer', transition: 'all 0.15s'
-              }}
-              onMouseEnter={e => { if (view !== item.key) e.currentTarget.style.background = '#f7fafc' }}
-              onMouseLeave={e => { if (view !== item.key) e.currentTarget.style.background = 'transparent' }}
-            >
-              <span>{item.icon}</span>
-              <span style={{ flex: 1 }}>{item.label}</span>
-              {item.badge && (
-                <span style={{ background: '#e53e3e', color: 'white', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 700 }}>
-                  {item.badge}
-                </span>
+            {
+              id: 'manuels',
+              isOpen: manualsMenuOpen,
+              toggle: () => setManualsMenuOpen(o => !o),
+              icon: (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/>
+                </svg>
+              ),
+              label: 'Manuels',
+              items: [
+                { label: 'Acheter', action: () => { setView('acheter'); if (isMobile) setSidebarOpen(false) }, active: view === 'acheter' },
+                { label: 'Vendre', action: () => { setView('vendre'); if (isMobile) setSidebarOpen(false) }, active: view === 'vendre' },
+                { label: 'Mes annonces', action: () => { setView('mes-annonces'); if (isMobile) setSidebarOpen(false) }, active: view === 'mes-annonces' },
+                { label: 'Mes favoris', action: () => { setView('favoris'); if (isMobile) setSidebarOpen(false) }, active: view === 'favoris', badge: wishlist.size > 0 ? wishlist.size : null },
+                { label: 'Mes cours', action: () => { setView('mes-cours'); if (isMobile) setSidebarOpen(false) }, active: view === 'mes-cours', badge: userSubjects.length > 0 ? userSubjects.length : null },
+                { label: 'FAQ', action: () => { setView('faq-manuels'); if (isMobile) setSidebarOpen(false) }, active: view === 'faq-manuels' },
+              ]
+            },
+            {
+              id: 'tuteurs',
+              isOpen: tutorsMenuOpen,
+              toggle: () => setTutorsMenuOpen(o => !o),
+              icon: (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M22 10v6M2 10l10-5 10 5-10 5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/>
+                </svg>
+              ),
+              label: 'Tuteurs',
+              items: [
+                { label: 'Trouver un tuteur', action: () => { setView('tuteurs'); if (isMobile) setSidebarOpen(false) }, active: view === 'tuteurs' },
+                { label: 'Devenir tuteur', action: () => { setView('devenir-tuteur'); if (isMobile) setSidebarOpen(false) }, active: view === 'devenir-tuteur' },
+                { label: 'FAQ', action: () => { setView('faq'); if (isMobile) setSidebarOpen(false) }, active: view === 'faq' },
+              ]
+            },
+          ].map(section => (
+            <div key={section.id}>
+              {/* Parent */}
+              <div
+                onClick={section.toggle}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: 10,
+                  padding: '10px 18px',
+                  borderLeft: section.isOpen ? '3px solid #00c9a7' : '3px solid transparent',
+                  background: section.isOpen ? '#f0fdf9' : 'transparent',
+                  color: section.isOpen ? '#00c9a7' : '#4a5568',
+                  fontWeight: 700, fontSize: 14,
+                  cursor: 'pointer', userSelect: 'none', transition: 'all 0.15s',
+                }}
+                onMouseEnter={e => { if (!section.isOpen) e.currentTarget.style.background = '#f7fafc' }}
+                onMouseLeave={e => { if (!section.isOpen) e.currentTarget.style.background = 'transparent' }}
+              >
+                <span style={{ display: 'flex', opacity: section.isOpen ? 1 : 0.5 }}>{section.icon}</span>
+                <span style={{ flex: 1 }}>{section.label}</span>
+                <svg
+                  width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"
+                  style={{ transition: 'transform 0.2s', transform: section.isOpen ? 'rotate(90deg)' : 'rotate(0deg)', opacity: 0.4 }}
+                >
+                  <polyline points="9 18 15 12 9 6"/>
+                </svg>
+              </div>
+
+              {/* Sous-items */}
+              {section.isOpen && (
+                <div style={{ paddingBottom: 4 }}>
+                  {section.items.map((item, i) => (
+                    <div
+                      key={i}
+                      onClick={item.action}
+                      style={{
+                        display: 'flex', alignItems: 'center',
+                        padding: '8px 18px 8px 46px',
+                        fontSize: 13,
+                        fontWeight: item.active ? 700 : 400,
+                        color: item.active ? '#00c9a7' : '#64748b',
+                        background: item.active ? '#f0fdf9' : 'transparent',
+                        cursor: 'pointer', transition: 'all 0.12s',
+                        borderLeft: item.active ? '3px solid #00c9a7' : '3px solid transparent',
+                      }}
+                      onMouseEnter={e => { if (!item.active) { e.currentTarget.style.background = '#f7fafc'; e.currentTarget.style.color = '#1a2e4a' } }}
+                      onMouseLeave={e => { if (!item.active) { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = '#64748b' } }}
+                    >
+                      <span style={{ flex: 1 }}>{item.label}</span>
+                      {item.badge && (
+                        <span style={{ background: '#e53e3e', color: 'white', borderRadius: 20, padding: '1px 7px', fontSize: 10, fontWeight: 700 }}>{item.badge}</span>
+                      )}
+                    </div>
+                  ))}
+                </div>
               )}
             </div>
           ))}
 
-          <div style={{ height: 1, background: '#e2e8f0', margin: '16px 0' }} />
+          <div style={{ height: 1, background: '#f1f5f9', margin: '8px 0' }} />
 
-          <div style={{ padding: '0 14px' }}>
-            <button onClick={() => { setVerifyRedirect('/create'); setView('vendre') }} style={{
-              width: '100%', padding: '11px',
-              background: '#1a2e4a', color: 'white',
-              border: 'none', borderRadius: 10,
-              fontWeight: 700, fontSize: 14, cursor: 'pointer'
-            }}
-              onMouseEnter={e => e.target.style.background = '#00c9a7'}
-              onMouseLeave={e => e.target.style.background = '#1a2e4a'}
-            >
-              + Publier un manuel
-            </button>
-
-            <div style={{ height: 1, background: '#e2e8f0', margin: '12px 0' }} />
-
+          <div style={{ padding: '8px 14px' }}>
             <button
               onClick={() => router.push('/profile')}
               style={{
-                width: '100%', padding: '10px',
-                background: 'transparent', color: '#718096',
-                border: '1px solid #e2e8f0', borderRadius: 10,
+                width: '100%', padding: '9px',
+                background: 'transparent', color: '#64748b',
+                border: '1px solid #e2e8f0', borderRadius: 8,
                 fontWeight: 600, fontSize: 13, cursor: 'pointer',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6
+                display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+                transition: 'all 0.15s',
               }}
               onMouseEnter={e => { e.currentTarget.style.borderColor = '#00c9a7'; e.currentTarget.style.color = '#00c9a7' }}
-              onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#718096' }}
+              onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.color = '#64748b' }}
             >
-              👤 Mon profil
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+              Mon profil
             </button>
           </div>
         </aside>
@@ -869,21 +961,18 @@ function HomeContent() {
         {/* MAIN */}
         <main style={{ flex: 1, padding: isMobile ? '16px 14px' : '28px 36px', maxWidth: 900, width: '100%' }}>
 
-          <div style={{ fontSize: 13, color: '#a0aec0', marginBottom: 8 }}>
-            <span onClick={() => setView('acheter')} style={{ cursor: 'pointer', color: '#00c9a7' }}
-              onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-              onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-            >Accueil</span>
-            {' / '}
-            <span onClick={() => setView('acheter')} style={{ cursor: 'pointer', color: '#00c9a7' }}
-              onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
-              onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
-            >Manuels</span>
-            {' / '}
-            <span style={{ color: '#1a2e4a', fontWeight: 600 }}>
-              {view === 'acheter' ? 'Acheter' : view === 'vendre' ? 'Vendre' : view === 'mes-annonces' ? 'Mes annonces' : view === 'favoris' ? 'Mes favoris' : 'Mes cours'}
-            </span>
-          </div>
+          {view !== 'accueil' && (
+            <div style={{ fontSize: 13, color: '#a0aec0', marginBottom: 8 }}>
+              <span onClick={() => setView('accueil')} style={{ cursor: 'pointer', color: '#00c9a7' }}
+                onMouseEnter={e => e.currentTarget.style.textDecoration = 'underline'}
+                onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
+              >Accueil</span>
+              {' / '}
+              <span style={{ color: '#1a2e4a', fontWeight: 600 }}>
+                {TUTEURS_VIEWS.includes(view) ? 'Tuteurs' : 'Manuels'}
+              </span>
+            </div>
+          )}
 
           {/* ===== VUE ACHETER ===== */}
           {view === 'acheter' && (
@@ -1219,6 +1308,40 @@ function HomeContent() {
                 </div>
               )}
             </>
+          )}
+
+          {/* ===== VUE ACCUEIL ===== */}
+          {view === 'accueil' && (
+            <AccueilView
+              userProfile={userProfile}
+              userId={user?.id}
+              router={router}
+              setView={setView}
+              onSearch={(q) => { setSearch(q); setView('acheter') }}
+              onSearchTutor={(q) => { setTutorSearchQuery(q); setView('tuteurs') }}
+              onSelectTutor={setSelectedTutorId}
+              onSelectListing={setSelectedBook}
+            />
+          )}
+
+          {/* ===== VUE TUTEURS ===== */}
+          {view === 'tuteurs' && (
+            <TuteursView user={user} setView={setView} onSelectTutor={setSelectedTutorId} initialSearch={tutorSearchQuery} />
+          )}
+
+          {/* ===== VUE DEVENIR TUTEUR ===== */}
+          {view === 'devenir-tuteur' && (
+            <DevenirTuteurView user={user} setView={setView} />
+          )}
+
+          {/* ===== VUE FAQ TUTEURS ===== */}
+          {view === 'faq' && (
+            <TuteursFaqView setView={setView} />
+          )}
+
+          {/* ===== VUE FAQ MANUELS ===== */}
+          {view === 'faq-manuels' && (
+            <ManuelsFaqView setView={setView} />
           )}
 
           {/* ===== VUE VENDRE ===== */}
@@ -1581,6 +1704,8 @@ function HomeContent() {
                 Mes annonces
               </h1>
 
+              <RemovedListingNotices userId={user?.id} />
+
               {myListings.length === 0 ? (
                 <div style={{
                   background: 'white', borderRadius: 14, padding: '50px',
@@ -1601,10 +1726,13 @@ function HomeContent() {
                   {myListings.map(item => (
                     <div key={item.id} style={{
                       background: item.status === 'sold' ? '#f8fafc' : 'white', borderRadius: 10, padding: '14px',
+                      border: '1px solid #e2e8f0',
+                      opacity: item.status === 'sold' ? 0.75 : 1
+                    }}>
+                    <div style={{
                       display: 'flex', flexDirection: isMobile ? 'column' : 'row',
                       alignItems: isMobile ? 'flex-start' : 'center',
-                      gap: isMobile ? 10 : 16, border: '1px solid #e2e8f0',
-                      opacity: item.status === 'sold' ? 0.75 : 1
+                      gap: isMobile ? 10 : 16,
                     }}>
                       <div style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1, minWidth: 0 }}>
                         <div style={{ flexShrink: 0, position: 'relative' }}>
@@ -1646,6 +1774,9 @@ function HomeContent() {
                         </div>
                       </div>
                     </div>
+                      <ListingWarningBadge userId={user?.id} listingId={item.id} />
+                      <ListingReportBadge listingId={item.id} />
+                    </div>
                   ))}
                 </div>
               )}
@@ -1654,6 +1785,8 @@ function HomeContent() {
 
         </main>
       </div>
+
+      <Footer onManuelsClick={() => setView('acheter')} onTuteursClick={() => setView('tuteurs')} />
 
       {/* ===== SLIDE-OVER ===== */}
       {/* MODAL SIGNALEMENT */}
@@ -1697,6 +1830,15 @@ function HomeContent() {
             )}
           </div>
         </div>
+      )}
+
+      {selectedTutorId && (
+        <TutorDetailPanel
+          tutorId={selectedTutorId}
+          currentUser={user}
+          onClose={() => setSelectedTutorId(null)}
+          router={router}
+        />
       )}
 
       {selectedBook && (() => {

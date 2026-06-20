@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, Suspense } from 'react'
 import { supabase } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Logo from '../../components/Logo'
+import LogoIcon from '../../components/LogoIcon'
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -287,8 +288,15 @@ function InboxInner() {
     setDeletingConv(null)
   }
 
+  const SYSTEM_ADMIN_PROFILE = { first_name: 'Support', last_name: 'BiblioCamp', institution: null, avatar_url: null, isSystem: true }
+
   const getOtherUser = (conv) => {
     if (!user) return null
+    // Conversation initiée par un admin : le vendeur (user2) voit "Support BiblioCamp"
+    // au lieu du profil personnel de l'admin (user1) qui a écrit.
+    if (conv.context_type === 'admin' && conv.user1_id !== user.id) {
+      return SYSTEM_ADMIN_PROFILE
+    }
     const otherId = conv.user1_id === user.id ? conv.user2_id : conv.user1_id
     return profiles[otherId]
   }
@@ -406,7 +414,11 @@ function InboxInner() {
                 >
                   <div onClick={() => setSelectedConv(conv.id)} style={{ display: 'flex', gap: 12, alignItems: 'center', flex: 1, minWidth: 0, cursor: 'pointer' }}>
                   {/* Avatar */}
-                  {other?.avatar_url ? (
+                  {other?.isSystem ? (
+                    <div style={{ width: 44, height: 44, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, background: 'white', border: '1px solid #e2e8f0' }}>
+                      <LogoIcon size={28} />
+                    </div>
+                  ) : other?.avatar_url ? (
                     <img src={other.avatar_url} style={{ width: 44, height: 44, borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }} />
                   ) : (
                     <div style={{ width: 44, height: 44, background: 'linear-gradient(135deg,#1a2e4a,#00c9a7)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 16, flexShrink: 0 }}>
@@ -417,7 +429,11 @@ function InboxInner() {
                     <div style={{ fontWeight: 700, color: '#1a2e4a', fontSize: 14, marginBottom: 2 }}>
                       {other?.first_name ? `${other.first_name} ${other.last_name || ''}`.trim() : 'Utilisateur'}
                     </div>
-                    {conv.listings && (
+                    {conv.context_type === 'admin' ? (
+                      <div style={{ fontSize: 11, color: '#b45309', fontWeight: 600 }}>Équipe support</div>
+                    ) : conv.context_type === 'tuteur' ? (
+                      <div style={{ fontSize: 11, color: '#00c9a7', fontWeight: 600 }}>🎓 Tuteur</div>
+                    ) : conv.listings && (
                       <div style={{ fontSize: 11, color: '#a0aec0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         📖 {conv.listings.title}
                       </div>
@@ -478,7 +494,11 @@ function InboxInner() {
             <>
               {/* Header conversation */}
               <div style={{ padding: '12px 16px', background: 'white', borderBottom: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 12, flexShrink: 0, position: 'sticky', top: 0, zIndex: 10 }}>
-                {otherUser?.avatar_url ? (
+                {otherUser?.isSystem ? (
+                  <div style={{ width: 40, height: 40, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'white', border: '1px solid #e2e8f0' }}>
+                    <LogoIcon size={26} />
+                  </div>
+                ) : otherUser?.avatar_url ? (
                   <img src={otherUser.avatar_url} style={{ width: 40, height: 40, borderRadius: '50%', objectFit: 'cover' }} />
                 ) : (
                   <div style={{ width: 40, height: 40, background: 'linear-gradient(135deg,#1a2e4a,#00c9a7)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 16 }}>
@@ -489,7 +509,11 @@ function InboxInner() {
                   <div style={{ fontWeight: 700, color: '#1a2e4a', fontSize: 15 }}>
                     {otherUser?.first_name ? `${otherUser.first_name} ${otherUser.last_name || ''}`.trim() : 'Utilisateur'}
                   </div>
-                  {selectedConvData?.listings && (
+                  {selectedConvData?.context_type === 'admin' ? (
+                    <div style={{ fontSize: 12, color: '#b45309', fontWeight: 600 }}>🛠️ Message de l'équipe BiblioCamp</div>
+                  ) : selectedConvData?.context_type === 'tuteur' ? (
+                    <div style={{ fontSize: 12, color: '#00c9a7', fontWeight: 600 }}>🎓 Conversation tuteur</div>
+                  ) : selectedConvData?.listings && (
                     <div style={{ fontSize: 12, color: '#a0aec0' }}>📖 {selectedConvData.listings.title} · {selectedConvData.listings.price} $</div>
                   )}
                 </div>
