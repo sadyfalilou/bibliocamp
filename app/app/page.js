@@ -14,6 +14,7 @@ import TuteursFaqView from '../../components/TuteursFaqView'
 import ManuelsFaqView from '../../components/ManuelsFaqView'
 import RemovedListingNotices from '../../components/RemovedListingNotices'
 import ListingWarningBadge from '../../components/ListingWarningBadge'
+import ListingReportBadge from '../../components/ListingReportBadge'
 import Footer from '../../components/Footer'
 
 function timeAgo(dateStr) {
@@ -1774,6 +1775,7 @@ function HomeContent() {
                       </div>
                     </div>
                       <ListingWarningBadge userId={user?.id} listingId={item.id} />
+                      <ListingReportBadge listingId={item.id} />
                     </div>
                   ))}
                 </div>
