@@ -19,10 +19,10 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
 }
 
-export default function RoommatesView({ user, setView }) {
+export default function RoommatesView({ user, setView, initialSearch }) {
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
-  const [city, setCity] = useState('')
+  const [city, setCity] = useState(initialSearch || '')
   const [maxPrice, setMaxPrice] = useState('')
   const [roomType, setRoomType] = useState('')
   const [reportModal, setReportModal] = useState(null) // listing id
