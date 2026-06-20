@@ -24,19 +24,22 @@ export default function RoommatesView({ user, setView }) {
   const [maxPrice, setMaxPrice] = useState('')
   const [roomType, setRoomType] = useState('')
 
-  const load = async () => {
+  const load = async (filters) => {
     setLoading(true)
     const params = new URLSearchParams()
-    if (city) params.set('city', city)
-    if (maxPrice) params.set('maxPrice', maxPrice)
-    if (roomType) params.set('roomType', roomType)
+    if (filters.city) params.set('city', filters.city)
+    if (filters.maxPrice) params.set('maxPrice', filters.maxPrice)
+    if (filters.roomType) params.set('roomType', filters.roomType)
     const res = await fetch(`/api/roommates?${params.toString()}`)
     const json = await res.json()
     setListings(json.listings || [])
     setLoading(false)
   }
 
-  useEffect(() => { load() }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    const timeout = setTimeout(() => load({ city, maxPrice, roomType }), 300)
+    return () => clearTimeout(timeout)
+  }, [city, maxPrice, roomType])
 
   const handleContact = async (listing) => {
     if (!user) return
@@ -79,9 +82,6 @@ export default function RoommatesView({ user, setView }) {
           <option value="">Tous les types</option>
           {Object.entries(ROOM_TYPE_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
         </select>
-        <button onClick={load} style={{ background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 8, padding: '9px 18px', fontWeight: 700, fontSize: 14, cursor: 'pointer' }}>
-          Filtrer
-        </button>
       </div>
 
       <button onClick={() => setView('publier-coloc')} style={{ background: '#00c9a7', color: 'white', border: 'none', borderRadius: 8, padding: '10px 18px', fontWeight: 700, fontSize: 14, cursor: 'pointer', marginBottom: 20 }}>
