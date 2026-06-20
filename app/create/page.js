@@ -90,6 +90,7 @@ function CreateInner() {
         setTitle(book.title || '')
         setAuthors(book.authors || '')
         setIsbn(cleaned)
+        if (book.course && !course) setCourse(book.course)
         if (book.cover) {
           setCoverFromGoogle(book.cover)
           setImagePreview(book.cover)
