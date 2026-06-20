@@ -10,8 +10,8 @@ export default function Footer() {
           <div>
             <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Produit</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-              <a href="/#manuels" style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, textDecoration: 'none' }}>Manuels</a>
-              <a href="/#tuteurs" style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, textDecoration: 'none' }}>Tuteurs</a>
+              <a href="/#manuels" onClick={(e) => { e.preventDefault(); window.location.href = '/#manuels' }} style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, textDecoration: 'none' }}>Manuels</a>
+              <a href="/#tuteurs" onClick={(e) => { e.preventDefault(); window.location.href = '/#tuteurs' }} style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, textDecoration: 'none' }}>Tuteurs</a>
             </div>
           </div>
           <div>
