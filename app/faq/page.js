@@ -105,7 +105,10 @@ export default function FaqPage() {
         {/* Contact */}
         <div style={{ background: 'linear-gradient(135deg,#1a2e4a,#2d4a6b)', borderRadius: 14, padding: '24px', textAlign: 'center' }}>
           <div style={{ fontSize: 16, fontWeight: 700, color: 'white', marginBottom: 8 }}>Tu as une autre question ?</div>
-          <p style={{ fontSize: 13, color: '#a0c4d8', margin: '0 0 16px' }}>Connecte-toi et utilise le bouton "Signaler" sur une annonce, ou écris-nous.</p>
+          <p style={{ fontSize: 13, color: '#a0c4d8', margin: '0 0 16px' }}>
+            Connecte-toi et utilise le bouton "Signaler" sur une annonce, ou écris-nous à{' '}
+            <a href="mailto:info@bibliocamp.ca" style={{ color: 'white', fontWeight: 600 }}>info@bibliocamp.ca</a>.
+          </p>
           <Link href="/login" style={{ padding: '10px 20px', background: '#00c9a7', color: 'white', border: 'none', borderRadius: 8, fontSize: 13, fontWeight: 700, textDecoration: 'none', display: 'inline-block' }}>
             Se connecter →
           </Link>

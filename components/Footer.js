@@ -13,20 +13,20 @@ export default function Footer({ onManuelsClick, onTuteursClick }) {
             <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Produit</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <a
-                href="/#manuels"
+                href="/login?redirect=/app&view=acheter"
                 onClick={(e) => {
                   e.preventDefault()
                   if (onManuelsClick) onManuelsClick()
-                  else window.location.href = '/#manuels'
+                  else window.location.href = '/login?redirect=/app&view=acheter'
                 }}
                 style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, textDecoration: 'none', cursor: 'pointer' }}
               >Manuels</a>
               <a
-                href="/#tuteurs"
+                href="/login?redirect=/app&view=tuteurs"
                 onClick={(e) => {
                   e.preventDefault()
                   if (onTuteursClick) onTuteursClick()
-                  else window.location.href = '/#tuteurs'
+                  else window.location.href = '/login?redirect=/app&view=tuteurs'
                 }}
                 style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, textDecoration: 'none', cursor: 'pointer' }}
               >Tuteurs</a>
