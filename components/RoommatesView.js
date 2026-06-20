@@ -29,6 +29,8 @@ export default function RoommatesView({ user, setView }) {
   const [reportReason, setReportReason] = useState('')
   const [reportSent, setReportSent] = useState(false)
   const [reportLoading, setReportLoading] = useState(false)
+  const [selected, setSelected] = useState(null) // annonce ouverte dans le panneau de détail
+  const [photoIdx, setPhotoIdx] = useState(0)
 
   const load = async (filters) => {
     setLoading(true)
@@ -124,10 +126,14 @@ export default function RoommatesView({ user, setView }) {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {listings.map(item => (
-            <div key={item.id} style={{
-              background: 'white', borderRadius: 10, padding: 16,
-              border: '1px solid #e2e8f0', display: 'flex', gap: 14, alignItems: 'center'
-            }}>
+            <div
+              key={item.id}
+              onClick={() => { setSelected(item); setPhotoIdx(0) }}
+              style={{
+                background: 'white', borderRadius: 10, padding: 16,
+                border: '1px solid #e2e8f0', display: 'flex', gap: 14, alignItems: 'center', cursor: 'pointer'
+              }}
+            >
               {item.image_url ? (
                 <div style={{ position: 'relative', flexShrink: 0 }}>
                   <img src={item.image_url} alt={item.title} style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 8 }} />
@@ -147,7 +153,7 @@ export default function RoommatesView({ user, setView }) {
                 </div>
                 <div style={{ fontSize: 11, color: '#b0bec5', marginTop: 2 }}>{timeAgo(item.created_at)}</div>
               </div>
-              <div style={{ textAlign: 'right', flexShrink: 0 }}>
+              <div onClick={e => e.stopPropagation()} style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ fontSize: 18, fontWeight: 900, color: '#1a2e4a' }}>{item.rent_price} $/mois</div>
                 <button
                   onClick={() => handleContact(item)}
@@ -220,6 +226,83 @@ export default function RoommatesView({ user, setView }) {
           </div>
         </div>
       )}
+
+      {/* PANNEAU DE DETAIL */}
+      {selected && (() => {
+        const photos = selected.image_urls?.length ? selected.image_urls : (selected.image_url ? [selected.image_url] : [])
+        return (
+          <>
+            <div onClick={() => setSelected(null)} style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', zIndex: 200 }} />
+            <div style={{
+              position: 'fixed', top: 0, right: 0,
+              width: 460, maxWidth: '100vw', height: '100vh',
+              background: '#f5f7fa', zIndex: 201,
+              boxShadow: '-8px 0 40px rgba(0,0,0,0.15)',
+              display: 'flex', flexDirection: 'column', overflowY: 'auto',
+            }}>
+              <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', background: 'white', flexShrink: 0, position: 'sticky', top: 0, zIndex: 1 }}>
+                <div style={{ fontSize: 12, color: '#a0aec0' }}>Colocs / <strong style={{ color: '#1a2e4a' }}>Annonce</strong></div>
+                <button onClick={() => setSelected(null)} style={{ background: '#f0f4f8', border: 'none', borderRadius: '50%', width: 30, height: 30, cursor: 'pointer', fontSize: 16, color: '#718096' }}>×</button>
+              </div>
+
+              <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 14 }}>
+                {/* Galerie photos */}
+                <div style={{ position: 'relative', borderRadius: 14, overflow: 'hidden', height: 260, background: 'linear-gradient(135deg,#1a2e4a,#0d4f6b)' }}>
+                  {photos.length > 0 ? (
+                    <img src={photos[photoIdx]} alt={selected.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 48 }}>🏠</div>
+                  )}
+                  {photos.length > 1 && (
+                    <>
+                      <button onClick={() => setPhotoIdx(i => (i - 1 + photos.length) % photos.length)} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16 }}>‹</button>
+                      <button onClick={() => setPhotoIdx(i => (i + 1) % photos.length)} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16 }}>›</button>
+                      <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>
+                        {photoIdx + 1} / {photos.length}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                {/* Infos principales */}
+                <div style={{ background: 'white', borderRadius: 14, border: '1px solid #e2e8f0', padding: '20px 24px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10, marginBottom: 8 }}>
+                    <h1 style={{ fontSize: 19, fontWeight: 900, color: '#1a2e4a', margin: 0 }}>{selected.title}</h1>
+                    <div style={{ fontSize: 20, fontWeight: 900, color: '#1a2e4a', whiteSpace: 'nowrap' }}>{selected.rent_price} $<span style={{ fontSize: 12, color: '#a0aec0', fontWeight: 600 }}>/mois</span></div>
+                  </div>
+                  <div style={{ fontSize: 13, color: '#64748b', marginBottom: 14 }}>
+                    {[ROOM_TYPE_LABELS[selected.room_type], selected.city, selected.campus].filter(Boolean).join(' · ')}
+                  </div>
+                  <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', fontSize: 13, color: '#374151', marginBottom: selected.description ? 14 : 0 }}>
+                    {selected.available_from && <div>📅 Dispo dès le {new Date(selected.available_from).toLocaleDateString('fr-CA')}</div>}
+                    <div>👥 {selected.num_spots} place{selected.num_spots > 1 ? 's' : ''}</div>
+                  </div>
+                  {selected.description && (
+                    <p style={{ fontSize: 14, color: '#4a5568', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>{selected.description}</p>
+                  )}
+                </div>
+
+                {selected.user_id !== user?.id ? (
+                  <button onClick={() => handleContact(selected)} style={{ width: '100%', padding: '13px', background: 'linear-gradient(135deg,#1a2e4a,#2d4a6b)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                    💬 Contacter
+                  </button>
+                ) : (
+                  <div style={{ textAlign: 'center', fontSize: 13, color: '#a0aec0' }}>Ceci est ton annonce</div>
+                )}
+
+                {selected.user_id !== user?.id && (
+                  <button
+                    onClick={() => { setReportModal(selected.id); setReportSent(false); setReportReason('') }}
+                    style={{ background: 'none', border: 'none', color: '#cbd5e1', fontSize: 12, cursor: 'pointer', textDecoration: 'underline', alignSelf: 'center' }}
+                  >
+                    🚩 Signaler cette annonce
+                  </button>
+                )}
+              </div>
+            </div>
+          </>
+        )
+      })()}
     </div>
   )
 }
