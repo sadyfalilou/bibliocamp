@@ -101,6 +101,11 @@ export default function AccueilView({ userProfile, router, setView, onSearch, on
                     -{Math.round(((listing.original_price - listing.price) / listing.original_price) * 100)}%
                   </div>
                 )}
+                {listing.course_code && (
+                  <div style={{ position: 'absolute', bottom: 6, left: 6, background: 'white', fontSize: 9, fontWeight: 700, color: '#00a88a', padding: '2px 7px', borderRadius: 20 }}>
+                    {listing.course_code}
+                  </div>
+                )}
               </div>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#1a2e4a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 1 }}>
                 {listing.title}
