@@ -11,7 +11,7 @@ export default function RemovedListingNotices({ userId }) {
     const load = async () => {
       const { data } = await supabase
         .from('removed_listings_notices')
-        .select('id, listing_title, reason, removed_at')
+        .select('id, listing_title, reason, type, removed_at')
         .eq('user_id', userId)
         .eq('read', false)
         .order('removed_at', { ascending: false })
@@ -29,28 +29,36 @@ export default function RemovedListingNotices({ userId }) {
 
   return (
     <div style={{ marginBottom: 20 }}>
-      {notices.map(n => (
-        <div key={n.id} style={{
-          background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 12,
-          padding: '14px 16px', marginBottom: 8, display: 'flex', alignItems: 'flex-start', gap: 12
-        }}>
-          <span style={{ fontSize: 20, flexShrink: 0 }}>🚩</span>
-          <div style={{ flex: 1 }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#991b1b', marginBottom: 2 }}>
-              Ton annonce « {n.listing_title} » a été retirée
+      {notices.map(n => {
+        const isWarning = n.type === 'warning'
+        const colors = isWarning
+          ? { bg: '#fffbeb', border: '#fde68a', text: '#92400e', sub: '#b45309' }
+          : { bg: '#fff5f5', border: '#fed7d7', text: '#991b1b', sub: '#7f1d1d' }
+        return (
+          <div key={n.id} style={{
+            background: colors.bg, border: `1px solid ${colors.border}`, borderRadius: 12,
+            padding: '14px 16px', marginBottom: 8, display: 'flex', alignItems: 'flex-start', gap: 12
+          }}>
+            <span style={{ fontSize: 20, flexShrink: 0 }}>{isWarning ? '⚠️' : '🚩'}</span>
+            <div style={{ flex: 1 }}>
+              <div style={{ fontSize: 14, fontWeight: 700, color: colors.text, marginBottom: 2 }}>
+                {isWarning
+                  ? <>Avertissement concernant ton annonce « {n.listing_title} »</>
+                  : <>Ton annonce « {n.listing_title} » a été retirée</>}
+              </div>
+              <div style={{ fontSize: 13, color: colors.sub }}>
+                Motif : {n.reason}
+              </div>
             </div>
-            <div style={{ fontSize: 13, color: '#7f1d1d' }}>
-              Motif : {n.reason}
-            </div>
+            <button
+              onClick={() => dismiss(n.id)}
+              style={{ background: 'none', border: 'none', color: colors.text, cursor: 'pointer', fontSize: 13, fontWeight: 600, flexShrink: 0 }}
+            >
+              Compris ✕
+            </button>
           </div>
-          <button
-            onClick={() => dismiss(n.id)}
-            style={{ background: 'none', border: 'none', color: '#991b1b', cursor: 'pointer', fontSize: 13, fontWeight: 600, flexShrink: 0 }}
-          >
-            Compris ✕
-          </button>
-        </div>
-      ))}
+        )
+      })}
     </div>
   )
 }

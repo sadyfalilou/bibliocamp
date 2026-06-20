@@ -34,7 +34,7 @@ function adminClient() {
   )
 }
 
-// GET /api/admin/reports — liste des signalements avec les annonces concernées
+// GET /api/admin/reports — signalements groupés par annonce, du plus signalé au moins signalé
 export async function GET(request) {
   const admin = await getAdminUser(request)
   if (!admin) return Response.json({ error: 'Accès refusé.' }, { status: 403 })
@@ -47,7 +47,7 @@ export async function GET(request) {
     .order('created_at', { ascending: false })
 
   if (error) return Response.json({ error: 'Erreur lors de la récupération des signalements.' }, { status: 500 })
-  if (!reports || reports.length === 0) return Response.json({ reports: [] })
+  if (!reports || reports.length === 0) return Response.json({ listings: [] })
 
   const listingIds = [...new Set(reports.map(r => r.listing_id))]
   const { data: listings } = await supabase
@@ -57,60 +57,76 @@ export async function GET(request) {
 
   const listingsById = Object.fromEntries((listings || []).map(l => [l.id, l]))
 
-  const enriched = reports.map(r => ({
-    ...r,
-    listing: listingsById[r.listing_id] || null
-  }))
+  const grouped = new Map()
+  for (const r of reports) {
+    if (!grouped.has(r.listing_id)) {
+      grouped.set(r.listing_id, {
+        listing_id: r.listing_id,
+        listing: listingsById[r.listing_id] || null,
+        reports: [],
+      })
+    }
+    grouped.get(r.listing_id).reports.push(r)
+  }
 
-  return Response.json({ reports: enriched })
+  const result = [...grouped.values()]
+    .map(g => ({ ...g, reportCount: g.reports.length }))
+    .sort((a, b) => b.reportCount - a.reportCount || new Date(b.reports[0].created_at) - new Date(a.reports[0].created_at))
+
+  return Response.json({ listings: result })
 }
 
-// DELETE /api/admin/reports?id=xxx&action=dismiss|remove-listing
+// DELETE /api/admin/reports?listingId=xxx&action=dismiss|warn|remove-listing
+// Agit sur TOUS les signalements de cette annonce d'un coup.
 export async function DELETE(request) {
   const admin = await getAdminUser(request)
   if (!admin) return Response.json({ error: 'Accès refusé.' }, { status: 403 })
 
   const url = new URL(request.url)
-  const reportId = url.searchParams.get('id')
+  const listingId = url.searchParams.get('listingId')
   const action = url.searchParams.get('action') || 'dismiss'
-  if (!reportId) return Response.json({ error: 'ID du signalement manquant.' }, { status: 400 })
+  if (!listingId) return Response.json({ error: 'ID de l\'annonce manquant.' }, { status: 400 })
 
   const supabase = adminClient()
 
-  const { data: report, error: fetchErr } = await supabase
+  const { data: pendingReports } = await supabase
     .from('reports')
-    .select('id, listing_id, reason')
-    .eq('id', reportId)
-    .single()
+    .select('id, reason')
+    .eq('listing_id', listingId)
 
-  if (fetchErr || !report) return Response.json({ error: 'Signalement introuvable.' }, { status: 404 })
+  if (!pendingReports || pendingReports.length === 0) {
+    return Response.json({ error: 'Aucun signalement pour cette annonce.' }, { status: 404 })
+  }
 
-  if (action === 'remove-listing' && report.listing_id) {
+  if (action === 'warn' || action === 'remove-listing') {
     const { data: listing } = await supabase
       .from('listings')
       .select('id, image_url, title, user_id')
-      .eq('id', report.listing_id)
+      .eq('id', listingId)
       .single()
 
-    if (listing?.image_url) {
-      const fileName = listing.image_url.split('/').pop()
-      if (fileName) await supabase.storage.from('images').remove([fileName])
-    }
-
     if (listing?.user_id) {
+      const reasons = [...new Set(pendingReports.map(r => r.reason))].join(' · ')
       await supabase.from('removed_listings_notices').insert({
         user_id: listing.user_id,
         listing_title: listing.title || 'Annonce',
-        reason: report.reason,
+        reason: reasons,
+        type: action === 'remove-listing' ? 'removed' : 'warning',
       })
     }
 
-    await supabase.from('listings').delete().eq('id', report.listing_id)
+    if (action === 'remove-listing') {
+      if (listing?.image_url) {
+        const fileName = listing.image_url.split('/').pop()
+        if (fileName) await supabase.storage.from('images').remove([fileName])
+      }
+      await supabase.from('listings').delete().eq('id', listingId)
+    }
   }
 
-  // Dans tous les cas, on retire le signalement traité
-  const { error: deleteErr } = await supabase.from('reports').delete().eq('id', reportId)
-  if (deleteErr) return Response.json({ error: 'Erreur lors du traitement du signalement.' }, { status: 500 })
+  // Dans tous les cas, on retire les signalements traités pour cette annonce
+  const { error: deleteErr } = await supabase.from('reports').delete().eq('listing_id', listingId)
+  if (deleteErr) return Response.json({ error: 'Erreur lors du traitement des signalements.' }, { status: 500 })
 
   return Response.json({ ok: true })
 }
