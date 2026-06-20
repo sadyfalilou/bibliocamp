@@ -89,7 +89,7 @@ export default function AdminStatsPage() {
     </div>
   )
 
-  const { users, listings, messages, referrals, community, growth, growth_monthly, tutors } = data
+  const { users, listings, messages, referrals, community, growth, growth_monthly, tutors, roommates } = data
   const maxGrowthUsers    = Math.max(...growth.map(g => g.new_users), 1)
   const maxGrowthListings = Math.max(...growth.map(g => g.new_listings), 1)
   const maxGrowthConv     = Math.max(...growth.map(g => g.new_conv), 1)
@@ -116,6 +116,7 @@ export default function AdminStatsPage() {
           <div style={{ display: 'flex', gap: 12 }}>
             <a href="/admin/invitations" style={{ fontSize: 13, color: '#00c9a7', fontWeight: 600, textDecoration: 'none' }}>Invitations →</a>
             <a href="/admin/reports" style={{ fontSize: 13, color: '#00c9a7', fontWeight: 600, textDecoration: 'none' }}>Signalements →</a>
+            <a href="/admin/roommate-reports" style={{ fontSize: 13, color: '#00c9a7', fontWeight: 600, textDecoration: 'none' }}>Signalements colocs →</a>
           </div>
         </div>
 
@@ -369,6 +370,22 @@ export default function AdminStatsPage() {
                 </div>
               </Card>
             </div>
+          </Section>
+        )}
+
+        {/* ── COLOCS ── */}
+        {roommates && (
+          <Section title="🏠 Colocs">
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+              <Stat icon="🏠" label="Annonces actives" value={roommates.active} sub={`+${roommates.week} cette semaine`} color="#1a2e4a" highlight />
+              <Stat icon="🔑" label="Louées" value={roommates.rented} sub={`${roommates.total} annonces au total`} color="#16a34a" highlight />
+              <Stat icon="🚩" label="Signalements en attente" value={roommates.pending_reports} sub="à traiter" color="#e53e3e" highlight />
+            </div>
+            {roommates.pending_reports > 0 && (
+              <a href="/admin/roommate-reports" style={{ fontSize: 13, color: '#00c9a7', fontWeight: 600, textDecoration: 'none' }}>
+                Voir les signalements colocs →
+              </a>
+            )}
           </Section>
         )}
 

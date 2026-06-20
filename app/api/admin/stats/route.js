@@ -73,6 +73,12 @@ export async function GET(request) {
     { count: tutors_city },
     { count: total_reviews },
     { data: tutors_raw },
+
+    // Colocs
+    { count: roommates_active },
+    { count: roommates_rented },
+    { count: roommates_week },
+    { count: roommate_reports_pending },
   ] = await Promise.all([
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
     supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString()),
@@ -113,6 +119,12 @@ export async function GET(request) {
     supabase.from('tutors').select('*', { count: 'exact', head: true }).eq('meet_city', true),
     supabase.from('tutor_reviews').select('*', { count: 'exact', head: true }),
     supabase.from('tutors_with_rating').select('rate_per_hour, domains, subjects, avg_rating').eq('is_active', true),
+
+    // Colocs
+    supabase.from('roommate_listings').select('*', { count: 'exact', head: true }).eq('status', 'active'),
+    supabase.from('roommate_listings').select('*', { count: 'exact', head: true }).eq('status', 'rented'),
+    supabase.from('roommate_listings').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString()),
+    supabase.from('roommate_reports').select('roommate_listing_id', { count: 'exact', head: true }),
   ])
 
   // ── Calculs ─────────────────────────────────────────────────────────────
@@ -326,6 +338,13 @@ export async function GET(request) {
       rate_ranges,
       platform_avg_rating,
       inactive: (total_tutors || 0) - (tutors_active || 0),
+    },
+    roommates: {
+      active: roommates_active || 0,
+      rented: roommates_rented || 0,
+      week: roommates_week || 0,
+      total: (roommates_active || 0) + (roommates_rented || 0),
+      pending_reports: roommate_reports_pending || 0,
     },
   })
 }

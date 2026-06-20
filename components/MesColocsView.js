@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import RoommateReportBadge from './RoommateReportBadge'
 
 const ROOM_TYPE_LABELS = {
   chambre_privee: 'Chambre privée',
@@ -73,9 +74,10 @@ export default function MesColocsView({ user, setView, onEdit }) {
           {listings.map(item => (
             <div key={item.id} style={{
               background: item.status === 'rented' ? '#f8fafc' : 'white', borderRadius: 10, padding: 14,
-              border: '1px solid #e2e8f0', display: 'flex', alignItems: 'center', gap: 14,
+              border: '1px solid #e2e8f0',
               opacity: item.status === 'rented' ? 0.75 : 1
             }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               {item.image_url ? (
                 <div style={{ position: 'relative', flexShrink: 0 }}>
                   <img src={item.image_url} alt={item.title} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }} />
@@ -118,6 +120,8 @@ export default function MesColocsView({ user, setView, onEdit }) {
                   Supprimer
                 </button>
               </div>
+            </div>
+            <RoommateReportBadge listingId={item.id} />
             </div>
           ))}
         </div>
