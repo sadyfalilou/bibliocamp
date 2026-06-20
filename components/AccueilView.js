@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import Carousel from './Carousel'
+import RemovedListingNotices from './RemovedListingNotices'
 import { BADGE_LABELS } from '../lib/tutorBadge'
 
 const coverGradients = [
@@ -21,7 +22,7 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
 }
 
-export default function AccueilView({ userProfile, router, setView, onSearch, onSearchTutor, onSelectTutor, onSelectListing }) {
+export default function AccueilView({ userProfile, userId, router, setView, onSearch, onSearchTutor, onSelectTutor, onSelectListing }) {
   const [listings, setListings] = useState([])
   const [tutors, setTutors] = useState([])
   const [loading, setLoading] = useState(true)
@@ -68,6 +69,8 @@ export default function AccueilView({ userProfile, router, setView, onSearch, on
 
   return (
     <div>
+      <RemovedListingNotices userId={userId} />
+
       {/* Hero compact */}
       <div style={{ background: 'linear-gradient(135deg,#1a2e4a 0%,#2d4a6b 100%)', borderRadius: 14, padding: '20px 24px', marginBottom: 24 }}>
         <div style={{ color: 'white', fontSize: 17, fontWeight: 800, marginBottom: 4 }}>

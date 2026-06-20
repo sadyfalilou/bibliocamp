@@ -1311,6 +1311,7 @@ function HomeContent() {
           {view === 'accueil' && (
             <AccueilView
               userProfile={userProfile}
+              userId={user?.id}
               router={router}
               setView={setView}
               onSearch={(q) => { setSearch(q); setView('acheter') }}

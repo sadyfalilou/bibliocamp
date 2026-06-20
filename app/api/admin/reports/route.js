@@ -79,7 +79,7 @@ export async function DELETE(request) {
 
   const { data: report, error: fetchErr } = await supabase
     .from('reports')
-    .select('id, listing_id')
+    .select('id, listing_id, reason')
     .eq('id', reportId)
     .single()
 
@@ -88,13 +88,21 @@ export async function DELETE(request) {
   if (action === 'remove-listing' && report.listing_id) {
     const { data: listing } = await supabase
       .from('listings')
-      .select('id, image_url')
+      .select('id, image_url, title, user_id')
       .eq('id', report.listing_id)
       .single()
 
     if (listing?.image_url) {
       const fileName = listing.image_url.split('/').pop()
       if (fileName) await supabase.storage.from('images').remove([fileName])
+    }
+
+    if (listing?.user_id) {
+      await supabase.from('removed_listings_notices').insert({
+        user_id: listing.user_id,
+        listing_title: listing.title || 'Annonce',
+        reason: report.reason,
+      })
     }
 
     await supabase.from('listings').delete().eq('id', report.listing_id)
