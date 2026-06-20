@@ -5,4 +5,4 @@
 -- À exécuter dans le SQL Editor de Supabase, après removed_listings_notices.sql.
 
 alter table removed_listings_notices
-  add column if not exists listing_id uuid references listings(id) on delete set null;
+  add column if not exists listing_id bigint references listings(id) on delete set null;
