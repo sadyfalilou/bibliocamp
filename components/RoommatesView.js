@@ -241,7 +241,9 @@ export default function RoommatesView({ user, setView, initialSearch }) {
               display: 'flex', flexDirection: 'column', overflowY: 'auto',
             }}>
               <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', background: 'white', flexShrink: 0, position: 'sticky', top: 0, zIndex: 1 }}>
-                <div style={{ fontSize: 12, color: '#a0aec0' }}>Colocs / <strong style={{ color: '#1a2e4a' }}>Annonce</strong></div>
+                <div style={{ fontSize: 12, color: '#a0aec0' }}>
+                  <span onClick={() => setSelected(null)} style={{ cursor: 'pointer' }}>Colocs</span> / <strong style={{ color: '#1a2e4a' }}>Annonce</strong>
+                </div>
                 <button onClick={() => setSelected(null)} style={{ background: '#f0f4f8', border: 'none', borderRadius: '50%', width: 30, height: 30, cursor: 'pointer', fontSize: 16, color: '#718096' }}>×</button>
               </div>
 

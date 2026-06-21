@@ -1890,6 +1890,7 @@ function HomeContent() {
           currentUser={user}
           onClose={() => setSelectedTutorId(null)}
           router={router}
+          setView={setView}
         />
       )}
 
