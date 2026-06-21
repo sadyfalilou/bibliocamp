@@ -5,7 +5,7 @@ et les lire, sans aide extérieure.
 
 ---
 
-## 1. Tests unitaires / API (Jest) — 141 tests, 9 suites
+## 1. Tests unitaires / API (Jest) — 145 tests, 10 suites
 
 Vérifient la logique isolée : routes API, validation, rate limiting.
 
@@ -15,8 +15,8 @@ npm test
 
 Résultat attendu :
 ```
-Test Suites: 9 passed, 9 total
-Tests:       141 passed, 141 total
+Test Suites: 10 passed, 10 total
+Tests:       145 passed, 145 total
 ```
 
 ### Suites actuelles
@@ -32,6 +32,7 @@ Tests:       141 passed, 141 total
 | `__tests__/api.roommates.test.js` | 25 | GET liste/filtres, POST publication, PATCH statut (JSON) + édition complète (multipart, photos), DELETE — auth, validation, 403/500 |
 | `__tests__/api.roommates.contact.test.js` | 7 | POST contact coloc : auth, 400 auto-contact, conv existante (par `roommate_listing_id`), nouvelle conv |
 | `__tests__/api.seller.test.js` | 4 | GET profil vendeur : 400 sans id, 404 introuvable, calcul `avgRating`/`reviewCount` à partir de `seller_reviews` |
+| `__tests__/api.book-alerts.test.js` | 4 | POST alerte manuel : courriel/ISBN invalides, upsert valide, erreur 500 |
 
 ### Règles de validation testées
 

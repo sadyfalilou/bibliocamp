@@ -19,6 +19,8 @@ export default function BookPageClient() {
   const [tutors, setTutors] = useState([])
   const [tutorsLoading, setTutorsLoading] = useState(false)
   const [tutorsCourseMatch, setTutorsCourseMatch] = useState(false)
+  const [alertEmail, setAlertEmail] = useState('')
+  const [alertStatus, setAlertStatus] = useState(null) // null | 'loading' | 'sent' | 'error'
 
   useEffect(() => {
     const check = () => setIsMobile(window.innerWidth < 768)
@@ -31,6 +33,7 @@ export default function BookPageClient() {
     supabase.auth.getUser().then(async ({ data }) => {
       if (!data?.user) return
       setUserId(data.user.id)
+      if (data.user.email) setAlertEmail(data.user.email)
       const { data: profile } = await supabase
         .from('profiles')
         .select('phone_verified')
@@ -62,6 +65,22 @@ export default function BookPageClient() {
       }
     } catch {
       router.push('/inbox')
+    }
+  }
+
+  const handleAlertSubmit = async (e) => {
+    e.preventDefault()
+    setAlertStatus('loading')
+    try {
+      const res = await fetch('/api/book-alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: alertEmail, isbn, title: displayTitle }),
+      })
+      if (!res.ok) throw new Error()
+      setAlertStatus('sent')
+    } catch {
+      setAlertStatus('error')
     }
   }
 
@@ -298,6 +317,49 @@ export default function BookPageClient() {
                   >
                     💰 Vendre mon exemplaire
                   </button>
+
+                  <div style={{ marginTop: 28, paddingTop: 24, borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+                    {alertStatus === 'sent' ? (
+                      <p style={{ color: '#00876e', fontSize: 14, fontWeight: 700, margin: 0 }}>
+                        ✅ On t'envoie un courriel dès qu'il sera en vente !
+                      </p>
+                    ) : (
+                      <>
+                        <p style={{ color: '#64748b', fontSize: 13, margin: '0 0 10px' }}>
+                          Ou reçois une alerte courriel quand quelqu'un le met en vente :
+                        </p>
+                        <form onSubmit={handleAlertSubmit} style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                          <input
+                            type="email"
+                            required
+                            placeholder="ton.courriel@exemple.com"
+                            value={alertEmail}
+                            onChange={e => setAlertEmail(e.target.value)}
+                            style={{
+                              padding: '10px 14px', borderRadius: 8, border: '1px solid #d8e0e8',
+                              fontSize: 14, minWidth: 220
+                            }}
+                          />
+                          <button
+                            type="submit"
+                            disabled={alertStatus === 'loading'}
+                            style={{
+                              background: '#1a2e4a', border: 'none', borderRadius: 8,
+                              padding: '10px 18px', fontSize: 14, fontWeight: 700,
+                              color: 'white', cursor: alertStatus === 'loading' ? 'default' : 'pointer'
+                            }}
+                          >
+                            {alertStatus === 'loading' ? '...' : "Recevoir l'alerte"}
+                          </button>
+                        </form>
+                        {alertStatus === 'error' && (
+                          <p style={{ color: '#dc2626', fontSize: 13, margin: '8px 0 0' }}>
+                            Erreur — vérifie ton courriel et réessaie.
+                          </p>
+                        )}
+                      </>
+                    )}
+                  </div>
                 </div>
               ) : (
                 listings.map((listing, idx) => (

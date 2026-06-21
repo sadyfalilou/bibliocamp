@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
+import { sendEmail } from '../../../lib/sendEmail'
 
 const VALID_ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -20,6 +21,38 @@ function validate({ title, authors, isbn, course_code, price, original_price, ca
   if (!VALID_ETATS.includes(description)) return 'État du livre invalide.'
   if (!meet_campus && !meet_city && !post) return 'Choisis au moins une méthode de transaction.'
   return null
+}
+
+async function notifyBookAlerts(supabase, listing) {
+  if (!listing.isbn) return
+  const { data: alerts } = await supabase
+    .from('book_alerts')
+    .select('id, email')
+    .eq('isbn', listing.isbn)
+    .eq('notified', false)
+  if (!alerts || alerts.length === 0) return
+
+  for (const alert of alerts) {
+    try {
+      await sendEmail({
+        to: alert.email,
+        subject: `📚 "${listing.title}" est maintenant disponible sur BiblioCamp`,
+        html: `
+          <p>Bonne nouvelle !</p>
+          <p>Le manuel <strong>${listing.title}</strong> que tu attendais vient d'être mis en vente sur BiblioCamp, à <strong>${listing.price} $</strong>.</p>
+          <p><a href="https://www.bibliocamp.ca/book/${listing.isbn}">Voir l'annonce →</a></p>
+          <p style="color:#888;font-size:12px">Tu reçois ce courriel parce que tu t'es inscrit à une alerte pour ce manuel sur BiblioCamp.</p>
+        `,
+      })
+    } catch (err) {
+      Sentry.captureException(err, { extra: { route: 'POST /api/listings', action: 'notifyBookAlerts', alertId: alert.id } })
+    }
+  }
+
+  await supabase
+    .from('book_alerts')
+    .update({ notified: true, notified_at: new Date().toISOString() })
+    .in('id', alerts.map(a => a.id))
 }
 
 async function getUser(request) {
@@ -105,6 +138,9 @@ export async function POST(request) {
     Sentry.captureException(error, { extra: { route: 'POST /api/listings', action: 'insert', userId: user.id } })
     return Response.json({ error: 'Erreur lors de la création.' }, { status: 500 })
   }
+
+  await notifyBookAlerts(supabase, data)
+
   return Response.json({ listing: data })
 }
 
