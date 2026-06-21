@@ -11,6 +11,8 @@ export default async function sitemap() {
     { url: `${BASE_URL}/confidentialite`, changeFrequency: 'yearly', priority: 0.3 },
   ]
 
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) return staticRoutes
+
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
