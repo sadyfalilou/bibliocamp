@@ -4,12 +4,19 @@ import AuthAwareLoginButton from '../../components/AuthAwareLoginButton'
 
 export const metadata = {
   title: 'Politique de confidentialité — BiblioCamp',
-  description: "Découvrez comment BiblioCamp collecte, utilise et protège vos données personnelles, conformément à la Loi 25 du Québec.",
+  description: "Découvrez comment BiblioCamp collecte, utilise et protège vos données personnelles sur les manuels, le tutorat, la colocation et les avis, conformément à la Loi 25 du Québec.",
 }
 
 export default function ConfidentialitePage() {
   return (
     <div style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", background: '#fff', color: '#222' }}>
+      <style>{`
+        .legal-content ul { padding-left: 28px; margin: 16px 0; }
+        .legal-content li { margin-bottom: 14px; padding-left: 4px; }
+        .legal-content li:last-child { margin-bottom: 0; }
+        .legal-content p { margin: 0 0 16px; }
+        .legal-content p:last-child { margin-bottom: 0; }
+      `}</style>
 
       {/* ── HEADER ── */}
       <header style={{ borderBottom: '1px solid #e5e7eb', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -32,40 +39,44 @@ export default function ConfidentialitePage() {
           Politique de confidentialité
         </h1>
         <p style={{ fontSize: 14, color: '#6b7280', margin: '0 0 48px', fontStyle: 'italic' }}>
-          Dernière mise à jour : 11 juin 2026
+          Dernière mise à jour : 21 juin 2026.
         </p>
 
-        <p style={{ fontSize: 15, lineHeight: 1.8, color: '#374151', margin: '0 0 48px' }}>
+        <p style={{ fontSize: 15, lineHeight: 1.8, color: '#374151', margin: '0 0 48px', textAlign: 'justify' }}>
           BiblioCamp (« nous ») respecte votre vie privée et se conforme à la{' '}
           <strong>Loi sur la protection des renseignements personnels dans le secteur privé (Loi 25)</strong>{' '}
           du Québec ainsi qu'à la loi fédérale canadienne <strong>LPRPDE</strong>. La présente politique
-          décrit comment nous collectons, utilisons et protégeons vos renseignements personnels.
-          Nous ne vendons jamais vos données.
+          décrit comment nous collectons, utilisons et protégeons vos renseignements personnels dans le
+          cadre de l'ensemble de nos services : manuels scolaires, tutorat, colocation et avis entre
+          utilisateurs. Nous ne vendons jamais vos données.
         </p>
 
         <Section title="1. Données que nous collectons">
-          <p>Nous collectons uniquement les données nécessaires au fonctionnement du service :</p>
+          <p>Nous collectons uniquement les données nécessaires au fonctionnement du service.</p>
 
           <p><strong>Données de compte</strong></p>
           <ul>
-            <li>Adresse courriel (identifiant, communications)</li>
-            <li>Numéro de téléphone canadien (vérification d'identité, prévention des abus)</li>
-            <li>Prénom, nom et photo de profil (optionnelle)</li>
-            <li>Établissement scolaire et campus</li>
+            <li>Adresse courriel (identifiant, communications).</li>
+            <li>Numéro de téléphone canadien (vérification d'identité, prévention des abus).</li>
+            <li>Prénom, nom et photo de profil (optionnelle).</li>
+            <li>Établissement scolaire et campus.</li>
           </ul>
 
           <p><strong>Données de contenu</strong></p>
           <ul>
-            <li>Annonces publiées (titre, description, photos, prix, ISBN)</li>
-            <li>Messages échangés via la messagerie intégrée</li>
-            <li>Code de parrainage (si applicable)</li>
+            <li>Annonces de manuels publiées (titre, description, photos, prix, ISBN).</li>
+            <li>Profils et annonces de tutorat (matières, tarifs, disponibilités, description).</li>
+            <li>Annonces de colocation (ville, campus, prix, type de logement, photos).</li>
+            <li>Avis et notations laissés sur les vendeurs de manuels (note, commentaire).</li>
+            <li>Messages échangés via la messagerie intégrée, y compris les signalements d'annonces.</li>
+            <li>Code de parrainage (si applicable).</li>
           </ul>
 
           <p><strong>Données techniques</strong></p>
           <ul>
-            <li>Adresse IP (sécurité, prévention des abus)</li>
-            <li>Journaux d'erreurs techniques anonymisés (Sentry)</li>
-            <li>Données de session (gestion de l'authentification)</li>
+            <li>Adresse IP (sécurité, prévention des abus).</li>
+            <li>Journaux d'erreurs techniques anonymisés (Sentry).</li>
+            <li>Données de session (gestion de l'authentification).</li>
           </ul>
 
           <p>
@@ -77,13 +88,15 @@ export default function ConfidentialitePage() {
         <Section title="2. Utilisation de vos données">
           <p>Vos données sont utilisées exclusivement pour :</p>
           <ul>
-            <li>Authentification et gestion de votre compte</li>
-            <li>Affichage de vos annonces aux autres utilisateurs</li>
-            <li>Transmission de messages entre acheteurs et vendeurs</li>
-            <li>Vérification de votre numéro de téléphone (Twilio)</li>
-            <li>Prévention des abus et fraudes</li>
-            <li>Surveillance des erreurs techniques (Sentry)</li>
-            <li>Communications liées à votre compte</li>
+            <li>Authentification et gestion de votre compte.</li>
+            <li>Affichage de vos annonces de manuels, de tutorat et de colocation aux autres utilisateurs.</li>
+            <li>Calcul et affichage de la note moyenne et des avis sur les vendeurs.</li>
+            <li>Transmission de messages entre utilisateurs (acheteurs/vendeurs, tuteurs/étudiants, colocataires potentiels).</li>
+            <li>Traitement des signalements d'annonces (manuels et colocation).</li>
+            <li>Vérification de votre numéro de téléphone (Twilio).</li>
+            <li>Prévention des abus et fraudes.</li>
+            <li>Surveillance des erreurs techniques (Sentry).</li>
+            <li>Communications liées à votre compte.</li>
           </ul>
           <p>
             Nous n'utilisons pas vos données à des fins publicitaires, de profilage commercial
@@ -122,11 +135,12 @@ export default function ConfidentialitePage() {
 
         <Section title="4. Conservation des données">
           <ul>
-            <li><strong>Compte et profil</strong> : conservés jusqu'à la suppression de votre compte</li>
-            <li><strong>Annonces</strong> : supprimées avec le compte ou sur demande</li>
-            <li><strong>Messages</strong> : conservés jusqu'à la suppression de la conversation ou du compte</li>
-            <li><strong>Journaux de sécurité (IP)</strong> : maximum 90 jours</li>
-            <li><strong>Données Sentry</strong> : maximum 90 jours</li>
+            <li><strong>Compte et profil</strong> : conservés jusqu'à la suppression de votre compte.</li>
+            <li><strong>Annonces (manuels, tutorat, colocation)</strong> : supprimées avec le compte ou sur demande.</li>
+            <li><strong>Avis et notations</strong> : conservés tant que le compte de l'auteur existe, modifiables ou supprimables par leur auteur.</li>
+            <li><strong>Messages et signalements</strong> : conservés jusqu'à la suppression de la conversation ou du compte.</li>
+            <li><strong>Journaux de sécurité (IP)</strong> : maximum 90 jours.</li>
+            <li><strong>Données Sentry</strong> : maximum 90 jours.</li>
           </ul>
           <p>
             Après la suppression de votre compte, certaines informations peuvent être conservées
@@ -137,11 +151,11 @@ export default function ConfidentialitePage() {
         <Section title="5. Sécurité">
           <p>Nous appliquons les mesures suivantes pour protéger vos données :</p>
           <ul>
-            <li>Chiffrement en transit (HTTPS/TLS) et au repos</li>
-            <li>Contrôle d'accès par ligne (RLS Supabase) : chaque utilisateur n'accède qu'à ses propres données</li>
-            <li>Authentification sécurisée : mots de passe hachés, sessions JWT</li>
-            <li>Vérification téléphone pour limiter les faux comptes</li>
-            <li>Rate limiting pour se protéger des attaques automatisées</li>
+            <li>Chiffrement en transit (HTTPS/TLS) et au repos.</li>
+            <li>Contrôle d'accès par ligne (RLS Supabase) : chaque utilisateur n'accède qu'à ses propres données.</li>
+            <li>Authentification sécurisée : mots de passe hachés, sessions JWT.</li>
+            <li>Vérification téléphone pour limiter les faux comptes.</li>
+            <li>Rate limiting pour se protéger des attaques automatisées.</li>
           </ul>
           <p>
             En cas de violation de données vous concernant, nous vous en informerons dans les délais
@@ -154,12 +168,12 @@ export default function ConfidentialitePage() {
             Conformément à la Loi 25 et à la LPRPDE, vous disposez des droits suivants :
           </p>
           <ul>
-            <li><strong>Droit d'accès</strong> : consulter les données que nous détenons sur vous</li>
-            <li><strong>Droit de rectification</strong> : corriger des données inexactes ou incomplètes</li>
-            <li><strong>Droit de suppression</strong> : effacer votre compte et vos données</li>
-            <li><strong>Droit à la portabilité</strong> : recevoir vos données dans un format structuré</li>
-            <li><strong>Droit d'opposition</strong> : limiter certains traitements</li>
-            <li><strong>Droit de déposer plainte</strong> : auprès de la Commission d'accès à l'information du Québec (<a href="https://www.cai.gouv.qc.ca" target="_blank" rel="noopener noreferrer" style={{ color: '#1a2e4a' }}>cai.gouv.qc.ca</a>)</li>
+            <li><strong>Droit d'accès</strong> : consulter les données que nous détenons sur vous.</li>
+            <li><strong>Droit de rectification</strong> : corriger des données inexactes ou incomplètes.</li>
+            <li><strong>Droit de suppression</strong> : effacer votre compte et vos données, y compris vos avis.</li>
+            <li><strong>Droit à la portabilité</strong> : recevoir vos données dans un format structuré.</li>
+            <li><strong>Droit d'opposition</strong> : limiter certains traitements.</li>
+            <li><strong>Droit de déposer plainte</strong> : auprès de la Commission d'accès à l'information du Québec (<a href="https://www.cai.gouv.qc.ca" target="_blank" rel="noopener noreferrer" style={{ color: '#1a2e4a' }}>cai.gouv.qc.ca</a>).</li>
           </ul>
           <p>
             Pour exercer ces droits, contactez-nous à{' '}
@@ -246,7 +260,7 @@ function Section({ title, children, last = false }) {
       <h2 style={{ fontSize: 18, fontWeight: 700, color: '#111', margin: '0 0 14px', lineHeight: 1.3 }}>
         {title}
       </h2>
-      <div style={{ fontSize: 15, lineHeight: 1.8, color: '#374151' }}>
+      <div className="legal-content" style={{ fontSize: 15, lineHeight: 1.8, color: '#374151', textAlign: 'justify' }}>
         {children}
       </div>
     </section>
