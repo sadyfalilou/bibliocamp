@@ -599,10 +599,10 @@ export default function Landing() {
         padding: '56px 24px', textAlign: 'center'
       }}>
         <h2 className="cta-title" style={{ color: 'white', fontWeight: 900, margin: '0 0 16px', letterSpacing: -0.5 }}>
-          Prêt à économiser sur tes manuels ?
+          Prêt à simplifier ta vie étudiante ?
         </h2>
         <p className="cta-sub" style={{ color: 'rgba(255,255,255,0.75)', margin: '0 0 36px' }}>
-          Rejoins BiblioCamp gratuitement en moins de 30 secondes.
+          Rejoins BiblioCamp gratuitement en moins de 30 secondes — manuels, tuteurs et colocs au même endroit.
         </p>
         <button onClick={() => router.push('/login?tab=signup')} style={{
           background: '#00c9a7', border: 'none', borderRadius: 12,
