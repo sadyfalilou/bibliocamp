@@ -61,7 +61,7 @@ function StarPicker({ value, onChange }) {
 
 const RATING_LABELS = { 1: 'Très décevant', 2: 'Décevant', 3: 'Correct', 4: 'Bien', 5: 'Excellent !' }
 
-export default function TutorDetailPanel({ tutorId, currentUser, onClose, router }) {
+export default function TutorDetailPanel({ tutorId, currentUser, onClose, router, setView }) {
   const [tutor, setTutor]         = useState(null)
   const [reviews, setReviews]     = useState([])
   const [loading, setLoading]     = useState(true)
@@ -219,7 +219,9 @@ export default function TutorDetailPanel({ tutorId, currentUser, onClose, router
       }}>
         {/* Header */}
         <div style={{ padding: '14px 20px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: '1px solid #e2e8f0', background: 'white', flexShrink: 0, position: 'sticky', top: 0, zIndex: 1 }}>
-          <div style={{ fontSize: 12, color: '#a0aec0' }}>Tuteurs / <strong style={{ color: '#1a2e4a' }}>Profil</strong></div>
+          <div style={{ fontSize: 12, color: '#a0aec0' }}>
+            <span onClick={() => { setView?.('tuteurs'); onClose() }} style={{ cursor: 'pointer' }}>Tuteurs</span> / <strong style={{ color: '#1a2e4a' }}>Profil</strong>
+          </div>
           <button onClick={onClose} style={{ background: '#f0f4f8', border: 'none', borderRadius: '50%', width: 30, height: 30, cursor: 'pointer', fontSize: 16, color: '#718096' }}>×</button>
         </div>
 
