@@ -8,12 +8,19 @@ async function getBookData(isbn) {
   )
   const { data: listings } = await supabase
     .from('listings')
-    .select('title, authors, image_url, price')
+    .select('title, authors, image_url, price, description')
     .eq('isbn', isbn)
     .eq('status', 'active')
     .order('price', { ascending: true })
     .limit(1)
   return listings?.[0] ?? null
+}
+
+const CONDITION_SCHEMA = {
+  'Neuf': 'https://schema.org/NewCondition',
+  'Très bon état': 'https://schema.org/UsedCondition',
+  'Bon état': 'https://schema.org/UsedCondition',
+  'État correct': 'https://schema.org/UsedCondition',
 }
 
 const BASE_URL = 'https://www.bibliocamp.ca'
@@ -58,6 +65,7 @@ export default async function BookPage({ params }) {
     '@context': 'https://schema.org',
     '@type': 'Product',
     name: listing.title,
+    description: `Manuel "${listing.title}"${listing.description ? `, état : ${listing.description.toLowerCase()}` : ''}, vendu entre étudiants sur BiblioCamp.`,
     ...(listing.authors ? { author: { '@type': 'Person', name: listing.authors } } : {}),
     ...(image ? { image: [image] } : {}),
     sku: isbn,
@@ -68,6 +76,11 @@ export default async function BookPage({ params }) {
       priceCurrency: 'CAD',
       availability: 'https://schema.org/InStock',
       url: `https://www.bibliocamp.ca/book/${isbn}`,
+      ...(listing.description && CONDITION_SCHEMA[listing.description] ? { itemCondition: CONDITION_SCHEMA[listing.description] } : {}),
+      hasMerchantReturnPolicy: {
+        '@type': 'MerchantReturnPolicy',
+        returnPolicyCategory: 'https://schema.org/MerchantReturnNotPermitted',
+      },
     },
   } : null
 
