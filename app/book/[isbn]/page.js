@@ -170,7 +170,7 @@ export default function BookPage() {
               background: '#00c9a7', border: 'none', borderRadius: 8,
               padding: '6px 14px', fontSize: 13, fontWeight: 700,
               color: 'white', cursor: 'pointer'
-            }}>← Marketplace</button>
+            }}>← Accueil</button>
           ) : (
             <>
               <button onClick={() => router.push('/login')} style={{

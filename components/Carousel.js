@@ -47,13 +47,13 @@ export default function Carousel({ children, onSeeAll, seeAllImages }) {
         .carousel-track { scrollbar-width: none; -ms-overflow-style: none; }
       `}</style>
       <div className="carousel-arrows" style={{ display: 'flex', gap: 8, justifyContent: 'flex-end', marginBottom: 10 }}>
-        <button type="button" onClick={() => scrollBy(-1)} style={arrowStyle(canLeft)} disabled={!canLeft}
+        <button type="button" onClick={() => scrollBy(-1)} style={arrowStyle(canLeft)} disabled={!canLeft} suppressHydrationWarning
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
         >
           <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#1a2e4a" strokeWidth="2.5"><path d="M15 18l-6-6 6-6"/></svg>
         </button>
-        <button type="button" onClick={() => scrollBy(1)} style={arrowStyle(canRight)} disabled={!canRight}
+        <button type="button" onClick={() => scrollBy(1)} style={arrowStyle(canRight)} disabled={!canRight} suppressHydrationWarning
           onMouseEnter={e => e.currentTarget.style.transform = 'scale(1.08)'}
           onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}
         >

@@ -12,6 +12,7 @@ import AccueilView from '../../components/AccueilView'
 import TutorDetailPanel from '../../components/TutorDetailPanel'
 import TuteursFaqView from '../../components/TuteursFaqView'
 import ManuelsFaqView from '../../components/ManuelsFaqView'
+import ColocsFaqView from '../../components/ColocsFaqView'
 import RoommatesView from '../../components/RoommatesView'
 import PublierColocView from '../../components/PublierColocView'
 import MesColocsView from '../../components/MesColocsView'
@@ -124,13 +125,13 @@ function HomeContent() {
   // Si ?view=tuteurs dans l'URL → redirigé depuis la landing page (recherche tuteur)
   useEffect(() => {
     const v = searchParams.get('view')
-    if (['tuteurs', 'devenir-tuteur', 'acheter', 'vendre', 'faq', 'faq-manuels'].includes(v)) setView(v)
+    if (['tuteurs', 'devenir-tuteur', 'acheter', 'vendre', 'faq', 'faq-manuels', 'faq-colocs', 'colocs'].includes(v)) setView(v)
   }, [searchParams])
 
   // Ouvre/ferme automatiquement les accordéons sidebar selon la vue active
   const MANUELS_VIEWS = ['acheter', 'vendre', 'mes-annonces', 'favoris', 'mes-cours', 'faq-manuels']
   const TUTEURS_VIEWS = ['tuteurs', 'devenir-tuteur', 'faq']
-  const COLOCS_VIEWS = ['colocs', 'publier-coloc', 'mes-colocs']
+  const COLOCS_VIEWS = ['colocs', 'publier-coloc', 'mes-colocs', 'faq-colocs']
   useEffect(() => {
     if (view === 'accueil') { setManualsMenuOpen(false); setTutorsMenuOpen(false); setColocsMenuOpen(false) }
     else if (MANUELS_VIEWS.includes(view)) { setManualsMenuOpen(true); setTutorsMenuOpen(false); setColocsMenuOpen(false) }
@@ -901,6 +902,7 @@ function HomeContent() {
                 { label: 'Trouver un coloc', action: () => { setView('colocs'); if (isMobile) setSidebarOpen(false) }, active: view === 'colocs' },
                 { label: 'Publier une annonce', action: () => { setView('publier-coloc'); if (isMobile) setSidebarOpen(false) }, active: view === 'publier-coloc' },
                 { label: 'Mes annonces', action: () => { setView('mes-colocs'); if (isMobile) setSidebarOpen(false) }, active: view === 'mes-colocs' },
+                { label: 'FAQ', action: () => { setView('faq-colocs'); if (isMobile) setSidebarOpen(false) }, active: view === 'faq-colocs' },
               ]
             },
           ].map(section => (
@@ -1387,6 +1389,11 @@ function HomeContent() {
               setView={setView}
               onEdit={(id) => { setEditingRoommateId(id); setView('publier-coloc') }}
             />
+          )}
+
+          {/* ===== VUE FAQ COLOCS ===== */}
+          {view === 'faq-colocs' && (
+            <ColocsFaqView setView={setView} />
           )}
 
           {/* ===== VUE VENDRE ===== */}

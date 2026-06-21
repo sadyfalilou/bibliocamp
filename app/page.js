@@ -12,9 +12,11 @@ export default function Landing() {
   const router = useRouter()
   const [listings, setListings] = useState([])
   const [tutors, setTutors] = useState([])
+  const [roommates, setRoommates] = useState([])
   const [searchBuy, setSearchBuy] = useState('')
   const [searchSell, setSearchSell] = useState('')
   const [searchTutor, setSearchTutor] = useState('')
+  const [searchColoc, setSearchColoc] = useState('')
   const [activeTab, setActiveTab] = useState('acheter')
   const [menuOpen, setMenuOpen] = useState(false)
 
@@ -32,6 +34,7 @@ export default function Landing() {
         const data = await res.json()
         setListings(data.listings ?? [])
         setTutors(data.tutors ?? [])
+        setRoommates(data.roommates ?? [])
       }
     }
     load()
@@ -62,6 +65,11 @@ export default function Landing() {
     router.push(`/login?redirect=/app&view=tuteurs&q=${encodeURIComponent(searchTutor)}`)
   }
 
+  const handleColocSearch = (e) => {
+    e.preventDefault()
+    router.push(`/login?redirect=/app&view=colocs&q=${encodeURIComponent(searchColoc)}`)
+  }
+
   const timeAgo = (dateStr) => {
     const diff = (Date.now() - new Date(dateStr)) / 1000
     if (diff < 3600) return `il y a ${Math.floor(diff / 60)} min`
@@ -89,8 +97,10 @@ export default function Landing() {
   const benefits = [
     { icon: '💸', title: 'Économise sur tes manuels', desc: "Jusqu'à 80% moins cher qu'en librairie" },
     { icon: '🎓', title: 'Trouve un tuteur', desc: "Des étudiants qui ont réussi avant toi, prêts à t'aider" },
+    { icon: '🏠', title: 'Trouve un coloc', desc: 'Annonces de chambres et logements entre étudiants' },
+    { icon: '⭐', title: 'Vendeurs notés', desc: 'Avis et notation pour acheter en toute confiance' },
     { icon: '📦', title: 'Vends tes anciens manuels', desc: 'Transforme tes livres en argent de poche' },
-    { icon: '💬', title: 'Messagerie intégrée', desc: 'Contacte vendeurs et tuteurs directement' },
+    { icon: '💬', title: 'Messagerie intégrée', desc: 'Contacte vendeurs, tuteurs et colocs directement' },
   ]
 
   return (
@@ -127,7 +137,7 @@ export default function Landing() {
           .hero-title { font-size: 48px; }
           .hero-sub { font-size: 18px; }
           .stats-grid { grid-template-columns: repeat(4, 1fr); gap: 24px; }
-          .benefits-grid { grid-template-columns: repeat(2, 1fr); gap: 20px; }
+          .benefits-grid { grid-template-columns: repeat(3, 1fr); gap: 20px; }
           .listings-section { padding: 56px 40px; }
           .section-title { font-size: 30px; }
           .cta-title { font-size: 40px; }
@@ -195,7 +205,7 @@ export default function Landing() {
             color: 'white', fontWeight: 900, lineHeight: 1.15,
             margin: '0 0 16px', letterSpacing: -1
           }}>
-            La marketplace des manuels{' '}
+            La plateforme tout-en-un des{' '}
             <span style={{ color: '#00c9a7' }}>étudiants du Québec</span>
           </h1>
 
@@ -203,7 +213,7 @@ export default function Landing() {
             color: 'rgba(255,255,255,0.75)',
             margin: '0 0 36px', lineHeight: 1.6
           }}>
-            Achète et vends tes manuels directement entre étudiants. Économise jusqu'à 80%.
+            Manuels, tuteurs et colocs — économise jusqu'à 80% et connecte-toi avec ta communauté étudiante.
           </p>
 
           {/* Barre de recherche */}
@@ -219,6 +229,7 @@ export default function Landing() {
                 { key: 'acheter', label: '🔍 Acheter' },
                 { key: 'vendre', label: '📦 Vendre' },
                 { key: 'tuteurs', label: '🎓 Tuteurs' },
+                { key: 'colocs', label: '🏠 Colocs' },
               ].map(tab => (
                 <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)} style={{
                   flex: 1, padding: '10px 8px', border: 'none',
@@ -323,6 +334,36 @@ export default function Landing() {
                     boxShadow: '0 4px 14px rgba(0,201,167,0.35)'
                   }}>
                     Trouver →
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {activeTab === 'colocs' && (
+              <form onSubmit={handleColocSearch}>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 600, color: '#64748b', marginBottom: 8 }}>
+                  Ville, secteur ou mot-clé
+                </label>
+                <div className="search-row" style={{ display: 'flex' }}>
+                  <input
+                    value={searchColoc}
+                    onChange={e => setSearchColoc(e.target.value)}
+                    placeholder="ex: Montréal, UQAM, 4 1/2..."
+                    style={{
+                      flex: 1, padding: '12px 14px', border: '1.5px solid #e2e8f0',
+                      borderRadius: 9, fontSize: 15, outline: 'none',
+                      transition: 'border-color 0.2s', minWidth: 0
+                    }}
+                    onFocus={e => e.target.style.borderColor = '#00c9a7'}
+                    onBlur={e => e.target.style.borderColor = '#e2e8f0'}
+                  />
+                  <button type="submit" style={{
+                    background: '#00c9a7', border: 'none', borderRadius: 9,
+                    padding: '12px 20px', color: 'white', fontWeight: 800,
+                    fontSize: 15, cursor: 'pointer', whiteSpace: 'nowrap',
+                    boxShadow: '0 4px 14px rgba(0,201,167,0.35)'
+                  }}>
+                    Chercher →
                   </button>
                 </div>
               </form>
@@ -459,6 +500,50 @@ export default function Landing() {
                 </div>
               )
             })}
+          </Carousel>
+        </section>
+      )}
+
+      {/* ── ANNONCES COLOCS ── */}
+      {roommates.length > 0 && (
+        <section id="colocs" className="listings-section" style={{ maxWidth: 1000, margin: '0 auto' }}>
+          <div
+            onClick={() => router.push('/login')}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, cursor: 'pointer', marginBottom: 16 }}
+          >
+            <h2 className="section-title" style={{ fontWeight: 900, margin: 0, letterSpacing: -0.5 }}>
+              Annonces colocs
+            </h2>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#1a2e4a" strokeWidth="2.5"><path d="M9 18l6-6-6-6"/></svg>
+          </div>
+
+          <Carousel onSeeAll={() => router.push('/login')} seeAllImages={roommates.slice(0, 3).map(r => r.image_url)}>
+            {roommates.map((r, idx) => (
+              <div
+                key={r.id}
+                onClick={() => router.push('/login')}
+                style={{ flex: '0 0 170px', scrollSnapAlign: 'start', cursor: 'pointer' }}
+              >
+                <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 130, background: coverGradients[idx % coverGradients.length], marginBottom: 8 }}>
+                  {r.image_url ? (
+                    <img src={r.image_url} alt={r.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                  ) : (
+                    <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: 30, opacity: 0.5 }}>🏠</div>
+                  )}
+                  {r.city && (
+                    <div style={{ position: 'absolute', bottom: 8, left: 8, background: 'white', fontSize: 10, fontWeight: 700, color: '#00a88a', padding: '3px 8px', borderRadius: 20 }}>
+                      {r.city}
+                    </div>
+                  )}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', marginBottom: 2 }}>
+                  {r.title}
+                </div>
+                <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a' }}>
+                  {r.rent_price} $/mois
+                </div>
+              </div>
+            ))}
           </Carousel>
         </section>
       )}

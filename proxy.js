@@ -1,7 +1,7 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 
-const PUBLIC_ROUTES = ['/', '/login', '/reset-password', '/confidentialite', '/cgu']
+const PUBLIC_ROUTES = ['/', '/login', '/reset-password', '/confidentialite', '/cgu', '/faq']
 const PUBLIC_PREFIXES = ['/book/', '/invite/', '/seller/']
 
 export async function proxy(req) {

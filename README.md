@@ -17,6 +17,7 @@
 - 🔔 Notifications sonores et badge en temps réel
 - 🛡️ Page admin signalements + gestion invitations
 - 🏠 Colocs — annonces de chambre/coloc (publication, recherche/filtres, panneau de détail, signalement)
+- ⭐ Avis/notation des vendeurs de manuels (page vendeur publique)
 - 📚 Catalogue maison de manuels (Coop UQAM, Chenelière) prioritaire avant les APIs externes
 
 ## 🛡️ Sécurité
@@ -111,7 +112,7 @@ proxy.js                 # Middleware Next.js — protection des routes
 ## 🧪 Tests
 
 ```bash
-# Tests unitaires (137 tests, 8 suites)
+# Tests unitaires (141 tests, 9 suites)
 npm test
 
 # Tests E2E Playwright (serveur local requis)

@@ -132,7 +132,9 @@ function LoginInner() {
 
   const benefits = [
     { icon: '📚', text: 'Des centaines de manuels à petit prix' },
-    { icon: '🎓', text: 'Réservé aux étudiants québécois' },
+    { icon: '🎓', text: 'Trouve un tuteur dans ton cours' },
+    { icon: '🏠', text: 'Annonces de chambres et colocs' },
+    { icon: '⭐', text: 'Vendeurs notés par la communauté' },
     { icon: '💬', text: 'Messagerie intégrée entre étudiants' },
     { icon: '🔒', text: 'Plateforme sécurisée et gratuite' },
   ]
@@ -164,10 +166,10 @@ function LoginInner() {
 
             {/* Tagline */}
             <h1 style={{ color: 'white', fontSize: 32, fontWeight: 900, lineHeight: 1.25, margin: '0 0 16px', letterSpacing: -0.5 }}>
-              La marketplace des manuels étudiants du Québec
+              La plateforme tout-en-un des étudiants du Québec
             </h1>
             <p style={{ color: 'rgba(255,255,255,0.6)', fontSize: 16, margin: '0 0 44px', lineHeight: 1.6 }}>
-              Achète et vends tes manuels directement entre étudiants.
+              Manuels, tuteurs et colocs — tout pour ta vie étudiante, entre étudiants.
             </p>
 
             {/* Avantages */}
@@ -234,7 +236,7 @@ function LoginInner() {
                 {mode === 'reset'
                   ? 'Entre ton courriel pour recevoir un lien de réinitialisation.'
                   : mode === 'login'
-                  ? 'Connecte-toi pour accéder à la marketplace.'
+                  ? 'Connecte-toi pour accéder à BiblioCamp.'
                   : 'Rejoins des milliers d\'étudiants québécois.'}
               </p>
             </div>

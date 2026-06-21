@@ -23,6 +23,36 @@ const FAQ = [
       },
     ]
   },
+  {
+    section: 'Colocs',
+    items: [
+      {
+        q: 'Comment publier une annonce de colocation ?',
+        a: 'Depuis ton tableau de bord, ouvre la section "Colocs" puis "Publier une annonce". Tu peux ajouter plusieurs photos de la chambre, le prix, la ville et le type de logement.'
+      },
+      {
+        q: 'Puis-je modifier ou supprimer mon annonce de coloc ?',
+        a: 'Oui. Dans "Mes annonces colocs", clique sur ton annonce pour la modifier (texte, prix, photos) ou la retirer à tout moment.'
+      },
+      {
+        q: 'Comment signaler une annonce de colocation suspecte ?',
+        a: 'Ouvre l\'annonce concernée et utilise le bouton de signalement. Notre équipe examine chaque signalement et peut retirer l\'annonce si elle ne respecte pas nos conditions.'
+      },
+    ]
+  },
+  {
+    section: 'Avis sur les vendeurs',
+    items: [
+      {
+        q: 'Comment laisser un avis sur un vendeur de manuels ?',
+        a: 'Visite la page du vendeur (depuis une de ses annonces) et utilise le formulaire de notation pour lui donner une note de 1 à 5 étoiles et un commentaire.'
+      },
+      {
+        q: 'Puis-je modifier mon avis ?',
+        a: 'Oui, tant que tu es connecté avec le même compte. Tu peux modifier ou supprimer ton avis depuis la page du vendeur. Un seul avis par vendeur est autorisé par personne.'
+      },
+    ]
+  },
 ]
 
 function AccordionItem({ question, answer }) {
@@ -105,6 +135,18 @@ export default function FaqPage() {
             <div style={{ fontSize: 13, color: '#64748b' }}>Consulte la FAQ dédiée au tutorat entre étudiants.</div>
           </div>
           <Link href="/tuteurs/faq" style={{ fontSize: 13, fontWeight: 700, color: '#00c9a7', textDecoration: 'none', whiteSpace: 'nowrap' }}>
+            Voir →
+          </Link>
+        </div>
+
+        {/* Pointeur vers FAQ colocs */}
+        <div style={{ background: 'white', borderRadius: 14, border: '1px solid #e2e8f0', padding: '20px 24px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ fontSize: 28 }}>🏠</span>
+          <div style={{ flex: 1 }}>
+            <div style={{ fontSize: 14, fontWeight: 700, color: '#1a2e4a' }}>Des questions sur les colocs ?</div>
+            <div style={{ fontSize: 13, color: '#64748b' }}>Consulte la FAQ dédiée à la colocation entre étudiants.</div>
+          </div>
+          <Link href={user ? '/app?view=faq-colocs' : '/login?redirect=/app&view=faq-colocs'} style={{ fontSize: 13, fontWeight: 700, color: '#00c9a7', textDecoration: 'none', whiteSpace: 'nowrap' }}>
             Voir →
           </Link>
         </div>
