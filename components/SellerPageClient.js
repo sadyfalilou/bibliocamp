@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation'
 import { supabase } from '../lib/supabase'
 import Logo from './Logo'
 import BadgeList from './BadgeList'
+import Footer from './Footer'
 
 const RATING_LABELS = { 1: 'Très décevant', 2: 'Décevant', 3: 'Correct', 4: 'Bien', 5: 'Excellent !' }
 
@@ -449,6 +450,8 @@ export default function SellerPageClient() {
           </>
         )}
       </div>
+
+      <Footer />
     </div>
   )
 }
