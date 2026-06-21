@@ -67,6 +67,8 @@ function HomeContent() {
   const [isMobile, setIsMobile] = useState(false)
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [alertEmail, setAlertEmail] = useState('')
+  const [alertStatus, setAlertStatus] = useState(null) // null | 'loading' | 'sent' | 'error'
   const [user, setUser] = useState(null)
   const [userProfile, setUserProfile] = useState(null)
   const [userSubjects, setUserSubjects] = useState([])
@@ -188,6 +190,7 @@ function HomeContent() {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user) { window.location.href = '/login'; return }
         setUser(user)
+        if (user.email) setAlertEmail(user.email)
         Sentry.setUser({ id: user.id, email: user.email })
         const { data: profile } = await supabase
           .from('profiles')
@@ -470,6 +473,25 @@ function HomeContent() {
       setOtpError('Erreur inattendue. Réessaie.')
     } finally {
       setVerifyingCode(false)
+    }
+  }
+
+  const searchIsbn = search.replace(/[-\s]/g, '')
+  const searchLooksLikeIsbn = /^\d{10,13}$/.test(searchIsbn)
+
+  const handleAlertSubmit = async (e) => {
+    e.preventDefault()
+    setAlertStatus('loading')
+    try {
+      const res = await fetch('/api/book-alerts', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: alertEmail, isbn: searchIsbn, title: null }),
+      })
+      if (!res.ok) throw new Error()
+      setAlertStatus('sent')
+    } catch {
+      setAlertStatus('error')
     }
   }
 
@@ -1154,6 +1176,48 @@ function HomeContent() {
                 <div style={{ textAlign: 'center', padding: '50px', color: '#a0aec0' }}>
                   <div style={{ fontSize: 40, marginBottom: 10 }}>📭</div>
                   Aucun manuel trouvé.
+
+                  {searchLooksLikeIsbn && (
+                    <div style={{ marginTop: 24 }}>
+                      {alertStatus === 'sent' ? (
+                        <p style={{ color: '#00876e', fontSize: 14, fontWeight: 700, margin: 0 }}>
+                          ✅ On t'envoie un courriel dès qu'il sera en vente !
+                        </p>
+                      ) : (
+                        <>
+                          <p style={{ color: '#718096', fontSize: 13, margin: '0 0 10px' }}>
+                            Reçois une alerte courriel quand quelqu'un publie ce manuel :
+                          </p>
+                          <form onSubmit={handleAlertSubmit} style={{ display: 'flex', gap: 8, justifyContent: 'center', flexWrap: 'wrap' }}>
+                            <input
+                              type="email"
+                              required
+                              placeholder="ton.courriel@exemple.com"
+                              value={alertEmail}
+                              onChange={e => setAlertEmail(e.target.value)}
+                              style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #d8e0e8', fontSize: 14, minWidth: 220 }}
+                            />
+                            <button
+                              type="submit"
+                              disabled={alertStatus === 'loading'}
+                              style={{
+                                background: '#1a2e4a', border: 'none', borderRadius: 8,
+                                padding: '10px 18px', fontSize: 14, fontWeight: 700,
+                                color: 'white', cursor: alertStatus === 'loading' ? 'default' : 'pointer'
+                              }}
+                            >
+                              {alertStatus === 'loading' ? '...' : "Recevoir l'alerte"}
+                            </button>
+                          </form>
+                          {alertStatus === 'error' && (
+                            <p style={{ color: '#dc2626', fontSize: 13, margin: '8px 0 0' }}>
+                              Erreur — vérifie ton courriel et réessaie.
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
