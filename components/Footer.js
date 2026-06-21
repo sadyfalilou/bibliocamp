@@ -2,13 +2,13 @@
 
 import Logo from './Logo'
 
-export default function Footer({ onManuelsClick, onTuteursClick }) {
+export default function Footer({ onManuelsClick, onTuteursClick, onColocsClick }) {
   return (
     <footer style={{ background: '#0f1f35', padding: '36px 20px 24px' }}>
       <div style={{ maxWidth: 860, margin: '0 auto' }}>
         <Logo variant="light" size="sm" style={{ marginBottom: 28, opacity: 0.85 }} />
 
-        <div className="footer-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 24, marginBottom: 28 }}>
+        <div className="footer-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 24, marginBottom: 28 }}>
           <div>
             <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Produit</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -30,6 +30,15 @@ export default function Footer({ onManuelsClick, onTuteursClick }) {
                 }}
                 style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, textDecoration: 'none', cursor: 'pointer' }}
               >Tuteurs</a>
+              <a
+                href="/login?redirect=/app&view=colocs"
+                onClick={(e) => {
+                  e.preventDefault()
+                  if (onColocsClick) onColocsClick()
+                  else window.location.href = '/login?redirect=/app&view=colocs'
+                }}
+                style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, textDecoration: 'none', cursor: 'pointer' }}
+              >Colocs</a>
             </div>
           </div>
           <div>
@@ -43,6 +52,13 @@ export default function Footer({ onManuelsClick, onTuteursClick }) {
             <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 700, marginBottom: 14 }}>Aide</div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <a href="/faq" style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, textDecoration: 'none' }}>FAQ</a>
+              <a href="mailto:info@bibliocamp.ca" style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, textDecoration: 'none' }}>Contactez-nous</a>
+            </div>
+          </div>
+          <div>
+            <div style={{ color: 'rgba(255,255,255,0.9)', fontSize: 13, fontWeight: 700, marginBottom: 14 }}>BiblioCamp</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              <a href="/a-propos" style={{ color: 'rgba(255,255,255,0.55)', fontSize: 13, textDecoration: 'none' }}>À propos</a>
             </div>
           </div>
         </div>

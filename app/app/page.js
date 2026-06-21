@@ -1906,7 +1906,7 @@ function HomeContent() {
         </main>
       </div>
 
-      <Footer onManuelsClick={() => setView('acheter')} onTuteursClick={() => setView('tuteurs')} />
+      <Footer onManuelsClick={() => setView('acheter')} onTuteursClick={() => setView('tuteurs')} onColocsClick={() => setView('colocs')} />
 
       {/* ===== SLIDE-OVER ===== */}
       {/* MODAL SIGNALEMENT */}
