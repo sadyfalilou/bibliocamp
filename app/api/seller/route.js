@@ -10,7 +10,7 @@ export async function GET(request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
-  const [{ data: profile }, { data: listings }] = await Promise.all([
+  const [{ data: profile }, { data: listings }, { data: reviews }] = await Promise.all([
     supabase
       .from('profiles')
       .select('id, first_name, last_name, avatar_url, institution, campus, program')
@@ -21,10 +21,26 @@ export async function GET(request) {
       .select('id, title, authors, isbn, price, original_price, description, image_url, meet_campus, meet_city, post, campus, course_code, created_at, status')
       .eq('user_id', userId)
       .eq('status', 'active')
+      .order('created_at', { ascending: false }),
+    supabase
+      .from('seller_reviews')
+      .select('id, rating, comment, reviewer_id, created_at, profiles(first_name, last_name, avatar_url)')
+      .eq('seller_id', userId)
       .order('created_at', { ascending: false })
   ])
 
   if (!profile) return NextResponse.json({ error: 'Vendeur introuvable' }, { status: 404 })
 
-  return NextResponse.json({ profile, listings: listings ?? [] })
+  const reviewList = reviews ?? []
+  const avgRating = reviewList.length
+    ? Math.round((reviewList.reduce((sum, r) => sum + r.rating, 0) / reviewList.length) * 10) / 10
+    : null
+
+  return NextResponse.json({
+    profile,
+    listings: listings ?? [],
+    reviews: reviewList,
+    avgRating,
+    reviewCount: reviewList.length,
+  })
 }
