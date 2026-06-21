@@ -11,15 +11,23 @@ const mockGetPublicUrl = jest.fn()
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
     auth: { getUser: mockGetUser },
-    from: jest.fn(() => ({
-      insert: jest.fn(() => ({
-        select: jest.fn(() => ({ single: mockInsert })),
-      })),
-      update: jest.fn(() => ({
-        eq: jest.fn().mockReturnThis(),
-        select: jest.fn(() => ({ single: mockUpdate })),
-      })),
-    })),
+    from: jest.fn((table) => {
+      if (table === 'book_alerts') {
+        const chain = { eq: jest.fn(() => chain), in: jest.fn(() => Promise.resolve({ data: null })) }
+        chain.select = jest.fn(() => ({ ...chain, then: (resolve) => resolve({ data: [] }) }))
+        chain.update = jest.fn(() => chain)
+        return chain
+      }
+      return {
+        insert: jest.fn(() => ({
+          select: jest.fn(() => ({ single: mockInsert })),
+        })),
+        update: jest.fn(() => ({
+          eq: jest.fn().mockReturnThis(),
+          select: jest.fn(() => ({ single: mockUpdate })),
+        })),
+      }
+    }),
     storage: {
       from: jest.fn(() => ({
         upload: mockUpload,

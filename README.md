@@ -19,6 +19,7 @@
 - 🏠 Colocs — annonces de chambre/coloc (publication, recherche/filtres, panneau de détail, signalement)
 - ⭐ Avis/notation des vendeurs de manuels (page vendeur publique)
 - 📚 Catalogue maison de manuels (Coop UQAM, Chenelière) prioritaire avant les APIs externes
+- 🔔 Alerte courriel "manuel disponible" — un étudiant laisse son courriel sur une fiche manuel sans vendeur, et reçoit un email (Resend) dès qu'une annonce correspondante est publiée
 
 ## 🛡️ Sécurité
 
@@ -38,6 +39,7 @@
 | Next.js | 16.2.6 | Framework React (App Router) |
 | Supabase | ^2.106.2 | Base de données, Auth, Storage |
 | Twilio | — | Vérification SMS |
+| Resend | — | Envoi des alertes courriel "manuel disponible" |
 | Sentry | ^10.56.0 | Monitoring erreurs production |
 | Playwright | ^1.60.0 | Tests E2E |
 | Jest | ^30 | Tests unitaires |
@@ -112,7 +114,7 @@ proxy.js                 # Middleware Next.js — protection des routes
 ## 🧪 Tests
 
 ```bash
-# Tests unitaires (141 tests, 9 suites)
+# Tests unitaires (145 tests, 10 suites)
 npm test
 
 # Tests E2E Playwright (serveur local requis)
