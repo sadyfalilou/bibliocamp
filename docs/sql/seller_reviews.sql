@@ -6,7 +6,9 @@
 create table if not exists seller_reviews (
   id bigint generated always as identity primary key,
   seller_id uuid not null references auth.users(id) on delete cascade,
-  reviewer_id uuid not null references auth.users(id) on delete cascade,
+  -- reference profiles(id) (et non auth.users) pour que PostgREST puisse
+  -- resoudre l'embed "profiles(...)" utilise par /api/seller.
+  reviewer_id uuid not null references profiles(id) on delete cascade,
   rating smallint not null check (rating between 1 and 5),
   comment text,
   created_at timestamptz not null default now(),
