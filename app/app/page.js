@@ -479,6 +479,10 @@ function HomeContent() {
   const searchIsbn = search.replace(/[-\s]/g, '')
   const searchLooksLikeIsbn = /^\d{10,13}$/.test(searchIsbn)
 
+  useEffect(() => {
+    setAlertStatus(null)
+  }, [searchIsbn])
+
   const handleAlertSubmit = async (e) => {
     e.preventDefault()
     setAlertStatus('loading')
