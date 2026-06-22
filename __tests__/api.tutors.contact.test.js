@@ -1,4 +1,4 @@
-import { POST } from '../app/api/conversations/route'
+import { POST } from '../app/api/tutors/contact/route'
 
 const mockGetUser = jest.fn()
 const mockMaybeSingle = jest.fn()
@@ -28,67 +28,67 @@ function makeRequest(body, withAuth = true) {
   return { json: () => Promise.resolve(body), headers }
 }
 
-describe('POST /api/conversations', () => {
+describe('POST /api/tutors/contact', () => {
   beforeEach(() => {
     jest.clearAllMocks()
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'buyer-123' } } })
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'student-123' } } })
     mockMaybeSingle.mockResolvedValue({ data: null, error: null }) // pas de conv existante
-    mockInsert.mockResolvedValue({ data: { id: 42 }, error: null })
+    mockInsert.mockResolvedValue({ data: { id: 88 }, error: null })
     mockSingle.mockResolvedValue({ data: { phone_verified: true }, error: null })
   })
 
   test('sans auth → 401', async () => {
-    const req = makeRequest({ listing_id: '1', seller_id: 'seller-1' }, false)
+    const req = makeRequest({ tutor_id: 1, owner_id: 'tutor-user-1' }, false)
     const res = await POST(req)
     expect(res.status).toBe(401)
   })
 
-  test('sans listing_id → 400', async () => {
-    const req = makeRequest({ seller_id: 'seller-1' })
+  test('sans tutor_id → 400', async () => {
+    const req = makeRequest({ owner_id: 'tutor-user-1' })
     const res = await POST(req)
     expect(res.status).toBe(400)
   })
 
-  test('sans seller_id → 400', async () => {
-    const req = makeRequest({ listing_id: '1' })
+  test('sans owner_id → 400', async () => {
+    const req = makeRequest({ tutor_id: 1 })
     const res = await POST(req)
     expect(res.status).toBe(400)
   })
 
-  test('auto-contact (buyer === seller) → 400', async () => {
-    mockGetUser.mockResolvedValue({ data: { user: { id: 'seller-1' } } })
-    const req = makeRequest({ listing_id: '1', seller_id: 'seller-1' })
+  test('auto-contact (étudiant === tuteur) → 400', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'tutor-user-1' } } })
+    const req = makeRequest({ tutor_id: 1, owner_id: 'tutor-user-1' })
     const res = await POST(req)
     expect(res.status).toBe(400)
   })
 
   test('téléphone non vérifié → 403', async () => {
     mockSingle.mockResolvedValue({ data: { phone_verified: false }, error: null })
-    const req = makeRequest({ listing_id: '1', seller_id: 'seller-1' })
+    const req = makeRequest({ tutor_id: 1, owner_id: 'tutor-user-1' })
     const res = await POST(req)
     expect(res.status).toBe(403)
   })
 
   test('conversation existante → retourne id existant', async () => {
-    mockMaybeSingle.mockResolvedValue({ data: { id: 99 }, error: null })
-    const req = makeRequest({ listing_id: '1', seller_id: 'seller-1' })
+    mockMaybeSingle.mockResolvedValue({ data: { id: 33 }, error: null })
+    const req = makeRequest({ tutor_id: 1, owner_id: 'tutor-user-1' })
     const res = await POST(req)
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body.conversation_id).toBe(99)
+    expect(body.conversation_id).toBe(33)
   })
 
   test('nouvelle conversation → 200 avec id', async () => {
-    const req = makeRequest({ listing_id: '1', seller_id: 'seller-1' })
+    const req = makeRequest({ tutor_id: 1, owner_id: 'tutor-user-1' })
     const res = await POST(req)
     expect(res.status).toBe(200)
     const body = await res.json()
-    expect(body.conversation_id).toBe(42)
+    expect(body.conversation_id).toBe(88)
   })
 
   test('erreur Supabase insert → 500', async () => {
     mockInsert.mockResolvedValue({ data: null, error: { message: 'DB error' } })
-    const req = makeRequest({ listing_id: '1', seller_id: 'seller-1' })
+    const req = makeRequest({ tutor_id: 1, owner_id: 'tutor-user-1' })
     const res = await POST(req)
     expect(res.status).toBe(500)
   })

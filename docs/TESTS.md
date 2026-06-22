@@ -5,7 +5,7 @@ et les lire, sans aide extérieure.
 
 ---
 
-## 1. Tests unitaires / API (Jest) — 154 tests, 12 suites
+## 1. Tests unitaires / API (Jest) — 164 tests, 13 suites
 
 Vérifient la logique isolée : routes API, validation, rate limiting.
 
@@ -15,8 +15,8 @@ npm test
 
 Résultat attendu :
 ```
-Test Suites: 12 passed, 12 total
-Tests:       154 passed, 154 total
+Test Suites: 13 passed, 13 total
+Tests:       164 passed, 164 total
 ```
 
 ### Suites actuelles
@@ -27,10 +27,11 @@ Tests:       154 passed, 154 total
 | `__tests__/api.listings.test.js` | 18 | POST/PATCH annonces : auth, ISBN requis, état requis, transaction requise |
 | `__tests__/api.listings.status.test.js` | 7 | PATCH statut annonce : 401, 400, 404, 403, 200 |
 | `__tests__/api.invite.test.js` | 6 | GET/POST parrainage : code, 404 parrain introuvable, 400 auto-parrainage |
-| `__tests__/api.conversations.test.js` | 7 | POST conversation : auth, 400 auto-contact, conv existante, nouvelle conv (par `tutor_id` + `context_type`) |
+| `__tests__/api.conversations.test.js` | 8 | POST conversation (manuel) : auth, 400 auto-contact, 403 téléphone non vérifié, conv existante, nouvelle conv |
 | `__tests__/api.check-phone.test.js` | 7 | Vérification SMS du numéro de téléphone |
 | `__tests__/api.roommates.test.js` | 25 | GET liste/filtres, POST publication, PATCH statut (JSON) + édition complète (multipart, photos), DELETE — auth, validation, 403/500 |
-| `__tests__/api.roommates.contact.test.js` | 7 | POST contact coloc : auth, 400 auto-contact, conv existante (par `roommate_listing_id`), nouvelle conv |
+| `__tests__/api.roommates.contact.test.js` | 8 | POST contact coloc : auth, 400 auto-contact, 403 téléphone non vérifié, conv existante (par `roommate_listing_id`), nouvelle conv |
+| `__tests__/api.tutors.contact.test.js` | 8 | POST contact tuteur : auth, 400 auto-contact, 403 téléphone non vérifié, conv existante (par `tutor_id`), nouvelle conv |
 | `__tests__/api.seller.test.js` | 4 | GET profil vendeur : 400 sans id, 404 introuvable, calcul `avgRating`/`reviewCount` à partir de `seller_reviews` |
 | `__tests__/api.book-alerts.test.js` | 4 | POST alerte manuel : courriel/ISBN invalides, upsert valide, erreur 500 |
 | `__tests__/api.newsletter-unsubscribe.test.js` | 4 | GET désabonnement infolettre : token manquant/invalide/valide, erreur 500 |

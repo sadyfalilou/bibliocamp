@@ -1442,7 +1442,7 @@ function HomeContent() {
 
           {/* ===== VUE COLOCS ===== */}
           {view === 'colocs' && (
-            <RoommatesView user={user} setView={setView} initialSearch={roommateSearchQuery} />
+            <RoommatesView user={user} setView={setView} initialSearch={roommateSearchQuery} phoneSaved={phoneSaved} setVerifyRedirect={setVerifyRedirect} />
           )}
 
           {/* ===== VUE PUBLIER COLOC ===== */}
@@ -1959,6 +1959,8 @@ function HomeContent() {
           onClose={() => setSelectedTutorId(null)}
           router={router}
           setView={setView}
+          phoneSaved={phoneSaved}
+          setVerifyRedirect={setVerifyRedirect}
         />
       )}
 
