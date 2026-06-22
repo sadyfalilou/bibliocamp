@@ -61,7 +61,7 @@ function StarPicker({ value, onChange }) {
 
 const RATING_LABELS = { 1: 'Très décevant', 2: 'Décevant', 3: 'Correct', 4: 'Bien', 5: 'Excellent !' }
 
-export default function TutorDetailPanel({ tutorId, currentUser, onClose, router, setView }) {
+export default function TutorDetailPanel({ tutorId, currentUser, onClose, router, setView, phoneSaved, setVerifyRedirect }) {
   const [tutor, setTutor]         = useState(null)
   const [reviews, setReviews]     = useState([])
   const [loading, setLoading]     = useState(true)
@@ -118,25 +118,26 @@ export default function TutorDetailPanel({ tutorId, currentUser, onClose, router
   const handleContact = async () => {
     if (!currentUser) { router.push('/login'); return }
     if (isOwn) return
+    if (!phoneSaved) {
+      setVerifyRedirect('/inbox')
+      onClose()
+      setView('vendre')
+      return
+    }
     setContacting(true)
     try {
-      // Cherche une conversation tuteur existante (filtrée par tutor_id, pas seulement la paire d'users —
-      // les deux users peuvent aussi avoir une conversation manuel séparée).
-      const { data: existing } = await supabase
-        .from('conversations').select('id')
-        .eq('tutor_id', tutor.id)
-        .or(`user1_id.eq.${currentUser.id},user2_id.eq.${currentUser.id}`)
-        .maybeSingle()
-
-      let convId = existing?.id
-      if (!convId) {
-        const { data: newConv } = await supabase
-          .from('conversations')
-          .insert({ user1_id: currentUser.id, user2_id: tutor.user_id, context_type: 'tuteur', tutor_id: tutor.id })
-          .select('id').single()
-        convId = newConv?.id
-      }
-      router.push(`/inbox?conv=${convId}`)
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/tutors/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({ tutor_id: tutor.id, owner_id: tutor.user_id })
+      })
+      const json = await res.json()
+      if (!res.ok) { setContacting(false); return }
+      router.push(`/inbox?conv=${json.conversation_id}`)
     } catch { setContacting(false) }
   }
 

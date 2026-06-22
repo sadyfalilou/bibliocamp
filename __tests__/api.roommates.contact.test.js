@@ -3,6 +3,7 @@ import { POST } from '../app/api/roommates/contact/route'
 const mockGetUser = jest.fn()
 const mockMaybeSingle = jest.fn()
 const mockInsert = jest.fn()
+const mockSingle = jest.fn()
 
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
@@ -12,6 +13,7 @@ jest.mock('@supabase/supabase-js', () => ({
         eq: jest.fn().mockReturnThis(),
         or: jest.fn().mockReturnThis(),
         maybeSingle: mockMaybeSingle,
+        single: mockSingle,
       })),
       insert: jest.fn(() => ({
         select: jest.fn(() => ({ single: mockInsert })),
@@ -32,6 +34,7 @@ describe('POST /api/roommates/contact', () => {
     mockGetUser.mockResolvedValue({ data: { user: { id: 'tenant-123' } } })
     mockMaybeSingle.mockResolvedValue({ data: null, error: null }) // pas de conv existante
     mockInsert.mockResolvedValue({ data: { id: 77 }, error: null })
+    mockSingle.mockResolvedValue({ data: { phone_verified: true }, error: null })
   })
 
   test('sans auth → 401', async () => {
@@ -57,6 +60,13 @@ describe('POST /api/roommates/contact', () => {
     const req = makeRequest({ roommate_listing_id: 1, owner_id: 'owner-1' })
     const res = await POST(req)
     expect(res.status).toBe(400)
+  })
+
+  test('téléphone non vérifié → 403', async () => {
+    mockSingle.mockResolvedValue({ data: { phone_verified: false }, error: null })
+    const req = makeRequest({ roommate_listing_id: 1, owner_id: 'owner-1' })
+    const res = await POST(req)
+    expect(res.status).toBe(403)
   })
 
   test('conversation existante → retourne id existant', async () => {

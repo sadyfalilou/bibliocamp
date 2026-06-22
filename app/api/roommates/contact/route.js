@@ -28,6 +28,15 @@ export async function POST(request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
+  const { data: requesterProfile } = await supabase
+    .from('profiles')
+    .select('phone_verified')
+    .eq('id', user.id)
+    .single()
+  if (!requesterProfile?.phone_verified) {
+    return NextResponse.json({ error: 'Numéro de téléphone non vérifié' }, { status: 403 })
+  }
+
   const { data: existing } = await supabase
     .from('conversations')
     .select('id')

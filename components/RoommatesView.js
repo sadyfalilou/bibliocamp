@@ -19,7 +19,7 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
 }
 
-export default function RoommatesView({ user, setView, initialSearch }) {
+export default function RoommatesView({ user, setView, initialSearch, phoneSaved, setVerifyRedirect }) {
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [city, setCity] = useState(initialSearch || '')
@@ -51,6 +51,12 @@ export default function RoommatesView({ user, setView, initialSearch }) {
 
   const handleContact = async (listing) => {
     if (!user) return
+    if (!phoneSaved) {
+      setVerifyRedirect('/inbox')
+      setSelected(null)
+      setView('vendre')
+      return
+    }
     const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch('/api/roommates/contact', {
       method: 'POST',
