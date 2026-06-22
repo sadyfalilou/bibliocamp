@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useRouter } from 'next/navigation'
+import { GrowthLineChart, DomainsBarChart, RateDonutChart } from '../../../components/admin/StatsCharts'
 
 function Stat({ label, value, sub, color = '#1a2e4a', icon, highlight }) {
   return (
@@ -90,9 +91,6 @@ export default function AdminStatsPage() {
   )
 
   const { users, listings, messages, referrals, community, growth, growth_monthly, tutors, roommates } = data
-  const maxGrowthUsers    = Math.max(...growth.map(g => g.new_users), 1)
-  const maxGrowthListings = Math.max(...growth.map(g => g.new_listings), 1)
-  const maxGrowthConv     = Math.max(...growth.map(g => g.new_conv), 1)
   const maxMonthUsers    = Math.max(...(growth_monthly || []).map(g => g.new_users), 1)
   const maxMonthListings = Math.max(...(growth_monthly || []).map(g => g.new_listings), 1)
   const maxMonthConv     = Math.max(...(growth_monthly || []).map(g => g.new_conv), 1)
@@ -138,26 +136,9 @@ export default function AdminStatsPage() {
 
         {/* ── CROISSANCE ── */}
         <Section title="📈 Croissance (8 semaines)">
-          <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-            <Card style={{ flex: 1, minWidth: 260 }}>
-              <CardTitle>Nouveaux utilisateurs / semaine</CardTitle>
-              {growth.map((w, i) => (
-                <Bar key={i} label={i === growth.length - 1 ? '← Cette semaine' : `S-${growth.length - 1 - i}`} value={w.new_users} max={maxGrowthUsers} color="#00c9a7" />
-              ))}
-            </Card>
-            <Card style={{ flex: 1, minWidth: 260 }}>
-              <CardTitle>Nouvelles annonces / semaine</CardTitle>
-              {growth.map((w, i) => (
-                <Bar key={i} label={i === growth.length - 1 ? '← Cette semaine' : `S-${growth.length - 1 - i}`} value={w.new_listings} max={maxGrowthListings} color="#6c63ff" />
-              ))}
-            </Card>
-            <Card style={{ flex: 1, minWidth: 260 }}>
-              <CardTitle>Nouvelles conversations / semaine</CardTitle>
-              {growth.map((w, i) => (
-                <Bar key={i} label={i === growth.length - 1 ? '← Cette semaine' : `S-${growth.length - 1 - i}`} value={w.new_conv} max={maxGrowthConv} color="#f59e0b" />
-              ))}
-            </Card>
-          </div>
+          <Card>
+            <GrowthLineChart growth={growth} />
+          </Card>
         </Section>
 
         {/* ── CROISSANCE MENSUELLE ── */}
@@ -319,18 +300,14 @@ export default function AdminStatsPage() {
               {tutors.top_domains.length > 0 && (
                 <Card style={{ flex: 1, minWidth: 260 }}>
                   <CardTitle>Top domaines enseignés</CardTitle>
-                  {tutors.top_domains.map(d => (
-                    <Bar key={d.name} label={d.name} value={d.count} max={tutors.top_domains[0].count} color="#00c9a7" sub=" tuteurs" />
-                  ))}
+                  <DomainsBarChart domains={tutors.top_domains} />
                 </Card>
               )}
 
               {/* Fourchettes de tarifs */}
               <Card style={{ flex: 1, minWidth: 220 }}>
                 <CardTitle>Fourchettes de tarifs</CardTitle>
-                {Object.entries(tutors.rate_ranges).map(([range, count]) => (
-                  <Bar key={range} label={range} value={count} max={Math.max(...Object.values(tutors.rate_ranges), 1)} color="#6c63ff" />
-                ))}
+                <RateDonutChart rateRanges={tutors.rate_ranges} />
                 <div style={{ marginTop: 12, paddingTop: 12, borderTop: '1px solid #f1f5f9', display: 'flex', gap: 16 }}>
                   {[
                     { label: 'Min', val: `${tutors.min_rate} $/h`, color: '#16a34a' },
