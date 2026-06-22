@@ -20,6 +20,7 @@
 - ⭐ Avis/notation des vendeurs de manuels (page vendeur publique)
 - 📚 Catalogue maison de manuels (Coop UQAM, Chenelière) prioritaire avant les APIs externes
 - 🔔 Alerte courriel "manuel disponible" — un étudiant laisse son courriel sur une fiche manuel sans vendeur, et reçoit un email (Resend) dès qu'une annonce correspondante est publiée
+- 📊 Page admin stats — graphiques Chart.js (croissance hebdomadaire, top matières tuteurs, répartition des tarifs)
 
 ## 🛡️ Sécurité
 
