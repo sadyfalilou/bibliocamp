@@ -18,6 +18,7 @@ function LoginInner() {
   const [showPassword, setShowPassword] = useState(false)
   const [confirmPassword, setConfirmPassword] = useState('')
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const [newsletterOptIn, setNewsletterOptIn] = useState(false)
   const [errorMsg, setErrorMsg] = useState('')
   const [isMobile, setIsMobile] = useState(false)
 
@@ -100,7 +101,7 @@ function LoginInner() {
       setErrorMsg(friendlyError(error.message)); return
     }
     if (data?.user) {
-      await supabase.from('profiles').upsert({ id: data.user.id, first_name: firstName.trim(), last_name: lastName.trim() })
+      await supabase.from('profiles').upsert({ id: data.user.id, first_name: firstName.trim(), last_name: lastName.trim(), newsletter_opt_in: newsletterOptIn })
       // Enregistre le parrainage si un code ref est présent dans l'URL
       const refCode = searchParams.get('ref')
       if (refCode) {
@@ -387,6 +388,19 @@ function LoginInner() {
                     </p>
                   )}
                 </div>
+              )}
+
+              {/* INFOLETTRE — signup seulement */}
+              {mode === 'signup' && (
+                <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 20, fontSize: 13, color: '#4a5568', cursor: 'pointer', lineHeight: 1.5 }}>
+                  <input
+                    type="checkbox"
+                    checked={newsletterOptIn}
+                    onChange={e => setNewsletterOptIn(e.target.checked)}
+                    style={{ marginTop: 2, width: 16, height: 16, flexShrink: 0, accentColor: '#00c9a7' }}
+                  />
+                  Je veux recevoir l'infolettre BiblioCamp (rappels de rentrée, nouveautés — désabonnement en un clic).
+                </label>
               )}
 
               {/* BOUTON SUBMIT */}

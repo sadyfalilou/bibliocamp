@@ -4,5 +4,11 @@
       "develop": false,
       "feature/tutors": false
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/newsletter-rentree",
+      "schedule": "0 13 * * *"
+    }
+  ]
 }
