@@ -25,9 +25,8 @@ const NEEDS_LABELS = {
 const ACADEMIC_DOCS = [
   'Relevés de notes (et diplôme, ou attestation si encore en cours)',
   'Copie du certificat de naissance avec le nom des parents',
-  'Résultat à un test de français reconnu (si ton diplôme ne provient pas du Québec)',
+  "Preuve de maîtrise du français si exigée — sinon l'établissement peut convoquer à son propre test sur place",
   'Traduction certifiée des documents qui ne sont pas en français ou en anglais (consulat, ambassade ou traducteur agréé OTTIAQ)',
-  'CV à jour et lettre de motivation',
 ]
 
 const IMMIGRATION_DOCS = [

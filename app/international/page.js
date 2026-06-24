@@ -82,7 +82,7 @@ export default function InternationalPage() {
           ))}
         </div>
         <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 48px' }}>
-          Prix indicatifs en dollars canadiens (CAD), à confirmer avant tout paiement. Le paiement se fait par lien sécurisé envoyé après ta demande.
+          Prix indicatifs en dollars canadiens (CAD), à confirmer avant tout paiement. Tu choisis ta méthode de paiement parmi virement bancaire, Sendwave ou Western Union — les détails te sont envoyés après ta demande.
         </p>
 
         <p style={{ fontSize: 13, color: '#9ca3af', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 700 }}>
