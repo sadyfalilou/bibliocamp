@@ -5,7 +5,7 @@ et les lire, sans aide extérieure.
 
 ---
 
-## 1. Tests unitaires / API (Jest) — 164 tests, 13 suites
+## 1. Tests unitaires / API (Jest) — 178 tests, 16 suites
 
 Vérifient la logique isolée : routes API, validation, rate limiting.
 
@@ -15,8 +15,8 @@ npm test
 
 Résultat attendu :
 ```
-Test Suites: 13 passed, 13 total
-Tests:       164 passed, 164 total
+Test Suites: 16 passed, 16 total
+Tests:       178 passed, 178 total
 ```
 
 ### Suites actuelles
@@ -36,6 +36,9 @@ Tests:       164 passed, 164 total
 | `__tests__/api.book-alerts.test.js` | 4 | POST alerte manuel : courriel/ISBN invalides, upsert valide, erreur 500 |
 | `__tests__/api.newsletter-unsubscribe.test.js` | 4 | GET désabonnement infolettre : token manquant/invalide/valide, erreur 500 |
 | `__tests__/api.cron-newsletter.test.js` | 5 | Cron infolettre rentrée : secret invalide, hors date, déjà envoyée, envoi aux abonnés, aucun abonné |
+| `__tests__/api.international-diagnostics.test.js` | 6 | POST diagnostic international : auth, infos incomplètes, niveau requis, consentement requis, soumission valide, erreur 500 |
+| `__tests__/api.international-diagnostics-id.test.js` | 4 | GET diagnostic par id : auth, 404 introuvable, 403 si autre utilisateur, 200 si propriétaire |
+| `__tests__/api.admin.international.test.js` | 4 | GET liste admin des diagnostics : 403 sans auth/non-admin, 200 avec liste, erreur 500 |
 
 ### Règles de validation testées
 

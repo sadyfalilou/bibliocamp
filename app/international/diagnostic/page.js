@@ -1,0 +1,359 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { supabase } from '../../../lib/supabase'
+import Logo from '../../../components/Logo'
+
+const STORAGE_KEY = 'bibliocamp_international_diagnostic_draft'
+const TOTAL_STEPS = 7
+
+const NIVEAUX = ['Formation professionnelle', 'DEC', 'Certificat', 'Baccalauréat', 'Diplôme d\'études supérieures', 'Maîtrise', 'Doctorat', 'Autre']
+const NEEDS = [
+  { key: 'choix_programme', label: 'Choix d\'un programme' },
+  { key: 'choix_etablissement', label: 'Choix d\'un établissement' },
+  { key: 'preparation_admission', label: 'Préparation de l\'admission' },
+  { key: 'revision_cv', label: 'Révision du CV' },
+  { key: 'revision_lettre', label: 'Révision de la lettre de motivation' },
+  { key: 'preparation_documents', label: 'Préparation des documents' },
+  { key: 'logement', label: 'Logement' },
+  { key: 'mentor', label: 'Mentor étudiant' },
+  { key: 'preparation_depart', label: 'Préparation avant le départ' },
+  { key: 'transport_aeroport', label: 'Transport depuis l\'aéroport' },
+  { key: 'installation', label: 'Installation au Québec' },
+]
+
+const emptyForm = {
+  first_name: '', last_name: '', email: '', phone: '', country: '', preferred_language: 'Français', timezone: '',
+  last_diploma: '', current_level: '', diploma_country: '', field_of_study: '', academic_description: '',
+  target_level: '', target_field: '', target_cities: '', target_session: '',
+  french_level: '', english_level: '',
+  annual_budget: '', budget_currency: 'CAD',
+  needs: [],
+  consent_data_processing: false, consent_terms: false, consent_marketing: false,
+}
+
+export default function DiagnosticPage() {
+  const router = useRouter()
+  const [user, setUser] = useState(null)
+  const [checkingAuth, setCheckingAuth] = useState(true)
+  const [step, setStep] = useState(1)
+  const [form, setForm] = useState(emptyForm)
+  const [errors, setErrors] = useState({})
+  const [submitting, setSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState('')
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      if (!data?.user) {
+        router.push('/login?redirect=/international/diagnostic')
+        return
+      }
+      setUser(data.user)
+      setCheckingAuth(false)
+      const draft = localStorage.getItem(STORAGE_KEY)
+      if (draft) {
+        try {
+          const parsed = JSON.parse(draft)
+          setForm(prev => ({ ...prev, ...parsed }))
+          if (parsed.__step) setStep(parsed.__step)
+        } catch {}
+      } else if (data.user.email) {
+        setForm(prev => ({ ...prev, email: data.user.email }))
+      }
+    })
+  }, [router])
+
+  useEffect(() => {
+    if (checkingAuth) return
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...form, __step: step }))
+  }, [form, step, checkingAuth])
+
+  const set = (key, value) => setForm(prev => ({ ...prev, [key]: value }))
+
+  const toggleNeed = (key) => {
+    setForm(prev => ({
+      ...prev,
+      needs: prev.needs.includes(key) ? prev.needs.filter(n => n !== key) : [...prev.needs, key]
+    }))
+  }
+
+  const validateStep = () => {
+    const e = {}
+    if (step === 1) {
+      if (!form.first_name.trim()) e.first_name = 'Requis'
+      if (!form.last_name.trim()) e.last_name = 'Requis'
+      if (!/^\S+@\S+\.\S+$/.test(form.email)) e.email = 'Courriel invalide'
+      if (!form.country.trim()) e.country = 'Requis'
+      if (!form.preferred_language) e.preferred_language = 'Requis'
+      if (!form.timezone.trim()) e.timezone = 'Requis'
+    }
+    if (step === 3) {
+      if (!form.target_level) e.target_level = 'Requis'
+    }
+    if (step === 7) {
+      if (!form.consent_data_processing) e.consent_data_processing = 'Requis'
+      if (!form.consent_terms) e.consent_terms = 'Requis'
+    }
+    setErrors(e)
+    return Object.keys(e).length === 0
+  }
+
+  const next = () => {
+    if (!validateStep()) return
+    setStep(s => Math.min(s + 1, TOTAL_STEPS))
+  }
+  const prev = () => setStep(s => Math.max(s - 1, 1))
+
+  const handleSubmit = async () => {
+    if (!validateStep()) return
+    setSubmitting(true)
+    setSubmitError('')
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/international-diagnostics', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token}`
+        },
+        body: JSON.stringify({
+          ...form,
+          target_cities: form.target_cities.split(',').map(c => c.trim()).filter(Boolean),
+          annual_budget: form.annual_budget ? Number(form.annual_budget) : null,
+        })
+      })
+      const json = await res.json()
+      if (!res.ok) {
+        setSubmitError(json.error || 'Une erreur est survenue. Réessaie.')
+        setSubmitting(false)
+        return
+      }
+      localStorage.removeItem(STORAGE_KEY)
+      router.push(`/international/resultat/${json.id}`)
+    } catch {
+      setSubmitError('Erreur réseau. Réessaie.')
+      setSubmitting(false)
+    }
+  }
+
+  if (checkingAuth) return null
+
+  const progress = Math.round((step / TOTAL_STEPS) * 100)
+
+  return (
+    <div style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", background: '#f8fafc', minHeight: '100vh', padding: '32px 16px' }}>
+      <div style={{ maxWidth: 560, margin: '0 auto' }}>
+        <div style={{ marginBottom: 20 }}>
+          <Logo variant="dark" />
+        </div>
+
+        <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 16, padding: '30px 32px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+            <span style={{ fontSize: 12, fontWeight: 600, color: '#94a3b8' }}>Étape {step} sur {TOTAL_STEPS}</span>
+            <span style={{ fontSize: 12, color: '#94a3b8' }}>💾 Sauvegardé automatiquement</span>
+          </div>
+          <div style={{ height: 6, background: '#eef2f6', borderRadius: 6, overflow: 'hidden', marginBottom: 24 }}>
+            <div style={{ height: '100%', width: `${progress}%`, background: '#00c9a7', borderRadius: 6, transition: 'width 0.2s' }} />
+          </div>
+
+          {step === 1 && (
+            <Step title="Informations personnelles" subtitle="Pour qu'on sache à qui on s'adresse.">
+              <Row>
+                <Field label="Prénom *" error={errors.first_name}>
+                  <input value={form.first_name} onChange={e => set('first_name', e.target.value)} />
+                </Field>
+                <Field label="Nom *" error={errors.last_name}>
+                  <input value={form.last_name} onChange={e => set('last_name', e.target.value)} />
+                </Field>
+              </Row>
+              <Field label="Courriel *" error={errors.email}>
+                <input type="email" value={form.email} onChange={e => set('email', e.target.value)} />
+              </Field>
+              <Row>
+                <Field label="Téléphone (facultatif)">
+                  <input value={form.phone} onChange={e => set('phone', e.target.value)} />
+                </Field>
+                <Field label="Pays de résidence *" error={errors.country}>
+                  <input value={form.country} onChange={e => set('country', e.target.value)} />
+                </Field>
+              </Row>
+              <Row>
+                <Field label="Langue préférée *" error={errors.preferred_language}>
+                  <select value={form.preferred_language} onChange={e => set('preferred_language', e.target.value)}>
+                    <option value="Français">Français</option>
+                    <option value="English">English</option>
+                  </select>
+                </Field>
+                <Field label="Fuseau horaire *" error={errors.timezone}>
+                  <input placeholder="ex. GMT, GMT+1" value={form.timezone} onChange={e => set('timezone', e.target.value)} />
+                </Field>
+              </Row>
+            </Step>
+          )}
+
+          {step === 2 && (
+            <Step title="Parcours scolaire" subtitle="Ton dernier diplôme et où tu en es.">
+              <Row>
+                <Field label="Dernier diplôme obtenu">
+                  <input value={form.last_diploma} onChange={e => set('last_diploma', e.target.value)} />
+                </Field>
+                <Field label="Niveau scolaire actuel">
+                  <input value={form.current_level} onChange={e => set('current_level', e.target.value)} />
+                </Field>
+              </Row>
+              <Row>
+                <Field label="Pays d'obtention">
+                  <input value={form.diploma_country} onChange={e => set('diploma_country', e.target.value)} />
+                </Field>
+                <Field label="Domaine d'études">
+                  <input value={form.field_of_study} onChange={e => set('field_of_study', e.target.value)} />
+                </Field>
+              </Row>
+              <Field label="Décris ton parcours en quelques mots">
+                <textarea rows={3} value={form.academic_description} onChange={e => set('academic_description', e.target.value)} />
+              </Field>
+            </Step>
+          )}
+
+          {step === 3 && (
+            <Step title="Projet d'études" subtitle="Ce que tu souhaites étudier au Québec.">
+              <Field label="Niveau recherché *" error={errors.target_level}>
+                <select value={form.target_level} onChange={e => set('target_level', e.target.value)}>
+                  <option value="">Choisir…</option>
+                  {NIVEAUX.map(n => <option key={n} value={n}>{n}</option>)}
+                </select>
+              </Field>
+              <Field label="Domaine souhaité">
+                <input value={form.target_field} onChange={e => set('target_field', e.target.value)} />
+              </Field>
+              <Field label="Villes souhaitées (séparées par des virgules)">
+                <input placeholder="Montréal, Québec, Sherbrooke…" value={form.target_cities} onChange={e => set('target_cities', e.target.value)} />
+              </Field>
+              <Field label="Session de rentrée souhaitée">
+                <input placeholder="ex. Automne 2027" value={form.target_session} onChange={e => set('target_session', e.target.value)} />
+              </Field>
+            </Step>
+          )}
+
+          {step === 4 && (
+            <Step title="Langues" subtitle="Ton niveau en français et en anglais.">
+              <Row>
+                <Field label="Niveau de français">
+                  <select value={form.french_level} onChange={e => set('french_level', e.target.value)}>
+                    <option value="">Choisir…</option>
+                    <option>Débutant</option><option>Intermédiaire</option><option>Avancé</option><option>Langue maternelle</option>
+                  </select>
+                </Field>
+                <Field label="Niveau d'anglais">
+                  <select value={form.english_level} onChange={e => set('english_level', e.target.value)}>
+                    <option value="">Choisir…</option>
+                    <option>Débutant</option><option>Intermédiaire</option><option>Avancé</option><option>Langue maternelle</option>
+                  </select>
+                </Field>
+              </Row>
+            </Step>
+          )}
+
+          {step === 5 && (
+            <Step title="Budget" subtitle="Ça nous aide à proposer des options réalistes.">
+              <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 14px', lineHeight: 1.5 }}>Cette estimation ne constitue jamais une garantie financière.</p>
+              <Row>
+                <Field label="Budget annuel disponible">
+                  <input type="number" min="0" value={form.annual_budget} onChange={e => set('annual_budget', e.target.value)} />
+                </Field>
+                <Field label="Devise">
+                  <select value={form.budget_currency} onChange={e => set('budget_currency', e.target.value)}>
+                    <option value="CAD">CAD</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="XOF">XOF</option><option value="MAD">MAD</option>
+                  </select>
+                </Field>
+              </Row>
+            </Step>
+          )}
+
+          {step === 6 && (
+            <Step title="Besoins d'accompagnement" subtitle="Coche ce qui t'intéresse — rien n'est facturé à cette étape.">
+              <div style={{ display: 'grid', gap: 10 }}>
+                {NEEDS.map(n => (
+                  <label key={n.key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151', cursor: 'pointer' }}>
+                    <input type="checkbox" checked={form.needs.includes(n.key)} onChange={() => toggleNeed(n.key)} style={{ width: 16, height: 16, accentColor: '#00c9a7' }} />
+                    {n.label}
+                  </label>
+                ))}
+              </div>
+            </Step>
+          )}
+
+          {step === 7 && (
+            <Step title="Consentement" subtitle="Dernière étape avant d'envoyer ton diagnostic.">
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#374151', marginBottom: 14, lineHeight: 1.5 }}>
+                <input type="checkbox" checked={form.consent_data_processing} onChange={e => set('consent_data_processing', e.target.checked)} style={{ marginTop: 2, width: 16, height: 16, flexShrink: 0, accentColor: '#00c9a7' }} />
+                Je consens au traitement des renseignements fournis dans ce formulaire, conformément à la <a href="/confidentialite" target="_blank" style={{ color: '#1a2e4a' }}>politique de confidentialité</a>.
+              </label>
+              {errors.consent_data_processing && <ErrorText text={errors.consent_data_processing} />}
+
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#374151', marginBottom: 14, lineHeight: 1.5 }}>
+                <input type="checkbox" checked={form.consent_terms} onChange={e => set('consent_terms', e.target.checked)} style={{ marginTop: 2, width: 16, height: 16, flexShrink: 0, accentColor: '#00c9a7' }} />
+                J'accepte les <a href="/cgu" target="_blank" style={{ color: '#1a2e4a' }}>conditions d'utilisation</a>, je confirme que les informations fournies sont exactes, et je comprends que BiblioCamp ne garantit aucune admission et ne fournit pas de conseils juridiques ou de conseils réglementés en immigration.
+              </label>
+              {errors.consent_terms && <ErrorText text={errors.consent_terms} />}
+
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#374151', marginBottom: 4, lineHeight: 1.5 }}>
+                <input type="checkbox" checked={form.consent_marketing} onChange={e => set('consent_marketing', e.target.checked)} style={{ marginTop: 2, width: 16, height: 16, flexShrink: 0, accentColor: '#00c9a7' }} />
+                Je veux recevoir des courriels au sujet de mon dossier et des nouveautés BiblioCamp (facultatif).
+              </label>
+
+              {submitError && <p style={{ color: '#b91c1c', fontSize: 13, marginTop: 16 }}>{submitError}</p>}
+            </Step>
+          )}
+
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid #e2e8f0', paddingTop: 18, marginTop: 24 }}>
+            <button onClick={prev} disabled={step === 1} style={{ background: 'transparent', color: step === 1 ? '#cbd5e1' : '#1a2e4a', border: '1px solid #e2e8f0', padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: step === 1 ? 'default' : 'pointer' }}>
+              ← Précédent
+            </button>
+            <button onClick={() => router.push('/international')} style={{ background: 'transparent', border: 'none', color: '#64748b', fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}>
+              Reprendre plus tard
+            </button>
+            {step < TOTAL_STEPS ? (
+              <button onClick={next} style={{ background: '#1a2e4a', color: 'white', border: 'none', padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>
+                Suivant →
+              </button>
+            ) : (
+              <button onClick={handleSubmit} disabled={submitting} style={{ background: submitting ? '#94a3b8' : '#00c9a7', color: '#073e35', border: 'none', padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 700, cursor: submitting ? 'default' : 'pointer' }}>
+                {submitting ? 'Envoi…' : 'Envoyer mon diagnostic'}
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function Step({ title, subtitle, children }) {
+  return (
+    <div>
+      <h2 style={{ fontSize: 17, fontWeight: 700, color: '#1a2e4a', margin: '0 0 4px' }}>{title}</h2>
+      <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 22px' }}>{subtitle}</p>
+      {children}
+    </div>
+  )
+}
+
+function Row({ children }) {
+  return <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14 }}>{children}</div>
+}
+
+function Field({ label, error, children }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <label style={{ fontSize: 12, fontWeight: 600, color: '#374151', display: 'block', marginBottom: 5 }}>{label}</label>
+      {children}
+      {error && <ErrorText text={error} />}
+    </div>
+  )
+}
+
+function ErrorText({ text }) {
+  return <p style={{ color: '#b91c1c', fontSize: 11, margin: '4px 0 0' }}>{text}</p>
+}
