@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase'
 import Logo from '../components/Logo'
 import Carousel from '../components/Carousel'
 import Footer from '../components/Footer'
+import { DiagnosticButton } from '../components/InternationalCta'
 import { BADGE_LABELS } from '../lib/tutorBadge'
 
 export default function Landing() {
@@ -110,7 +111,7 @@ export default function Landing() {
       <style>{`
         * { box-sizing: border-box; }
 
-        .nav-btn-text { display: inline; }
+        .nav-btn-text { display: none; }
         .nav-cta { display: flex; }
 
         .hero-title { font-size: 32px; }
@@ -133,6 +134,7 @@ export default function Landing() {
         }
 
         @media (min-width: 768px) {
+          .nav-btn-text { display: flex; }
           .nav-cta { display: flex; }
           .hero-title { font-size: 48px; }
           .hero-sub { font-size: 18px; }
@@ -158,7 +160,15 @@ export default function Landing() {
       }}>
         <Logo variant="dark" size="md" style={{ cursor: 'pointer' }} onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })} />
 
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
+          <span
+            onClick={() => router.push('/international')}
+            className="nav-btn-text"
+            style={{ alignItems: 'center', gap: 5, fontSize: 13, fontWeight: 600, color: '#1a2e4a', cursor: 'pointer', whiteSpace: 'nowrap' }}
+          >
+            🌍 Étudiants internationaux
+          </span>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
           <button onClick={() => router.push('/login')} style={{
             background: 'transparent', border: '1.5px solid #e8edf2',
             borderRadius: 8, padding: '8px 12px', fontSize: 13, fontWeight: 600,
@@ -179,6 +189,7 @@ export default function Landing() {
           >
             Rejoindre
           </button>
+          </div>
         </div>
       </nav>
 
@@ -590,6 +601,25 @@ export default function Landing() {
               {inst}
             </span>
           ))}
+        </div>
+      </section>
+
+      {/* ── INTERNATIONAL ── */}
+      <section style={{ maxWidth: 900, margin: '0 auto', padding: '0 20px 48px' }}>
+        <div style={{
+          background: 'white', borderRadius: 14, border: '1px solid #e8edf2',
+          padding: '24px 28px', display: 'flex', alignItems: 'center', gap: 20, flexWrap: 'wrap'
+        }}>
+          <div style={{ fontSize: 28, flexShrink: 0 }}>🌍</div>
+          <div style={{ flex: 1, minWidth: 200 }}>
+            <p style={{ fontWeight: 800, fontSize: 16, color: '#1a2e4a', margin: '0 0 4px' }}>
+              Tu arrives bientôt au Québec ?
+            </p>
+            <p style={{ fontSize: 13, color: '#64748b', margin: 0, lineHeight: 1.5 }}>
+              Diagnostic gratuit pour préparer ton admission et ton installation — programme, documents, logement, intégration.
+            </p>
+          </div>
+          <DiagnosticButton label="Faire mon diagnostic gratuit →" style={{ padding: '11px 20px', fontSize: 14, whiteSpace: 'nowrap' }} />
         </div>
       </section>
 
