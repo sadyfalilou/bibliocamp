@@ -13,11 +13,9 @@ const NEEDS = [
   { key: 'choix_programme', label: 'Choix d\'un programme' },
   { key: 'choix_etablissement', label: 'Choix d\'un établissement' },
   { key: 'preparation_admission', label: 'Préparation de l\'admission' },
-  { key: 'revision_cv', label: 'Révision du CV' },
   { key: 'revision_lettre', label: 'Révision de la lettre de motivation' },
   { key: 'preparation_documents', label: 'Préparation des documents' },
   { key: 'logement', label: 'Logement' },
-  { key: 'mentor', label: 'Mentor étudiant' },
   { key: 'preparation_depart', label: 'Préparation avant le départ' },
   { key: 'transport_aeroport', label: 'Transport depuis l\'aéroport' },
   { key: 'installation', label: 'Installation au Québec' },
@@ -31,6 +29,33 @@ const emptyForm = {
   annual_budget: '', budget_currency: 'CAD',
   needs: [],
   consent_data_processing: false, consent_terms: false, consent_marketing: false,
+}
+
+function fieldStyle(extra = {}) {
+  return {
+    width: '100%', padding: '12px 14px',
+    border: '1.5px solid #e8edf2', borderRadius: 10,
+    fontSize: 14, outline: 'none', boxSizing: 'border-box',
+    background: '#fafbfc', color: '#1a2e4a',
+    transition: 'border-color 0.2s, box-shadow 0.2s',
+    fontFamily: "'Segoe UI', sans-serif",
+    ...extra
+  }
+}
+
+const onFieldFocus = e => { e.target.style.borderColor = '#00c9a7'; e.target.style.boxShadow = '0 0 0 3px rgba(0,201,167,0.1)'; e.target.style.background = 'white' }
+const onFieldBlur = e => { e.target.style.borderColor = '#e8edf2'; e.target.style.boxShadow = 'none'; e.target.style.background = '#fafbfc' }
+
+function TextInput(props) {
+  return <input {...props} onFocus={onFieldFocus} onBlur={onFieldBlur} style={fieldStyle(props.style)} />
+}
+
+function Select({ children, ...props }) {
+  return <select {...props} onFocus={onFieldFocus} onBlur={onFieldBlur} style={fieldStyle({ cursor: 'pointer', ...props.style })}>{children}</select>
+}
+
+function TextArea(props) {
+  return <textarea {...props} onFocus={onFieldFocus} onBlur={onFieldBlur} style={fieldStyle({ resize: 'vertical', ...props.style })} />
 }
 
 export default function DiagnosticPage() {
@@ -51,15 +76,16 @@ export default function DiagnosticPage() {
       }
       setUser(data.user)
       setCheckingAuth(false)
+      const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
       const draft = localStorage.getItem(STORAGE_KEY)
       if (draft) {
         try {
           const parsed = JSON.parse(draft)
-          setForm(prev => ({ ...prev, ...parsed }))
+          setForm(prev => ({ ...prev, ...parsed, timezone: parsed.timezone || detectedTimezone }))
           if (parsed.__step) setStep(parsed.__step)
         } catch {}
-      } else if (data.user.email) {
-        setForm(prev => ({ ...prev, email: data.user.email }))
+      } else {
+        setForm(prev => ({ ...prev, email: data.user.email || '', timezone: detectedTimezone }))
       }
     })
   }, [router])
@@ -86,7 +112,6 @@ export default function DiagnosticPage() {
       if (!/^\S+@\S+\.\S+$/.test(form.email)) e.email = 'Courriel invalide'
       if (!form.country.trim()) e.country = 'Requis'
       if (!form.preferred_language) e.preferred_language = 'Requis'
-      if (!form.timezone.trim()) e.timezone = 'Requis'
     }
     if (step === 3) {
       if (!form.target_level) e.target_level = 'Requis'
@@ -161,34 +186,29 @@ export default function DiagnosticPage() {
             <Step title="Informations personnelles" subtitle="Pour qu'on sache à qui on s'adresse.">
               <Row>
                 <Field label="Prénom *" error={errors.first_name}>
-                  <input value={form.first_name} onChange={e => set('first_name', e.target.value)} />
+                  <TextInput value={form.first_name} onChange={e => set('first_name', e.target.value)} />
                 </Field>
                 <Field label="Nom *" error={errors.last_name}>
-                  <input value={form.last_name} onChange={e => set('last_name', e.target.value)} />
+                  <TextInput value={form.last_name} onChange={e => set('last_name', e.target.value)} />
                 </Field>
               </Row>
               <Field label="Courriel *" error={errors.email}>
-                <input type="email" value={form.email} onChange={e => set('email', e.target.value)} />
+                <TextInput type="email" value={form.email} onChange={e => set('email', e.target.value)} />
               </Field>
               <Row>
                 <Field label="Téléphone (facultatif)">
-                  <input value={form.phone} onChange={e => set('phone', e.target.value)} />
+                  <TextInput value={form.phone} onChange={e => set('phone', e.target.value)} />
                 </Field>
                 <Field label="Pays de résidence *" error={errors.country}>
-                  <input value={form.country} onChange={e => set('country', e.target.value)} />
+                  <TextInput value={form.country} onChange={e => set('country', e.target.value)} />
                 </Field>
               </Row>
-              <Row>
-                <Field label="Langue préférée *" error={errors.preferred_language}>
-                  <select value={form.preferred_language} onChange={e => set('preferred_language', e.target.value)}>
-                    <option value="Français">Français</option>
-                    <option value="English">English</option>
-                  </select>
-                </Field>
-                <Field label="Fuseau horaire *" error={errors.timezone}>
-                  <input placeholder="ex. GMT, GMT+1" value={form.timezone} onChange={e => set('timezone', e.target.value)} />
-                </Field>
-              </Row>
+              <Field label="Langue préférée *" error={errors.preferred_language}>
+                <Select value={form.preferred_language} onChange={e => set('preferred_language', e.target.value)}>
+                  <option value="Français">Français</option>
+                  <option value="English">English</option>
+                </Select>
+              </Field>
             </Step>
           )}
 
@@ -196,22 +216,22 @@ export default function DiagnosticPage() {
             <Step title="Parcours scolaire" subtitle="Ton dernier diplôme et où tu en es.">
               <Row>
                 <Field label="Dernier diplôme obtenu">
-                  <input value={form.last_diploma} onChange={e => set('last_diploma', e.target.value)} />
+                  <TextInput value={form.last_diploma} onChange={e => set('last_diploma', e.target.value)} />
                 </Field>
                 <Field label="Niveau scolaire actuel">
-                  <input value={form.current_level} onChange={e => set('current_level', e.target.value)} />
+                  <TextInput value={form.current_level} onChange={e => set('current_level', e.target.value)} />
                 </Field>
               </Row>
               <Row>
                 <Field label="Pays d'obtention">
-                  <input value={form.diploma_country} onChange={e => set('diploma_country', e.target.value)} />
+                  <TextInput value={form.diploma_country} onChange={e => set('diploma_country', e.target.value)} />
                 </Field>
                 <Field label="Domaine d'études">
-                  <input value={form.field_of_study} onChange={e => set('field_of_study', e.target.value)} />
+                  <TextInput value={form.field_of_study} onChange={e => set('field_of_study', e.target.value)} />
                 </Field>
               </Row>
               <Field label="Décris ton parcours en quelques mots">
-                <textarea rows={3} value={form.academic_description} onChange={e => set('academic_description', e.target.value)} />
+                <TextArea rows={3} value={form.academic_description} onChange={e => set('academic_description', e.target.value)} />
               </Field>
             </Step>
           )}
@@ -219,19 +239,19 @@ export default function DiagnosticPage() {
           {step === 3 && (
             <Step title="Projet d'études" subtitle="Ce que tu souhaites étudier au Québec.">
               <Field label="Niveau recherché *" error={errors.target_level}>
-                <select value={form.target_level} onChange={e => set('target_level', e.target.value)}>
+                <Select value={form.target_level} onChange={e => set('target_level', e.target.value)}>
                   <option value="">Choisir…</option>
                   {NIVEAUX.map(n => <option key={n} value={n}>{n}</option>)}
-                </select>
+                </Select>
               </Field>
               <Field label="Domaine souhaité">
-                <input value={form.target_field} onChange={e => set('target_field', e.target.value)} />
+                <TextInput value={form.target_field} onChange={e => set('target_field', e.target.value)} />
               </Field>
               <Field label="Villes souhaitées (séparées par des virgules)">
-                <input placeholder="Montréal, Québec, Sherbrooke…" value={form.target_cities} onChange={e => set('target_cities', e.target.value)} />
+                <TextInput placeholder="Montréal, Québec, Sherbrooke…" value={form.target_cities} onChange={e => set('target_cities', e.target.value)} />
               </Field>
               <Field label="Session de rentrée souhaitée">
-                <input placeholder="ex. Automne 2027" value={form.target_session} onChange={e => set('target_session', e.target.value)} />
+                <TextInput placeholder="ex. Automne 2027" value={form.target_session} onChange={e => set('target_session', e.target.value)} />
               </Field>
             </Step>
           )}
@@ -240,16 +260,16 @@ export default function DiagnosticPage() {
             <Step title="Langues" subtitle="Ton niveau en français et en anglais.">
               <Row>
                 <Field label="Niveau de français">
-                  <select value={form.french_level} onChange={e => set('french_level', e.target.value)}>
+                  <Select value={form.french_level} onChange={e => set('french_level', e.target.value)}>
                     <option value="">Choisir…</option>
                     <option>Débutant</option><option>Intermédiaire</option><option>Avancé</option><option>Langue maternelle</option>
-                  </select>
+                  </Select>
                 </Field>
                 <Field label="Niveau d'anglais">
-                  <select value={form.english_level} onChange={e => set('english_level', e.target.value)}>
+                  <Select value={form.english_level} onChange={e => set('english_level', e.target.value)}>
                     <option value="">Choisir…</option>
                     <option>Débutant</option><option>Intermédiaire</option><option>Avancé</option><option>Langue maternelle</option>
-                  </select>
+                  </Select>
                 </Field>
               </Row>
             </Step>
@@ -260,12 +280,12 @@ export default function DiagnosticPage() {
               <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 14px', lineHeight: 1.5 }}>Cette estimation ne constitue jamais une garantie financière.</p>
               <Row>
                 <Field label="Budget annuel disponible">
-                  <input type="number" min="0" value={form.annual_budget} onChange={e => set('annual_budget', e.target.value)} />
+                  <TextInput type="number" min="0" value={form.annual_budget} onChange={e => set('annual_budget', e.target.value)} />
                 </Field>
                 <Field label="Devise">
-                  <select value={form.budget_currency} onChange={e => set('budget_currency', e.target.value)}>
+                  <Select value={form.budget_currency} onChange={e => set('budget_currency', e.target.value)}>
                     <option value="CAD">CAD</option><option value="USD">USD</option><option value="EUR">EUR</option><option value="XOF">XOF</option><option value="MAD">MAD</option>
-                  </select>
+                  </Select>
                 </Field>
               </Row>
             </Step>
@@ -286,21 +306,21 @@ export default function DiagnosticPage() {
 
           {step === 7 && (
             <Step title="Consentement" subtitle="Dernière étape avant d'envoyer ton diagnostic.">
-              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#374151', marginBottom: 14, lineHeight: 1.5 }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#374151', marginBottom: 14, lineHeight: 1.5, cursor: 'pointer' }}>
                 <input type="checkbox" checked={form.consent_data_processing} onChange={e => set('consent_data_processing', e.target.checked)} style={{ marginTop: 2, width: 16, height: 16, flexShrink: 0, accentColor: '#00c9a7' }} />
-                Je consens au traitement des renseignements fournis dans ce formulaire, conformément à la <a href="/confidentialite" target="_blank" style={{ color: '#1a2e4a' }}>politique de confidentialité</a>.
+                <span>Je consens au traitement des renseignements fournis dans ce formulaire, conformément à la <a href="/confidentialite" target="_blank" style={{ color: '#1a2e4a' }}>politique de confidentialité</a>.</span>
               </label>
               {errors.consent_data_processing && <ErrorText text={errors.consent_data_processing} />}
 
-              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#374151', marginBottom: 14, lineHeight: 1.5 }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#374151', marginBottom: 14, lineHeight: 1.5, cursor: 'pointer' }}>
                 <input type="checkbox" checked={form.consent_terms} onChange={e => set('consent_terms', e.target.checked)} style={{ marginTop: 2, width: 16, height: 16, flexShrink: 0, accentColor: '#00c9a7' }} />
-                J'accepte les <a href="/cgu" target="_blank" style={{ color: '#1a2e4a' }}>conditions d'utilisation</a>, je confirme que les informations fournies sont exactes, et je comprends que BiblioCamp ne garantit aucune admission et ne fournit pas de conseils juridiques ou de conseils réglementés en immigration.
+                <span>J'accepte les <a href="/cgu" target="_blank" style={{ color: '#1a2e4a' }}>conditions d'utilisation</a>, je confirme que les informations fournies sont exactes, et je comprends que BiblioCamp ne garantit aucune admission et ne fournit pas de conseils juridiques ou de conseils réglementés en immigration.</span>
               </label>
               {errors.consent_terms && <ErrorText text={errors.consent_terms} />}
 
-              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#374151', marginBottom: 4, lineHeight: 1.5 }}>
+              <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 13, color: '#374151', marginBottom: 4, lineHeight: 1.5, cursor: 'pointer' }}>
                 <input type="checkbox" checked={form.consent_marketing} onChange={e => set('consent_marketing', e.target.checked)} style={{ marginTop: 2, width: 16, height: 16, flexShrink: 0, accentColor: '#00c9a7' }} />
-                Je veux recevoir des courriels au sujet de mon dossier et des nouveautés BiblioCamp (facultatif).
+                <span>Je veux recevoir des courriels au sujet de mon dossier et des nouveautés BiblioCamp (facultatif).</span>
               </label>
 
               {submitError && <p style={{ color: '#b91c1c', fontSize: 13, marginTop: 16 }}>{submitError}</p>}
