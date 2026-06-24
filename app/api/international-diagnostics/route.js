@@ -75,7 +75,7 @@ export async function POST(request) {
     sendEmail({
       to: email.trim(),
       subject: 'Ton diagnostic BiblioCamp International est reçu',
-      html: `<p>Salut ${first_name.trim()},</p><p>On a bien reçu ton diagnostic pour ton projet d'études au Québec. On l'analyse et on revient vers toi rapidement avec des recommandations.</p><p>Tu peux consulter ton résultat préliminaire dès maintenant dans ton espace BiblioCamp.</p>`,
+      html: `<p>Salut ${first_name.trim()},</p><p>On a bien reçu ton diagnostic pour ton projet d'études au Québec. On l'analyse et on revient vers toi rapidement avec des recommandations.</p><p>Tu peux consulter ton résultat préliminaire dès maintenant dans ton espace BiblioCamp. Si tu choisis un service payant, tu pourras choisir ta méthode de paiement (virement bancaire, Sendwave ou Western Union) — les détails te seront envoyés directement.</p>`,
     }),
     ...adminEmails.map(to => sendEmail({
       to,
