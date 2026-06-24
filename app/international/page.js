@@ -53,7 +53,16 @@ export default function InternationalPage() {
         <InternationalCta />
       </div>
 
-      <main style={{ maxWidth: 880, margin: '0 auto', padding: '56px 24px 24px' }} id="services">
+      <div style={{ maxWidth: 880, margin: '0 auto', padding: '24px 24px 0' }}>
+        <Link href="/international/mon-histoire" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 12, padding: '16px 20px', textDecoration: 'none' }}>
+          <span style={{ fontSize: 14, color: '#1a2e4a', fontWeight: 600 }}>
+            📖 Pourquoi j'ai créé ce programme — mon histoire en arrivant au Québec
+          </span>
+          <span style={{ fontSize: 13, color: '#0f6e56', fontWeight: 700, whiteSpace: 'nowrap' }}>Lire mon histoire →</span>
+        </Link>
+      </div>
+
+      <main style={{ maxWidth: 880, margin: '0 auto', padding: '32px 24px 24px' }} id="services">
         <p style={{ fontSize: 13, color: '#9ca3af', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 700 }}>
           Ton parcours, étape par étape
         </p>
