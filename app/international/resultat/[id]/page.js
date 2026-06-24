@@ -25,8 +25,9 @@ const NEEDS_LABELS = {
 const ACADEMIC_DOCS = [
   'Relevés de notes (et diplôme, ou attestation si encore en cours)',
   'Copie du certificat de naissance avec le nom des parents',
-  "Preuve de maîtrise du français si exigée — sinon l'établissement peut convoquer à son propre test sur place",
+  "Preuve de maîtrise du français si exigée (test reconnu ou parcours d'études reconnu) — les exigences exactes varient selon l'établissement",
   'Traduction certifiée des documents qui ne sont pas en français ou en anglais (consulat, ambassade ou traducteur agréé OTTIAQ)',
+  'Toujours des copies officielles ou certifiées conformes — une photo ou une capture d\'écran est refusée par la plupart des établissements',
 ]
 
 const IMMIGRATION_DOCS = [
