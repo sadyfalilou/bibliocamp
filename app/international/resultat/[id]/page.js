@@ -22,13 +22,18 @@ const NEEDS_LABELS = {
   installation: 'Installation au Québec',
 }
 
-const GENERIC_DOCS = [
-  'Relevés de notes',
-  'Copie des diplômes obtenus',
-  'CV à jour',
-  'Lettre de motivation',
-  'Résultats de tests linguistiques (si déjà passés)',
-  "Lettres de recommandation (selon l'établissement visé)",
+const ACADEMIC_DOCS = [
+  'Relevés de notes (et diplôme, ou attestation si encore en cours)',
+  'Copie du certificat de naissance avec le nom des parents',
+  'Résultat à un test de français reconnu (si ton diplôme ne provient pas du Québec)',
+  'Traduction certifiée des documents qui ne sont pas en français ou en anglais (consulat, ambassade ou traducteur agréé OTTIAQ)',
+  'CV à jour et lettre de motivation',
+]
+
+const IMMIGRATION_DOCS = [
+  "Permis d'études valide",
+  "Certificat d'acceptation du Québec (CAQ) valide",
+  'Passeport valide',
 ]
 
 function readinessLevel(d) {
@@ -100,11 +105,21 @@ export default function DiagnosticResultPage() {
         </div>
 
         <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 16, padding: '24px 32px', marginBottom: 20 }}>
-          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a2e4a', margin: '0 0 12px' }}>Documents habituellement à préparer</h2>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a2e4a', margin: '0 0 12px' }}>Documents scolaires habituellement à préparer</h2>
           <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: '#374151', lineHeight: 1.8 }}>
-            {GENERIC_DOCS.map(doc => <li key={doc}>{doc}</li>)}
+            {ACADEMIC_DOCS.map(doc => <li key={doc}>{doc}</li>)}
           </ul>
           <p style={{ fontSize: 11, color: '#94a3b8', margin: '12px 0 0' }}>Liste générale — les exigences varient selon l'établissement et le programme visés.</p>
+
+          <div style={{ borderTop: '1px solid #f1f5f9', marginTop: 18, paddingTop: 16 }}>
+            <h3 style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a', margin: '0 0 8px' }}>Documents d'immigration à avoir en main une fois au Québec</h3>
+            <ul style={{ margin: 0, paddingLeft: 20, fontSize: 13, color: '#374151', lineHeight: 1.8 }}>
+              {IMMIGRATION_DOCS.map(doc => <li key={doc}>{doc}</li>)}
+            </ul>
+            <p style={{ fontSize: 11, color: '#94a3b8', margin: '8px 0 0' }}>
+              Ces documents s'obtiennent uniquement auprès des autorités compétentes (IRCC, ministère de l'Immigration du Québec). BiblioCamp ne prépare pas ces demandes et ne fournit pas de conseils à leur sujet — consulte un conseiller en immigration agréé ou un avocat.
+            </p>
+          </div>
         </div>
 
         <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 16, padding: '24px 32px', marginBottom: 20 }}>
