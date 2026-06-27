@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import Footer from '../../../components/Footer'
+import Logo from '../../../components/Logo'
 import AuthAwareLoginButton from '../../../components/AuthAwareLoginButton'
 
 export const metadata = {
@@ -12,8 +13,8 @@ export default function MonHistoirePage() {
     <div style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", background: '#fff', color: '#222' }}>
 
       <header style={{ borderBottom: '1px solid #e5e7eb', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ fontWeight: 800, fontSize: 17, color: '#1a2e4a', textDecoration: 'none', letterSpacing: -0.3 }}>
-          📚 BIBLIOCAMP
+        <Link href="/" style={{ textDecoration: 'none' }}>
+          <Logo variant="dark" size="md" />
         </Link>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
           <Link href="/international" style={{ fontSize: 13, color: '#6b7280', textDecoration: 'none' }}>International</Link>
