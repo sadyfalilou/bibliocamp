@@ -9,17 +9,10 @@ import Footer from '../../../../components/Footer'
 const CALENDLY_URL = 'https://calendly.com/sadyfalilou1988/consultation-diagnostic-international'
 
 const NEEDS_LABELS = {
-  choix_programme: "Choix d'un programme",
-  choix_etablissement: "Choix d'un établissement",
-  preparation_admission: "Préparation de l'admission",
-  revision_cv: 'Révision du CV',
-  revision_lettre: 'Révision de la lettre de motivation',
-  preparation_documents: 'Préparation des documents',
-  logement: 'Logement',
-  mentor: 'Mentor étudiant',
-  preparation_depart: 'Préparation avant le départ',
-  transport_aeroport: "Transport depuis l'aéroport",
-  installation: 'Installation au Québec',
+  selection_programmes: 'Sélection de programmes',
+  accompagnement_admission: 'Accompagnement admission essentiel',
+  preparation_arrivee: "Préparation à l'arrivée",
+  service_complet: 'Service complet',
 }
 
 const ACADEMIC_DOCS = [

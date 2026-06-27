@@ -16,21 +16,23 @@ const FORFAIT_PRICES = {
   'Sélection de programmes': '99',
   'Accompagnement admission essentiel': '149',
   'Préparation à l\'arrivée': '99',
-  'Mentorat (consultation)': '',
+  'Service complet': '449',
 }
 const FORFAITS = Object.keys(FORFAIT_PRICES)
 const PAYMENT_METHODS = ['Sendwave', 'Virement bancaire', 'Western Union']
 
-const ADMISSION_NEEDS = ['preparation_admission', 'revision_lettre', 'preparation_documents']
-const SELECTION_NEEDS = ['choix_programme', 'choix_etablissement']
-const ARRIVAL_NEEDS = ['logement', 'preparation_depart', 'transport_aeroport', 'installation']
+const NEED_TO_FORFAIT = {
+  service_complet: 'Service complet',
+  accompagnement_admission: 'Accompagnement admission essentiel',
+  preparation_arrivee: 'Préparation à l\'arrivée',
+  selection_programmes: 'Sélection de programmes',
+}
+const FORFAIT_PRIORITY = ['service_complet', 'accompagnement_admission', 'preparation_arrivee', 'selection_programmes']
 
 function suggestedForfait(needs) {
   if (!needs || needs.length === 0) return 'Diagnostic personnalisé'
-  if (needs.some(n => ADMISSION_NEEDS.includes(n))) return 'Accompagnement admission essentiel'
-  if (needs.some(n => SELECTION_NEEDS.includes(n))) return 'Sélection de programmes'
-  if (needs.some(n => ARRIVAL_NEEDS.includes(n))) return 'Préparation à l\'arrivée'
-  return 'Diagnostic personnalisé'
+  const top = FORFAIT_PRIORITY.find(key => needs.includes(key))
+  return top ? NEED_TO_FORFAIT[top] : 'Diagnostic personnalisé'
 }
 
 const inputStyle = { border: '1px solid #e2e8f0', borderRadius: 7, padding: '6px 8px', fontSize: 12, color: '#1a2e4a', background: 'white', width: '100%' }

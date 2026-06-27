@@ -9,33 +9,33 @@ const STORAGE_KEY = 'bibliocamp_international_diagnostic_draft'
 const TOTAL_STEPS = 7
 
 const NIVEAUX = ['Formation professionnelle', 'DEC', 'Certificat', 'Baccalauréat', 'Diplôme d\'études supérieures', 'Maîtrise', 'Doctorat', 'Autre']
-const NEEDS_GROUPS = [
+
+const NEEDS = [
   {
-    title: 'Sélection de programmes',
-    items: [
-      { key: 'choix_programme', label: 'Choix d\'un programme' },
-      { key: 'choix_etablissement', label: 'Choix d\'un établissement' },
-    ],
+    key: 'selection_programmes',
+    label: 'Sélection de programmes',
+    prix: '99 $',
+    desc: 'Diagnostic + 3 programmes potentiels comparés, conditions d\'admission, dates importantes.',
   },
   {
-    title: 'Accompagnement admission essentiel',
-    items: [
-      { key: 'preparation_admission', label: 'Préparation de l\'admission' },
-      { key: 'revision_lettre', label: 'Révision de la lettre de motivation' },
-      { key: 'preparation_documents', label: 'Préparation des documents' },
-    ],
+    key: 'accompagnement_admission',
+    label: 'Accompagnement admission essentiel',
+    prix: '149 $',
+    desc: 'Checklist personnalisée, organisation des documents, révision du CV et de la lettre, une rencontre vidéo.',
   },
   {
-    title: 'Préparation à l\'arrivée',
-    items: [
-      { key: 'logement', label: 'Logement' },
-      { key: 'preparation_depart', label: 'Préparation avant le départ' },
-      { key: 'transport_aeroport', label: 'Transport depuis l\'aéroport' },
-      { key: 'installation', label: 'Installation au Québec' },
-    ],
+    key: 'preparation_arrivee',
+    label: 'Préparation à l\'arrivée',
+    prix: '99 $',
+    desc: 'Checklist avant le départ, budget d\'installation, logement, téléphone, séance d\'orientation.',
+  },
+  {
+    key: 'service_complet',
+    label: 'Service complet',
+    prix: '449 $',
+    desc: 'Admission, conseils personnalisés, accueil à l\'aéroport, recherche de logement, installation complète au Québec.',
   },
 ]
-const NEEDS = NEEDS_GROUPS.flatMap(g => g.items)
 
 const emptyForm = {
   first_name: '', last_name: '', email: '', phone: '', country: '', preferred_language: 'Français', timezone: '',
@@ -79,6 +79,7 @@ export default function DiagnosticPage() {
   const [user, setUser] = useState(null)
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [step, setStep] = useState(1)
+  const [openInfo, setOpenInfo] = useState(null)
   const [form, setForm] = useState(emptyForm)
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
@@ -308,21 +309,29 @@ export default function DiagnosticPage() {
           )}
 
           {step === 6 && (
-            <Step title="Besoins d'accompagnement" subtitle="Coche ce qui t'intéresse — rien n'est facturé à cette étape. Ça nous aide à te proposer le bon forfait.">
-              <div style={{ display: 'grid', gap: 20 }}>
-                {NEEDS_GROUPS.map(group => (
-                  <div key={group.title}>
-                    <p style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.4, margin: '0 0 10px' }}>
-                      {group.title}
-                    </p>
-                    <div style={{ display: 'grid', gap: 10 }}>
-                      {group.items.map(n => (
-                        <label key={n.key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151', cursor: 'pointer' }}>
-                          <input type="checkbox" checked={form.needs.includes(n.key)} onChange={() => toggleNeed(n.key)} style={{ width: 16, height: 16, accentColor: '#00c9a7' }} />
-                          {n.label}
-                        </label>
-                      ))}
-                    </div>
+            <Step title="Besoins d'accompagnement" subtitle="Coche ce qui t'intéresse — rien n'est facturé à cette étape. Touche le « i » pour voir le détail de chaque service.">
+              <div style={{ display: 'grid', gap: 0 }}>
+                {NEEDS.map((n, i) => (
+                  <div key={n.key} style={{ padding: '10px 0', borderBottom: i < NEEDS.length - 1 ? '1px solid #f1f5f9' : 'none' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151', cursor: 'pointer' }}>
+                      <input type="checkbox" checked={form.needs.includes(n.key)} onChange={() => toggleNeed(n.key)} style={{ width: 16, height: 16, flexShrink: 0, accentColor: '#00c9a7' }} />
+                      <span style={{ flex: 1, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 8 }}>
+                        <span><b>{n.label}</b> — {n.prix}</span>
+                        <span
+                          onClick={e => { e.preventDefault(); setOpenInfo(o => o === n.key ? null : n.key) }}
+                          style={{
+                            display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 16, height: 16,
+                            borderRadius: '50%', border: '1px solid #94a3b8', color: '#94a3b8', fontSize: 10,
+                            fontStyle: 'italic', fontWeight: 700, cursor: 'pointer', flexShrink: 0
+                          }}
+                        >i</span>
+                      </span>
+                    </label>
+                    {openInfo === n.key && (
+                      <p style={{ fontSize: 12, color: '#64748b', margin: '8px 0 0 24px', lineHeight: 1.5, background: '#f8fafc', borderRadius: 6, padding: '8px 10px' }}>
+                        {n.desc}
+                      </p>
+                    )}
                   </div>
                 ))}
               </div>

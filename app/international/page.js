@@ -51,7 +51,7 @@ const FORFAITS = [
   { nom: 'Sélection de programmes', prix: '99 $', desc: 'Diagnostic + 3 programmes potentiels comparés, conditions d\'admission, dates importantes.' },
   { nom: "Accompagnement admission essentiel", prix: '149 $', desc: 'Checklist personnalisée, organisation des documents, révision du CV et de la lettre, une rencontre vidéo.' },
   { nom: 'Préparation à l\'arrivée', prix: '99 $', desc: 'Checklist avant le départ, budget d\'installation, logement, téléphone, séance d\'orientation.' },
-  { nom: 'Mentorat (consultation)', prix: 'Sur réservation', desc: 'Une consultation avec un ancien étudiant international, par visioconférence.' },
+  { nom: 'Service complet', prix: '449 $', desc: 'Admission, conseils personnalisés, accueil à l\'aéroport, recherche de logement, installation complète au Québec.', highlight: true },
 ]
 
 const sectionLabelStyle = { fontSize: 13, color: '#9ca3af', margin: '0 0 8px', textTransform: 'uppercase', letterSpacing: 0.5, fontWeight: 700 }
@@ -156,12 +156,21 @@ export default function InternationalPage() {
         <p style={sectionLabelStyle} id="forfaits">Forfaits et tarification</p>
         <div style={{ display: 'grid', gap: 14, marginBottom: 16 }}>
           {FORFAITS.map(f => (
-            <div key={f.nom} style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap' }}>
+            <div key={f.nom} style={{
+              background: f.highlight ? '#f0fdf9' : '#fff',
+              border: f.highlight ? '2px solid #00c9a7' : '1px solid #e2e8f0',
+              borderRadius: 14, padding: '18px 20px', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 16, flexWrap: 'wrap'
+            }}>
               <div style={{ maxWidth: 560 }}>
+                {f.highlight && (
+                  <span style={{ display: 'inline-block', background: '#00c9a7', color: '#073e35', fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 20, marginBottom: 6 }}>
+                    LE PLUS COMPLET
+                  </span>
+                )}
                 <p style={{ fontSize: 15, fontWeight: 700, color: '#1a2e4a', margin: '0 0 4px' }}>{f.nom}</p>
                 <p style={{ fontSize: 13, color: '#64748b', margin: 0, lineHeight: 1.5 }}>{f.desc}</p>
               </div>
-              <p style={{ fontSize: 17, fontWeight: 800, color: '#0f6e56', margin: 0, whiteSpace: 'nowrap' }}>{f.prix}</p>
+              <p style={{ fontSize: f.highlight ? 19 : 17, fontWeight: 800, color: '#0f6e56', margin: 0, whiteSpace: 'nowrap' }}>{f.prix}</p>
             </div>
           ))}
         </div>
