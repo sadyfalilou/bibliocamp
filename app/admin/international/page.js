@@ -11,13 +11,26 @@ const STATUS_LABELS = {
   termine: 'Terminé',
 }
 
-const FORFAITS = ['Diagnostic seul (gratuit)', 'Accompagnement complet', 'Préparation des documents']
+const FORFAIT_PRICES = {
+  'Diagnostic personnalisé': '39',
+  'Sélection de programmes': '99',
+  'Accompagnement admission essentiel': '149',
+  'Préparation à l\'arrivée': '99',
+  'Mentorat (consultation)': '',
+}
+const FORFAITS = Object.keys(FORFAIT_PRICES)
 const PAYMENT_METHODS = ['Sendwave', 'Virement bancaire', 'Western Union']
 
+const ADMISSION_NEEDS = ['preparation_admission', 'revision_lettre', 'preparation_documents']
+const SELECTION_NEEDS = ['choix_programme', 'choix_etablissement']
+const ARRIVAL_NEEDS = ['logement', 'preparation_depart', 'transport_aeroport', 'installation']
+
 function suggestedForfait(needs) {
-  if (!needs || needs.length === 0) return 'Diagnostic seul (gratuit)'
-  if (needs.length === 1 && needs[0] === 'preparation_documents') return 'Préparation des documents'
-  return 'Accompagnement complet'
+  if (!needs || needs.length === 0) return 'Diagnostic personnalisé'
+  if (needs.some(n => ADMISSION_NEEDS.includes(n))) return 'Accompagnement admission essentiel'
+  if (needs.some(n => SELECTION_NEEDS.includes(n))) return 'Sélection de programmes'
+  if (needs.some(n => ARRIVAL_NEEDS.includes(n))) return 'Préparation à l\'arrivée'
+  return 'Diagnostic personnalisé'
 }
 
 const inputStyle = { border: '1px solid #e2e8f0', borderRadius: 7, padding: '6px 8px', fontSize: 12, color: '#1a2e4a', background: 'white', width: '100%' }
@@ -43,12 +56,15 @@ export default function AdminInternationalPage() {
         return
       }
       setDiagnostics(json.diagnostics || [])
-      setPaymentDrafts(Object.fromEntries((json.diagnostics || []).map(d => [d.id, {
-        forfait: d.forfait || suggestedForfait(d.needs),
-        prix: d.prix ?? '',
-        payment_method: d.payment_method || '',
-        payment_status: d.payment_status || 'non_paye',
-      }])))
+      setPaymentDrafts(Object.fromEntries((json.diagnostics || []).map(d => {
+        const forfait = d.forfait || suggestedForfait(d.needs)
+        return [d.id, {
+          forfait,
+          prix: d.prix ?? FORFAIT_PRICES[forfait] ?? '',
+          payment_method: d.payment_method || '',
+          payment_status: d.payment_status || 'non_paye',
+        }]
+      })))
       setLoading(false)
     }
     load()
@@ -69,7 +85,11 @@ export default function AdminInternationalPage() {
   }
 
   const handleDraftChange = (id, field, value) => {
-    setPaymentDrafts(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }))
+    setPaymentDrafts(prev => {
+      const next = { ...prev[id], [field]: value }
+      if (field === 'forfait' && FORFAIT_PRICES[value]) next.prix = FORFAIT_PRICES[value]
+      return { ...prev, [id]: next }
+    })
   }
 
   const handleSavePayment = async (id) => {

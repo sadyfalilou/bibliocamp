@@ -9,17 +9,28 @@ const STORAGE_KEY = 'bibliocamp_international_diagnostic_draft'
 const TOTAL_STEPS = 7
 
 const NIVEAUX = ['Formation professionnelle', 'DEC', 'Certificat', 'Baccalauréat', 'Diplôme d\'études supérieures', 'Maîtrise', 'Doctorat', 'Autre']
-const NEEDS = [
-  { key: 'choix_programme', label: 'Choix d\'un programme' },
-  { key: 'choix_etablissement', label: 'Choix d\'un établissement' },
-  { key: 'preparation_admission', label: 'Préparation de l\'admission' },
-  { key: 'revision_lettre', label: 'Révision de la lettre de motivation' },
-  { key: 'preparation_documents', label: 'Préparation des documents' },
-  { key: 'logement', label: 'Logement' },
-  { key: 'preparation_depart', label: 'Préparation avant le départ' },
-  { key: 'transport_aeroport', label: 'Transport depuis l\'aéroport' },
-  { key: 'installation', label: 'Installation au Québec' },
+const NEEDS_GROUPS = [
+  {
+    title: 'Choix et admission',
+    items: [
+      { key: 'choix_programme', label: 'Choix d\'un programme' },
+      { key: 'choix_etablissement', label: 'Choix d\'un établissement' },
+      { key: 'preparation_admission', label: 'Préparation de l\'admission' },
+      { key: 'revision_lettre', label: 'Révision de la lettre de motivation' },
+      { key: 'preparation_documents', label: 'Préparation des documents' },
+    ],
+  },
+  {
+    title: 'Préparation à l\'arrivée',
+    items: [
+      { key: 'logement', label: 'Logement' },
+      { key: 'preparation_depart', label: 'Préparation avant le départ' },
+      { key: 'transport_aeroport', label: 'Transport depuis l\'aéroport' },
+      { key: 'installation', label: 'Installation au Québec' },
+    ],
+  },
 ]
+const NEEDS = NEEDS_GROUPS.flatMap(g => g.items)
 
 const emptyForm = {
   first_name: '', last_name: '', email: '', phone: '', country: '', preferred_language: 'Français', timezone: '',
@@ -292,13 +303,22 @@ export default function DiagnosticPage() {
           )}
 
           {step === 6 && (
-            <Step title="Besoins d'accompagnement" subtitle="Coche ce qui t'intéresse — rien n'est facturé à cette étape.">
-              <div style={{ display: 'grid', gap: 10 }}>
-                {NEEDS.map(n => (
-                  <label key={n.key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151', cursor: 'pointer' }}>
-                    <input type="checkbox" checked={form.needs.includes(n.key)} onChange={() => toggleNeed(n.key)} style={{ width: 16, height: 16, accentColor: '#00c9a7' }} />
-                    {n.label}
-                  </label>
+            <Step title="Besoins d'accompagnement" subtitle="Coche ce qui t'intéresse — rien n'est facturé à cette étape. Ça nous aide à te proposer le bon forfait.">
+              <div style={{ display: 'grid', gap: 20 }}>
+                {NEEDS_GROUPS.map(group => (
+                  <div key={group.title}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.4, margin: '0 0 10px' }}>
+                      {group.title}
+                    </p>
+                    <div style={{ display: 'grid', gap: 10 }}>
+                      {group.items.map(n => (
+                        <label key={n.key} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#374151', cursor: 'pointer' }}>
+                          <input type="checkbox" checked={form.needs.includes(n.key)} onChange={() => toggleNeed(n.key)} style={{ width: 16, height: 16, accentColor: '#00c9a7' }} />
+                          {n.label}
+                        </label>
+                      ))}
+                    </div>
+                  </div>
                 ))}
               </div>
             </Step>
