@@ -17,7 +17,6 @@ const SERVICES = [
   { icon: '🎓', title: 'Trouver un programme', desc: 'Cégep, université, comparatif', action: 'diagnostic' },
   { icon: '📄', title: "Préparer ton dossier d'admission", desc: 'Checklist, documents, suivi', action: 'diagnostic' },
   { icon: '✈️', title: 'Organiser ton arrivée', desc: 'Logement, banque, hiver, accueil à l\'aéroport', action: 'diagnostic' },
-  { icon: '🤝', title: 'Parler avec un étudiant déjà au Québec', desc: 'Consultation mentorat par visioconférence', action: 'external', href: CALENDLY_URL },
   { icon: '🏠', title: "Trouver un logement et t'installer", desc: 'Colocs BiblioCamp, démarches', action: 'diagnostic' },
   { icon: '💰', title: 'Voir les forfaits', desc: 'Forfaits à la carte, prix en CAD', action: 'anchor', href: '#forfaits' },
 ]
