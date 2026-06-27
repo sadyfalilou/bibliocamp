@@ -13,7 +13,7 @@ export default function MonHistoirePage() {
     <div style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", background: '#fff', color: '#222' }}>
 
       <header style={{ borderBottom: '1px solid #e5e7eb', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ textDecoration: 'none' }}>
+        <Link href="/app" style={{ textDecoration: 'none' }}>
           <Logo variant="dark" size="md" />
         </Link>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>

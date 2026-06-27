@@ -7,10 +7,8 @@ import ServiceCard from '../../components/ServiceCard'
 
 export const metadata = {
   title: 'Étudiants internationaux — BiblioCamp',
-  description: "Trouve une formation, prépare ton admission et organise ton arrivée au Québec avec BiblioCamp : diagnostic gratuit, recherche de programmes, accompagnement administratif et mentorat étudiant.",
+  description: "Trouve une formation, prépare ton admission et organise ton arrivée au Québec avec BiblioCamp : diagnostic gratuit, recherche de programmes et accompagnement administratif.",
 }
-
-const CALENDLY_URL = 'https://calendly.com/sadyfalilou1988/consultation-diagnostic-international'
 
 const SERVICES = [
   { icon: '🎯', title: 'Diagnostic de ton projet', desc: 'Profil académique, budget, objectifs', action: 'diagnostic' },
@@ -24,7 +22,7 @@ const SERVICES = [
 const ETAPES = [
   { n: 1, title: 'Tu remplis ton diagnostic', desc: 'Tu nous expliques ton parcours, ton budget, ton domaine et ton objectif.' },
   { n: 2, title: 'On analyse ton projet', desc: "On t'aide à identifier les programmes, documents et étapes à préparer." },
-  { n: 3, title: 'Tu choisis ton accompagnement', desc: 'Admission, recherche de programme, logement, mentorat ou préparation à l\'arrivée.' },
+  { n: 3, title: 'Tu choisis ton accompagnement', desc: 'Admission, recherche de programme, logement ou préparation à l\'arrivée.' },
   { n: 4, title: 'Tu suis ton dossier', desc: 'Documents, tâches, recommandations et rapport personnalisé dans ton espace.' },
 ]
 
@@ -42,7 +40,6 @@ const CONFIANCE = [
   'Services en français',
   'Suivi étape par étape',
   'Documents et tâches centralisés',
-  'Mentorat avec des étudiants déjà au Québec',
   'Aucun engagement après le diagnostic gratuit',
 ]
 
@@ -60,7 +57,7 @@ export default function InternationalPage() {
     <div style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", background: '#fff', color: '#222' }}>
 
       <header style={{ borderBottom: '1px solid #e5e7eb', padding: '0 24px', height: 56, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <Link href="/" style={{ textDecoration: 'none' }}>
+        <Link href="/app" style={{ textDecoration: 'none' }}>
           <Logo variant="dark" size="md" />
         </Link>
         <div style={{ display: 'flex', gap: 16, alignItems: 'center' }}>
@@ -176,20 +173,6 @@ export default function InternationalPage() {
         <p style={{ fontSize: 12, color: '#94a3b8', margin: '0 0 56px' }}>
           Prix indicatifs en dollars canadiens (CAD), à confirmer avant tout paiement. Tu choisis ta méthode de paiement parmi virement bancaire, Sendwave ou Western Union — les détails te sont envoyés après ta demande.
         </p>
-
-        {/* MENTORAT */}
-        <p style={sectionLabelStyle}>Mentorat étudiant</p>
-        <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: 14, padding: '24px 28px', marginBottom: 56, display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 20, flexWrap: 'wrap' }}>
-          <div style={{ flex: '1 1 380px' }}>
-            <p style={{ fontSize: 15, fontWeight: 700, color: '#1a2e4a', margin: '0 0 6px' }}>Parle avec un étudiant déjà installé au Québec</p>
-            <p style={{ fontSize: 13, color: '#64748b', margin: 0, lineHeight: 1.6 }}>
-              Une consultation vidéo avec quelqu'un qui a vécu la même expérience — pas un centre d'appels.
-            </p>
-          </div>
-          <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer" style={{ background: '#1a2e4a', color: 'white', padding: '12px 22px', borderRadius: 10, fontSize: 14, fontWeight: 700, textDecoration: 'none', whiteSpace: 'nowrap' }}>
-            Réserver une consultation →
-          </a>
-        </div>
 
         {/* BLOC DE CONFIANCE */}
         <p style={sectionLabelStyle}>Pourquoi utiliser BiblioCamp International ?</p>

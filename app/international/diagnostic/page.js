@@ -365,7 +365,7 @@ export default function DiagnosticPage() {
             <button onClick={prev} disabled={step === 1} style={{ background: 'transparent', color: step === 1 ? '#cbd5e1' : '#1a2e4a', border: '1px solid #e2e8f0', padding: '10px 18px', borderRadius: 10, fontSize: 13, fontWeight: 600, cursor: step === 1 ? 'default' : 'pointer' }}>
               ← Précédent
             </button>
-            <button onClick={() => router.push('/international')} style={{ background: 'transparent', border: 'none', color: '#64748b', fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}>
+            <button onClick={() => router.push('/app')} style={{ background: 'transparent', border: 'none', color: '#64748b', fontSize: 12, cursor: 'pointer', textDecoration: 'underline' }}>
               Reprendre plus tard
             </button>
             {step < TOTAL_STEPS ? (
