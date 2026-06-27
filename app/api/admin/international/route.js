@@ -64,7 +64,7 @@ export async function PATCH(request) {
   const update = {}
   if (status !== undefined) update.status = status
   if (forfait !== undefined) update.forfait = forfait || null
-  if (prix !== undefined) update.prix = prix === '' || prix === null ? null : Number(prix)
+  if (prix !== undefined) update.prix = prix === '' || prix === null ? null : Number(String(prix).replace(',', '.'))
   if (devise !== undefined) update.devise = devise || 'CAD'
   if (payment_method !== undefined) update.payment_method = payment_method || null
   if (payment_status !== undefined) update.payment_status = payment_status

@@ -147,10 +147,11 @@ export default function AdminInternationalPage() {
                   )}
                 </div>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   placeholder="Prix (CAD)"
                   value={paymentDrafts[d.id]?.prix ?? ''}
-                  onChange={e => handleDraftChange(d.id, 'prix', e.target.value)}
+                  onChange={e => handleDraftChange(d.id, 'prix', e.target.value.replace(',', '.'))}
                   style={inputStyle}
                 />
                 <select
