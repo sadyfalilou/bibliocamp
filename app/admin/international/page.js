@@ -14,6 +14,12 @@ const STATUS_LABELS = {
 const FORFAITS = ['Diagnostic seul (gratuit)', 'Accompagnement complet', 'Préparation des documents']
 const PAYMENT_METHODS = ['Sendwave', 'Virement bancaire', 'Western Union']
 
+function suggestedForfait(needs) {
+  if (!needs || needs.length === 0) return 'Diagnostic seul (gratuit)'
+  if (needs.length === 1 && needs[0] === 'preparation_documents') return 'Préparation des documents'
+  return 'Accompagnement complet'
+}
+
 const inputStyle = { border: '1px solid #e2e8f0', borderRadius: 7, padding: '6px 8px', fontSize: 12, color: '#1a2e4a', background: 'white', width: '100%' }
 
 export default function AdminInternationalPage() {
@@ -38,7 +44,7 @@ export default function AdminInternationalPage() {
       }
       setDiagnostics(json.diagnostics || [])
       setPaymentDrafts(Object.fromEntries((json.diagnostics || []).map(d => [d.id, {
-        forfait: d.forfait || '',
+        forfait: d.forfait || suggestedForfait(d.needs),
         prix: d.prix ?? '',
         payment_method: d.payment_method || '',
         payment_status: d.payment_status || 'non_paye',
@@ -127,14 +133,19 @@ export default function AdminInternationalPage() {
                 Forfait et paiement
               </p>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginBottom: 8 }}>
-                <select
-                  value={paymentDrafts[d.id]?.forfait || ''}
-                  onChange={e => handleDraftChange(d.id, 'forfait', e.target.value)}
-                  style={inputStyle}
-                >
-                  <option value="">Forfait —</option>
-                  {FORFAITS.map(f => <option key={f} value={f}>{f}</option>)}
-                </select>
+                <div>
+                  <select
+                    value={paymentDrafts[d.id]?.forfait || ''}
+                    onChange={e => handleDraftChange(d.id, 'forfait', e.target.value)}
+                    style={inputStyle}
+                  >
+                    <option value="">Forfait —</option>
+                    {FORFAITS.map(f => <option key={f} value={f}>{f}</option>)}
+                  </select>
+                  {!d.forfait && paymentDrafts[d.id]?.forfait && (
+                    <p style={{ fontSize: 10, color: '#94a3b8', margin: '3px 0 0' }}>Suggéré selon les besoins — à confirmer</p>
+                  )}
+                </div>
                 <input
                   type="number"
                   placeholder="Prix (CAD)"
