@@ -47,7 +47,6 @@ const CONFIANCE = [
 ]
 
 const FORFAITS = [
-  { nom: 'Diagnostic personnalisé', prix: '39 $', desc: 'Analyse du profil, forces et points à améliorer, liste de documents, plan d\'action.' },
   { nom: 'Sélection de programmes', prix: '99 $', desc: 'Diagnostic + 3 programmes potentiels comparés, conditions d\'admission, dates importantes.' },
   { nom: "Accompagnement admission essentiel", prix: '149 $', desc: 'Checklist personnalisée, organisation des documents, révision du CV et de la lettre, une rencontre vidéo.' },
   { nom: 'Préparation à l\'arrivée', prix: '99 $', desc: 'Checklist avant le départ, budget d\'installation, logement, téléphone, séance d\'orientation.' },

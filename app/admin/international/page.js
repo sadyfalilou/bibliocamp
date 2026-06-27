@@ -12,7 +12,6 @@ const STATUS_LABELS = {
 }
 
 const FORFAIT_PRICES = {
-  'Diagnostic personnalisé': '39',
   'Sélection de programmes': '99',
   'Accompagnement admission essentiel': '149',
   'Préparation à l\'arrivée': '99',
@@ -30,9 +29,9 @@ const NEED_TO_FORFAIT = {
 const FORFAIT_PRIORITY = ['service_complet', 'accompagnement_admission', 'preparation_arrivee', 'selection_programmes']
 
 function suggestedForfait(needs) {
-  if (!needs || needs.length === 0) return 'Diagnostic personnalisé'
+  if (!needs || needs.length === 0) return ''
   const top = FORFAIT_PRIORITY.find(key => needs.includes(key))
-  return top ? NEED_TO_FORFAIT[top] : 'Diagnostic personnalisé'
+  return top ? NEED_TO_FORFAIT[top] : ''
 }
 
 const inputStyle = { border: '1px solid #e2e8f0', borderRadius: 7, padding: '6px 8px', fontSize: 12, color: '#1a2e4a', background: 'white', width: '100%' }
