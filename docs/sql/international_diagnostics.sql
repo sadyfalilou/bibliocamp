@@ -47,7 +47,7 @@ create table if not exists international_diagnostics (
   consent_terms boolean not null default false,
   consent_marketing boolean not null default false,
 
-  status text not null default 'soumis' check (status in ('soumis', 'en_analyse', 'resultat_disponible')),
+  status text not null default 'soumis' check (status in ('soumis', 'en_analyse', 'resultat_disponible', 'consultation_planifiee', 'termine')),
   created_at timestamptz not null default now()
 );
 

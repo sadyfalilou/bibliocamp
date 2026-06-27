@@ -1,7 +1,8 @@
-import { POST } from '../app/api/international-diagnostics/route'
+import { GET, POST } from '../app/api/international-diagnostics/route'
 
 const mockGetUser = jest.fn()
 const mockInsert = jest.fn()
+const mockOrder = jest.fn()
 
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
@@ -9,6 +10,9 @@ jest.mock('@supabase/supabase-js', () => ({
     from: jest.fn(() => ({
       insert: jest.fn(() => ({
         select: jest.fn(() => ({ single: mockInsert })),
+      })),
+      select: jest.fn(() => ({
+        eq: jest.fn(() => ({ order: mockOrder })),
       })),
     })),
   })),
@@ -75,6 +79,32 @@ describe('POST /api/international-diagnostics', () => {
   test('erreur Supabase insert → 500', async () => {
     mockInsert.mockResolvedValue({ data: null, error: { message: 'DB error' } })
     const res = await POST(makeRequest(validBody))
+    expect(res.status).toBe(500)
+  })
+})
+
+describe('GET /api/international-diagnostics', () => {
+  beforeEach(() => {
+    jest.clearAllMocks()
+    mockGetUser.mockResolvedValue({ data: { user: { id: 'user-1' } } })
+    mockOrder.mockResolvedValue({ data: [{ id: 1, status: 'soumis' }], error: null })
+  })
+
+  test('sans auth → 401', async () => {
+    const res = await GET(makeRequest(null, false))
+    expect(res.status).toBe(401)
+  })
+
+  test('avec auth → 200 avec liste', async () => {
+    const res = await GET(makeRequest(null))
+    expect(res.status).toBe(200)
+    const body = await res.json()
+    expect(body.diagnostics).toHaveLength(1)
+  })
+
+  test('erreur Supabase → 500', async () => {
+    mockOrder.mockResolvedValue({ data: null, error: { message: 'DB error' } })
+    const res = await GET(makeRequest(null))
     expect(res.status).toBe(500)
   })
 })

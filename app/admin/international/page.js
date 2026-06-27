@@ -3,10 +3,19 @@
 import { useEffect, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 
+const STATUS_LABELS = {
+  soumis: 'Soumis',
+  en_analyse: 'En analyse',
+  resultat_disponible: 'Résultat disponible',
+  consultation_planifiee: 'Consultation planifiée',
+  termine: 'Terminé',
+}
+
 export default function AdminInternationalPage() {
   const [loading, setLoading] = useState(true)
   const [diagnostics, setDiagnostics] = useState([])
   const [error, setError] = useState('')
+  const [savingId, setSavingId] = useState(null)
 
   useEffect(() => {
     const load = async () => {
@@ -26,6 +35,20 @@ export default function AdminInternationalPage() {
     }
     load()
   }, [])
+
+  const handleStatusChange = async (id, status) => {
+    setSavingId(id)
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/admin/international', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ id, status }),
+    })
+    if (res.ok) {
+      setDiagnostics(prev => prev.map(d => d.id === id ? { ...d, status } : d))
+    }
+    setSavingId(null)
+  }
 
   if (loading) return <div style={{ padding: 40, fontFamily: "'Segoe UI', sans-serif" }}>Chargement…</div>
   if (error) return <div style={{ padding: 40, fontFamily: "'Segoe UI', sans-serif", color: '#b91c1c' }}>{error}</div>
@@ -49,9 +72,21 @@ export default function AdminInternationalPage() {
                 ✉️ {d.email}
               </a>
             </div>
-            <p style={{ fontSize: 12, color: '#94a3b8', margin: '10px 0 0' }}>
-              Soumis le {new Date(d.created_at).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short', year: 'numeric' })} · Statut : {d.status}
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 10, flexWrap: 'wrap' }}>
+              <p style={{ fontSize: 12, color: '#94a3b8', margin: 0 }}>
+                Soumis le {new Date(d.created_at).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short', year: 'numeric' })}
+              </p>
+              <select
+                value={d.status}
+                disabled={savingId === d.id}
+                onChange={e => handleStatusChange(d.id, e.target.value)}
+                style={{ border: '1px solid #e2e8f0', borderRadius: 7, padding: '5px 8px', fontSize: 12, color: '#1a2e4a', background: 'white' }}
+              >
+                {Object.entries(STATUS_LABELS).map(([value, label]) => (
+                  <option key={value} value={value}>{label}</option>
+                ))}
+              </select>
+            </div>
             {(d.needs || []).length > 0 && (
               <p style={{ fontSize: 12, color: '#374151', margin: '8px 0 0' }}>Besoins : {d.needs.join(', ')}</p>
             )}

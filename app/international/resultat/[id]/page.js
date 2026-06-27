@@ -81,8 +81,11 @@ export default function DiagnosticResultPage() {
   return (
     <div style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", background: '#f8fafc', minHeight: '100vh' }}>
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '32px 16px 64px' }}>
-        <div style={{ marginBottom: 24 }}>
+        <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Logo variant="dark" />
+          <span onClick={() => router.push('/international/mes-demandes')} style={{ fontSize: 12, fontWeight: 700, color: '#0f6e56', cursor: 'pointer' }}>
+            Mes demandes →
+          </span>
         </div>
 
         <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 16, padding: '28px 32px', marginBottom: 20 }}>

@@ -44,3 +44,29 @@ export async function GET(request) {
 
   return NextResponse.json({ diagnostics: data || [] })
 }
+
+const VALID_STATUSES = ['soumis', 'en_analyse', 'resultat_disponible', 'consultation_planifiee', 'termine']
+
+export async function PATCH(request) {
+  const admin = await getAdminUser(request)
+  if (!admin) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
+
+  const { id, status } = await request.json()
+  if (!id || !VALID_STATUSES.includes(status)) {
+    return NextResponse.json({ error: 'Requête invalide' }, { status: 400 })
+  }
+
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+
+  const { error } = await supabase
+    .from('international_diagnostics')
+    .update({ status })
+    .eq('id', id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+
+  return NextResponse.json({ ok: true })
+}
