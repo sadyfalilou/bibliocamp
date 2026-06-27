@@ -11,10 +11,15 @@ const TOTAL_STEPS = 7
 const NIVEAUX = ['Formation professionnelle', 'DEC', 'Certificat', 'Baccalauréat', 'Diplôme d\'études supérieures', 'Maîtrise', 'Doctorat', 'Autre']
 const NEEDS_GROUPS = [
   {
-    title: 'Choix et admission',
+    title: 'Sélection de programmes',
     items: [
       { key: 'choix_programme', label: 'Choix d\'un programme' },
       { key: 'choix_etablissement', label: 'Choix d\'un établissement' },
+    ],
+  },
+  {
+    title: 'Accompagnement admission essentiel',
+    items: [
       { key: 'preparation_admission', label: 'Préparation de l\'admission' },
       { key: 'revision_lettre', label: 'Révision de la lettre de motivation' },
       { key: 'preparation_documents', label: 'Préparation des documents' },
