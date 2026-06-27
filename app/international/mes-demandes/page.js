@@ -35,6 +35,15 @@ function stepIndex(status) {
   return i === -1 ? 0 : i
 }
 
+function Row({ label, value }) {
+  return (
+    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '6px 0', borderBottom: '1px solid #f1f5f9' }}>
+      <span style={{ color: '#64748b' }}>{label}</span>
+      <span style={{ color: '#1a2e4a', fontWeight: 600 }}>{value}</span>
+    </div>
+  )
+}
+
 function Timeline({ status }) {
   const current = stepIndex(status)
   return (
@@ -148,6 +157,25 @@ export default function MesDemandesPage() {
                 </div>
 
                 <Timeline status={d.status} />
+
+                {d.forfait && (
+                  <div style={{ border: '1px solid #e8edf2', borderRadius: 10, padding: '14px 16px', marginBottom: 14 }}>
+                    <p style={{ fontSize: 12, fontWeight: 700, color: '#1a2e4a', margin: '0 0 8px' }}>Forfait et paiement</p>
+                    <Row label="Forfait" value={d.forfait} />
+                    {d.prix != null && <Row label="Montant à payer" value={`${d.prix} ${d.devise || 'CAD'}`} />}
+                    {d.payment_method && <Row label="Méthode" value={d.payment_method} />}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, padding: '6px 0' }}>
+                      <span style={{ color: '#64748b' }}>Statut</span>
+                      <span style={{
+                        background: d.payment_status === 'paye' ? '#e1f5ee' : '#faeeda',
+                        color: d.payment_status === 'paye' ? '#085041' : '#854f0b',
+                        fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 20
+                      }}>
+                        {d.payment_status === 'paye' ? 'Payé' : 'Non payé'}
+                      </span>
+                    </div>
+                  </div>
+                )}
 
                 <div style={{ background: '#f8fafc', borderRadius: 10, padding: '14px 16px', marginBottom: 14 }}>
                   <p style={{ fontSize: 12, fontWeight: 700, color: '#1a2e4a', margin: '0 0 4px' }}>Prochaine étape</p>

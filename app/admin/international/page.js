@@ -11,11 +11,17 @@ const STATUS_LABELS = {
   termine: 'Terminé',
 }
 
+const FORFAITS = ['Diagnostic seul (gratuit)', 'Accompagnement complet', 'Préparation des documents']
+const PAYMENT_METHODS = ['Sendwave', 'Virement bancaire', 'Western Union']
+
+const inputStyle = { border: '1px solid #e2e8f0', borderRadius: 7, padding: '6px 8px', fontSize: 12, color: '#1a2e4a', background: 'white', width: '100%' }
+
 export default function AdminInternationalPage() {
   const [loading, setLoading] = useState(true)
   const [diagnostics, setDiagnostics] = useState([])
   const [error, setError] = useState('')
   const [savingId, setSavingId] = useState(null)
+  const [paymentDrafts, setPaymentDrafts] = useState({})
 
   useEffect(() => {
     const load = async () => {
@@ -31,6 +37,12 @@ export default function AdminInternationalPage() {
         return
       }
       setDiagnostics(json.diagnostics || [])
+      setPaymentDrafts(Object.fromEntries((json.diagnostics || []).map(d => [d.id, {
+        forfait: d.forfait || '',
+        prix: d.prix ?? '',
+        payment_method: d.payment_method || '',
+        payment_status: d.payment_status || 'non_paye',
+      }])))
       setLoading(false)
     }
     load()
@@ -46,6 +58,25 @@ export default function AdminInternationalPage() {
     })
     if (res.ok) {
       setDiagnostics(prev => prev.map(d => d.id === id ? { ...d, status } : d))
+    }
+    setSavingId(null)
+  }
+
+  const handleDraftChange = (id, field, value) => {
+    setPaymentDrafts(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }))
+  }
+
+  const handleSavePayment = async (id) => {
+    setSavingId(id)
+    const draft = paymentDrafts[id]
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch('/api/admin/international', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session.access_token}` },
+      body: JSON.stringify({ id, ...draft }),
+    })
+    if (res.ok) {
+      setDiagnostics(prev => prev.map(d => d.id === id ? { ...d, ...draft, prix: draft.prix === '' ? null : Number(draft.prix) } : d))
     }
     setSavingId(null)
   }
@@ -90,6 +121,55 @@ export default function AdminInternationalPage() {
             {(d.needs || []).length > 0 && (
               <p style={{ fontSize: 12, color: '#374151', margin: '8px 0 0' }}>Besoins : {d.needs.join(', ')}</p>
             )}
+
+            <div style={{ borderTop: '1px solid #f1f5f9', marginTop: 14, paddingTop: 14 }}>
+              <p style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: 0.4, margin: '0 0 8px' }}>
+                Forfait et paiement
+              </p>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 8, marginBottom: 8 }}>
+                <select
+                  value={paymentDrafts[d.id]?.forfait || ''}
+                  onChange={e => handleDraftChange(d.id, 'forfait', e.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="">Forfait —</option>
+                  {FORFAITS.map(f => <option key={f} value={f}>{f}</option>)}
+                </select>
+                <input
+                  type="number"
+                  placeholder="Prix (CAD)"
+                  value={paymentDrafts[d.id]?.prix ?? ''}
+                  onChange={e => handleDraftChange(d.id, 'prix', e.target.value)}
+                  style={inputStyle}
+                />
+                <select
+                  value={paymentDrafts[d.id]?.payment_method || ''}
+                  onChange={e => handleDraftChange(d.id, 'payment_method', e.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="">Méthode —</option>
+                  {PAYMENT_METHODS.map(m => <option key={m} value={m}>{m}</option>)}
+                </select>
+                <select
+                  value={paymentDrafts[d.id]?.payment_status || 'non_paye'}
+                  onChange={e => handleDraftChange(d.id, 'payment_status', e.target.value)}
+                  style={inputStyle}
+                >
+                  <option value="non_paye">Non payé</option>
+                  <option value="paye">Payé</option>
+                </select>
+              </div>
+              <button
+                onClick={() => handleSavePayment(d.id)}
+                disabled={savingId === d.id}
+                style={{
+                  background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 7,
+                  padding: '7px 14px', fontSize: 12, fontWeight: 700, cursor: 'pointer'
+                }}
+              >
+                {savingId === d.id ? 'Enregistrement…' : 'Enregistrer'}
+              </button>
+            </div>
           </div>
         ))}
       </div>

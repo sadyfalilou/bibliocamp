@@ -48,7 +48,14 @@ create table if not exists international_diagnostics (
   consent_marketing boolean not null default false,
 
   status text not null default 'soumis' check (status in ('soumis', 'en_analyse', 'resultat_disponible', 'consultation_planifiee', 'termine')),
-  created_at timestamptz not null default now()
+  created_at timestamptz not null default now(),
+
+  -- Forfait et paiement (renseignes manuellement par l'admin apres la consultation)
+  forfait text,
+  prix numeric,
+  devise text not null default 'CAD',
+  payment_method text,
+  payment_status text not null default 'non_paye' check (payment_status in ('non_paye', 'paye'))
 );
 
 create index if not exists international_diagnostics_user_id_idx on international_diagnostics(user_id);

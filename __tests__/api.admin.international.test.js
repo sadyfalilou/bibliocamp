@@ -116,4 +116,27 @@ describe('PATCH /api/admin/international', () => {
     const res = await PATCH(makePatchRequest({ id: 1, status: 'termine' }))
     expect(res.status).toBe(500)
   })
+
+  test('statut paiement invalide → 400', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { email: 'admin@example.com' } } })
+    const res = await PATCH(makePatchRequest({ id: 1, payment_status: 'inexistant' }))
+    expect(res.status).toBe(400)
+  })
+
+  test('aucun champ a mettre a jour → 400', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { email: 'admin@example.com' } } })
+    const res = await PATCH(makePatchRequest({ id: 1 }))
+    expect(res.status).toBe(400)
+  })
+
+  test('admin met a jour le forfait et le paiement → 200', async () => {
+    mockGetUser.mockResolvedValue({ data: { user: { email: 'admin@example.com' } } })
+    const res = await PATCH(makePatchRequest({
+      id: 1, forfait: 'Accompagnement complet', prix: 250, payment_method: 'Sendwave', payment_status: 'paye'
+    }))
+    expect(res.status).toBe(200)
+    expect(mockUpdate).toHaveBeenCalledWith({
+      forfait: 'Accompagnement complet', prix: 250, payment_method: 'Sendwave', payment_status: 'paye'
+    })
+  })
 })

@@ -29,7 +29,7 @@ export async function GET(request) {
 
   const { data, error } = await supabase
     .from('international_diagnostics')
-    .select('id, first_name, target_level, target_field, status, created_at')
+    .select('id, first_name, target_level, target_field, status, created_at, forfait, prix, devise, payment_method, payment_status')
     .eq('user_id', user.id)
     .order('created_at', { ascending: false })
 

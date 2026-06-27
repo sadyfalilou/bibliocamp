@@ -46,13 +46,30 @@ export async function GET(request) {
 }
 
 const VALID_STATUSES = ['soumis', 'en_analyse', 'resultat_disponible', 'consultation_planifiee', 'termine']
+const VALID_PAYMENT_STATUSES = ['non_paye', 'paye']
 
 export async function PATCH(request) {
   const admin = await getAdminUser(request)
   if (!admin) return NextResponse.json({ error: 'Accès refusé' }, { status: 403 })
 
-  const { id, status } = await request.json()
-  if (!id || !VALID_STATUSES.includes(status)) {
+  const { id, status, forfait, prix, devise, payment_method, payment_status } = await request.json()
+  if (!id) return NextResponse.json({ error: 'Requête invalide' }, { status: 400 })
+  if (status !== undefined && !VALID_STATUSES.includes(status)) {
+    return NextResponse.json({ error: 'Requête invalide' }, { status: 400 })
+  }
+  if (payment_status !== undefined && !VALID_PAYMENT_STATUSES.includes(payment_status)) {
+    return NextResponse.json({ error: 'Requête invalide' }, { status: 400 })
+  }
+
+  const update = {}
+  if (status !== undefined) update.status = status
+  if (forfait !== undefined) update.forfait = forfait || null
+  if (prix !== undefined) update.prix = prix === '' || prix === null ? null : Number(prix)
+  if (devise !== undefined) update.devise = devise || 'CAD'
+  if (payment_method !== undefined) update.payment_method = payment_method || null
+  if (payment_status !== undefined) update.payment_status = payment_status
+
+  if (Object.keys(update).length === 0) {
     return NextResponse.json({ error: 'Requête invalide' }, { status: 400 })
   }
 
@@ -63,7 +80,7 @@ export async function PATCH(request) {
 
   const { error } = await supabase
     .from('international_diagnostics')
-    .update({ status })
+    .update(update)
     .eq('id', id)
 
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
