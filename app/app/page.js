@@ -111,6 +111,7 @@ function HomeContent() {
   const [tutorsMenuOpen, setTutorsMenuOpen] = useState(false)
   const [manualsMenuOpen, setManualsMenuOpen] = useState(false)
   const [colocsMenuOpen, setColocsMenuOpen] = useState(false)
+  const [internationalMenuOpen, setInternationalMenuOpen] = useState(false)
   const [editingRoommateId, setEditingRoommateId] = useState(null)
   const [soldConfirmId, setSoldConfirmId] = useState(null)
   const [markingAsSold, setMarkingAsSold] = useState(false)
@@ -929,6 +930,21 @@ function HomeContent() {
                 { label: 'Publier une annonce', action: () => { setView('publier-coloc'); if (isMobile) setSidebarOpen(false) }, active: view === 'publier-coloc' },
                 { label: 'Mes annonces', action: () => { setView('mes-colocs'); if (isMobile) setSidebarOpen(false) }, active: view === 'mes-colocs' },
                 { label: 'FAQ', action: () => { setView('faq-colocs'); if (isMobile) setSidebarOpen(false) }, active: view === 'faq-colocs' },
+              ]
+            },
+            {
+              id: 'international',
+              isOpen: internationalMenuOpen,
+              toggle: () => setInternationalMenuOpen(o => !o),
+              icon: (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/>
+                </svg>
+              ),
+              label: 'International',
+              items: [
+                { label: 'Faire mon diagnostic', action: () => { router.push('/international/diagnostic'); if (isMobile) setSidebarOpen(false) }, active: false },
+                { label: 'Mes demandes', action: () => { router.push('/international/mes-demandes'); if (isMobile) setSidebarOpen(false) }, active: false },
               ]
             },
           ].map(section => (
