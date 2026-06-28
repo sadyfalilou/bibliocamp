@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { supabase } from '../../../lib/supabase'
 import Logo from '../../../components/Logo'
 
@@ -75,7 +75,17 @@ function TextArea(props) {
 }
 
 export default function DiagnosticPage() {
+  return (
+    <Suspense fallback={null}>
+      <DiagnosticForm />
+    </Suspense>
+  )
+}
+
+function DiagnosticForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const editId = searchParams.get('edit')
   const [user, setUser] = useState(null)
   const [checkingAuth, setCheckingAuth] = useState(true)
   const [step, setStep] = useState(1)
@@ -86,12 +96,35 @@ export default function DiagnosticPage() {
   const [submitError, setSubmitError] = useState('')
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => {
+    supabase.auth.getUser().then(async ({ data }) => {
       if (!data?.user) {
-        router.push('/login?redirect=/international/diagnostic')
+        router.push(`/login?redirect=/international/diagnostic${editId ? `?edit=${editId}` : ''}`)
         return
       }
       setUser(data.user)
+
+      if (editId) {
+        const { data: { session } } = await supabase.auth.getSession()
+        const res = await fetch(`/api/international-diagnostics/${editId}`, {
+          headers: { Authorization: `Bearer ${session?.access_token}` }
+        })
+        const json = await res.json()
+        if (res.ok && json.diagnostic) {
+          const d = json.diagnostic
+          setForm(prev => ({
+            ...prev,
+            ...d,
+            target_cities: (d.target_cities || []).join(', '),
+            annual_budget: d.annual_budget != null ? String(d.annual_budget) : '',
+            needs: d.needs || [],
+          }))
+        } else {
+          setSubmitError(json.error || 'Impossible de charger cette demande.')
+        }
+        setCheckingAuth(false)
+        return
+      }
+
       setCheckingAuth(false)
       const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
       const draft = localStorage.getItem(STORAGE_KEY)
@@ -105,12 +138,12 @@ export default function DiagnosticPage() {
         setForm(prev => ({ ...prev, email: data.user.email || '', timezone: detectedTimezone }))
       }
     })
-  }, [router])
+  }, [router, editId])
 
   useEffect(() => {
-    if (checkingAuth) return
+    if (checkingAuth || editId) return
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...form, __step: step }))
-  }, [form, step, checkingAuth])
+  }, [form, step, checkingAuth, editId])
 
   const set = (key, value) => setForm(prev => ({ ...prev, [key]: value }))
 
@@ -153,8 +186,8 @@ export default function DiagnosticPage() {
     setSubmitError('')
     try {
       const { data: { session } } = await supabase.auth.getSession()
-      const res = await fetch('/api/international-diagnostics', {
-        method: 'POST',
+      const res = await fetch(editId ? `/api/international-diagnostics/${editId}` : '/api/international-diagnostics', {
+        method: editId ? 'PATCH' : 'POST',
         headers: {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session?.access_token}`
@@ -172,7 +205,7 @@ export default function DiagnosticPage() {
         return
       }
       localStorage.removeItem(STORAGE_KEY)
-      router.push(`/international/resultat/${json.id}`)
+      router.push(`/international/resultat/${editId || json.id}`)
     } catch {
       setSubmitError('Erreur réseau. Réessaie.')
       setSubmitting(false)

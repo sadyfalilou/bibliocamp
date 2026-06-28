@@ -85,6 +85,8 @@ export default function MesDemandesPage() {
   const [loading, setLoading] = useState(true)
   const [diagnostics, setDiagnostics] = useState([])
   const [error, setError] = useState('')
+  const [deletingId, setDeletingId] = useState(null)
+  const [actionError, setActionError] = useState('')
 
   useEffect(() => {
     const load = async () => {
@@ -100,6 +102,21 @@ export default function MesDemandesPage() {
     }
     load()
   }, [router])
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Supprimer cette demande ? Cette action est irréversible.')) return
+    setActionError('')
+    setDeletingId(id)
+    const { data: { session } } = await supabase.auth.getSession()
+    const res = await fetch(`/api/international-diagnostics/${id}`, {
+      method: 'DELETE',
+      headers: { Authorization: `Bearer ${session?.access_token}` }
+    })
+    const json = await res.json()
+    setDeletingId(null)
+    if (!res.ok) { setActionError(json.error || 'Erreur lors de la suppression.'); return }
+    setDiagnostics(prev => prev.filter(d => d.id !== id))
+  }
 
   if (loading) return null
 
@@ -127,6 +144,7 @@ export default function MesDemandesPage() {
         </p>
 
         {error && <p style={{ color: '#b91c1c', fontSize: 13 }}>{error}</p>}
+        {actionError && <p style={{ color: '#b91c1c', fontSize: 13 }}>{actionError}</p>}
 
         {!error && diagnostics.length === 0 && (
           <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 14, padding: '24px 28px', textAlign: 'center' }}>
@@ -161,24 +179,29 @@ export default function MesDemandesPage() {
 
                 <Timeline status={d.status} />
 
-                {d.forfait && (
-                  <div style={{ border: '1px solid #e8edf2', borderRadius: 10, padding: '14px 16px', marginBottom: 14 }}>
-                    <p style={{ fontSize: 12, fontWeight: 700, color: '#1a2e4a', margin: '0 0 8px' }}>Forfait et paiement</p>
+                <div style={{ border: '1px solid #e8edf2', borderRadius: 10, padding: '14px 16px', marginBottom: 14 }}>
+                  <p style={{ fontSize: 12, fontWeight: 700, color: '#1a2e4a', margin: '0 0 8px' }}>Forfait et paiement</p>
+                  {d.forfait ? (
                     <Row label="Forfait" value={d.forfait} />
-                    {d.prix != null && <Row label="Montant à payer" value={`${d.prix} ${d.devise || 'CAD'}`} />}
-                    {d.payment_method && <Row label="Méthode" value={d.payment_method} />}
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, padding: '6px 0' }}>
-                      <span style={{ color: '#64748b' }}>Statut</span>
-                      <span style={{
-                        background: d.payment_status === 'paye' ? '#e1f5ee' : '#faeeda',
-                        color: d.payment_status === 'paye' ? '#085041' : '#854f0b',
-                        fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 20
-                      }}>
-                        {d.payment_status === 'paye' ? 'Payé' : 'Non payé'}
-                      </span>
+                  ) : (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '6px 0', borderBottom: '1px solid #f1f5f9' }}>
+                      <span style={{ color: '#64748b' }}>Forfait</span>
+                      <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>À déterminer après analyse</span>
                     </div>
+                  )}
+                  {d.prix != null && <Row label="Montant à payer" value={`${d.prix} ${d.devise || 'CAD'}`} />}
+                  {d.payment_method && <Row label="Méthode" value={d.payment_method} />}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, padding: '6px 0' }}>
+                    <span style={{ color: '#64748b' }}>Statut</span>
+                    <span style={{
+                      background: d.payment_status === 'paye' ? '#e1f5ee' : '#faeeda',
+                      color: d.payment_status === 'paye' ? '#085041' : '#854f0b',
+                      fontSize: 11, fontWeight: 600, padding: '4px 10px', borderRadius: 20
+                    }}>
+                      {d.payment_status === 'paye' ? 'Payé' : 'Non payé'}
+                    </span>
                   </div>
-                )}
+                </div>
 
                 <div style={{ background: '#f8fafc', borderRadius: 10, padding: '14px 16px', marginBottom: 14 }}>
                   <p style={{ fontSize: 12, fontWeight: 700, color: '#1a2e4a', margin: '0 0 4px' }}>Prochaine étape</p>
@@ -187,12 +210,30 @@ export default function MesDemandesPage() {
                   </p>
                 </div>
 
-                <span
-                  onClick={() => router.push(`/international/resultat/${d.id}`)}
-                  style={{ fontSize: 12, fontWeight: 700, color: '#0f6e56', cursor: 'pointer' }}
-                >
-                  Voir le diagnostic →
-                </span>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+                  <span
+                    onClick={() => router.push(`/international/resultat/${d.id}`)}
+                    style={{ fontSize: 12, fontWeight: 700, color: '#0f6e56', cursor: 'pointer' }}
+                  >
+                    Voir le diagnostic →
+                  </span>
+                  {d.status === 'soumis' && (
+                    <div style={{ display: 'flex', gap: 14 }}>
+                      <span
+                        onClick={() => router.push(`/international/diagnostic?edit=${d.id}`)}
+                        style={{ fontSize: 12, fontWeight: 700, color: '#0c447c', cursor: 'pointer' }}
+                      >
+                        Modifier
+                      </span>
+                      <span
+                        onClick={() => deletingId !== d.id && handleDelete(d.id)}
+                        style={{ fontSize: 12, fontWeight: 700, color: '#b91c1c', cursor: 'pointer', opacity: deletingId === d.id ? 0.5 : 1 }}
+                      >
+                        {deletingId === d.id ? 'Suppression…' : 'Supprimer'}
+                      </span>
+                    </div>
+                  )}
+                </div>
               </div>
             )
           })}
