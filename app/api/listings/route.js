@@ -3,7 +3,6 @@ import * as Sentry from '@sentry/nextjs'
 import { sendEmail } from '../../../lib/sendEmail'
 
 const VALID_ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
-const VALID_DOMAINS = ['Sciences', 'Santé', 'Droit', 'Arts', 'Éducation', 'Génie', 'Commerce', 'Autres']
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5 MB
 
@@ -20,7 +19,7 @@ function validate({ title, authors, isbn, course_code, price, original_price, ca
   if (campus && campus.length > 100) return 'Le campus ne peut pas dépasser 100 caractères.'
   if (!description || description.trim().length === 0) return "L'état du livre est obligatoire."
   if (!VALID_ETATS.includes(description)) return 'État du livre invalide.'
-  if (domain && !VALID_DOMAINS.includes(domain)) return 'Domaine invalide.'
+  if (domain && domain.length > 100) return 'Le nom du cours ne peut pas dépasser 100 caractères.'
   if (!meet_campus && !meet_city && !post) return 'Choisis au moins une méthode de transaction.'
   return null
 }
@@ -139,7 +138,7 @@ export async function POST(request) {
     original_price: fields.original_price ? Number(fields.original_price) : null,
     description: fields.description,
     campus: fields.campus.trim(),
-    domain: fields.domain || null,
+    domain: fields.domain.trim() || null,
     meet_campus: fields.meet_campus,
     meet_city: fields.meet_city,
     post: fields.post,
@@ -224,7 +223,7 @@ export async function PATCH(request) {
       original_price: fields.original_price ? Number(fields.original_price) : null,
       description: fields.description,
       campus: fields.campus.trim(),
-      domain: fields.domain || null,
+      domain: fields.domain.trim() || null,
       meet_campus: fields.meet_campus,
       meet_city: fields.meet_city,
       post: fields.post,

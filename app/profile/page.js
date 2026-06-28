@@ -307,7 +307,7 @@ export default function Profile() {
 
         {/* Breadcrumb */}
         <div style={{ fontSize: 13, color: '#a0aec0', marginBottom: 8 }}>
-          Accueil / <span style={{ color: '#1a2e4a', fontWeight: 600 }}>Mon profil</span>
+          <span onClick={() => router.push('/app')} style={{ cursor: 'pointer' }}>Accueil</span> / <span style={{ color: '#1a2e4a', fontWeight: 600 }}>Mon profil</span>
         </div>
         <h1 style={{ fontSize: 26, fontWeight: 900, color: '#1a2e4a', margin: '0 0 24px' }}>Mon profil</h1>
 

@@ -21,7 +21,6 @@ import ListingWarningBadge from '../../components/ListingWarningBadge'
 import ListingReportBadge from '../../components/ListingReportBadge'
 import Footer from '../../components/Footer'
 
-const DOMAINES = ['Sciences', 'Santé', 'Droit', 'Arts', 'Éducation', 'Génie', 'Commerce', 'Autres']
 
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -514,7 +513,7 @@ function HomeContent() {
       if (!matchTitle && !matchCourse && !matchIsbn && !matchAuthors) return false
     }
     if (filterEtat && item.description !== filterEtat) return false
-    if (filterDomain && item.domain !== filterDomain) return false
+    if (filterDomain && !item.domain?.toLowerCase().includes(filterDomain.toLowerCase())) return false
     if (filterTransaction === 'campus' && !item.meet_campus) return false
     if (filterTransaction === 'city' && !item.meet_city) return false
     if (filterTransaction === 'post' && !item.post) return false
@@ -1129,16 +1128,19 @@ function HomeContent() {
                   {['Neuf', 'Très bon état', 'Bon état', 'Acceptable'].map(e => <option key={e} value={e}>{e}</option>)}
                 </select>
 
-                {/* Domaine */}
-                <select value={filterDomain} onChange={e => setFilterDomain(e.target.value)} style={{
-                  padding: '8px 12px', border: `1px solid ${filterDomain ? '#00c9a7' : '#e2e8f0'}`,
-                  borderRadius: 8, fontSize: 13, outline: 'none',
-                  background: filterDomain ? '#f0fdf9' : 'white',
-                  cursor: 'pointer', color: filterDomain ? '#00a88a' : '#1a2e4a', fontWeight: 600
-                }}>
-                  <option value="">🎓 Domaine</option>
-                  {DOMAINES.map(d => <option key={d} value={d}>{d}</option>)}
-                </select>
+                {/* Nom du cours */}
+                <input
+                  type="text"
+                  value={filterDomain}
+                  onChange={e => setFilterDomain(e.target.value)}
+                  placeholder="🎓 Nom du cours"
+                  style={{
+                    padding: '8px 12px', border: `1px solid ${filterDomain ? '#00c9a7' : '#e2e8f0'}`,
+                    borderRadius: 8, fontSize: 13, outline: 'none',
+                    background: filterDomain ? '#f0fdf9' : 'white',
+                    color: filterDomain ? '#00a88a' : '#1a2e4a', fontWeight: 600, width: 150
+                  }}
+                />
 
                 {/* Méthode */}
                 <select value={filterTransaction} onChange={e => setFilterTransaction(e.target.value)} style={{
