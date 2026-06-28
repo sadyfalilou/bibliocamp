@@ -16,6 +16,20 @@ const NEEDS_LABELS = {
   service_complet: 'Service complet',
 }
 
+const FORFAIT_PRICES = {
+  'Sélection de programmes': '99',
+  'Accompagnement admission essentiel': '149',
+  "Préparation à l'arrivée": '99',
+  'Service complet': '449',
+}
+const FORFAIT_PRIORITY = ['service_complet', 'accompagnement_admission', 'preparation_arrivee', 'selection_programmes']
+
+function suggestedForfait(needs) {
+  if (!needs || needs.length === 0) return ''
+  const top = FORFAIT_PRIORITY.find(key => needs.includes(key))
+  return top ? NEEDS_LABELS[top] : ''
+}
+
 const ACADEMIC_DOCS = [
   'Relevés de notes (et diplôme, ou attestation si encore en cours)',
   'Copie du certificat de naissance avec le nom des parents',
@@ -71,6 +85,8 @@ export default function DiagnosticResultPage() {
   }
 
   const readiness = readinessLevel(diagnostic)
+  const estimatedForfait = suggestedForfait(diagnostic.needs)
+  const estimatedPrix = FORFAIT_PRICES[estimatedForfait]
 
   return (
     <div style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", background: '#f8fafc', minHeight: '100vh' }}>
@@ -103,26 +119,40 @@ export default function DiagnosticResultPage() {
           </div>
         </div>
 
-        {diagnostic.forfait && (
-          <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 16, padding: '24px 32px', marginBottom: 20 }}>
-            <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a2e4a', margin: '0 0 12px' }}>Forfait et paiement</h2>
-            <div style={{ display: 'grid', gap: 12 }}>
+        <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 16, padding: '24px 32px', marginBottom: 20 }}>
+          <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a2e4a', margin: '0 0 12px' }}>Forfait et paiement</h2>
+          <div style={{ display: 'grid', gap: 12 }}>
+            {diagnostic.forfait ? (
               <SummaryRow label="Forfait" value={diagnostic.forfait} />
-              {diagnostic.prix != null && <SummaryRow label="Montant à payer" value={`${diagnostic.prix} ${diagnostic.devise || 'CAD'}`} />}
-              {diagnostic.payment_method && <SummaryRow label="Méthode" value={diagnostic.payment_method} />}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, borderBottom: '1px solid #f1f5f9', paddingBottom: 8 }}>
-                <span style={{ color: '#64748b' }}>Statut</span>
-                <span style={{
-                  background: diagnostic.payment_status === 'paye' ? '#e1f5ee' : '#faeeda',
-                  color: diagnostic.payment_status === 'paye' ? '#085041' : '#854f0b',
-                  fontSize: 12, fontWeight: 700, padding: '4px 12px', borderRadius: 20
-                }}>
-                  {diagnostic.payment_status === 'paye' ? 'Payé' : 'Non payé'}
+            ) : (
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13, borderBottom: '1px solid #f1f5f9', paddingBottom: 8 }}>
+                <span style={{ color: '#64748b' }}>Forfait</span>
+                <span style={{ color: '#94a3b8', fontStyle: 'italic', textAlign: 'right' }}>
+                  {estimatedForfait ? `${estimatedForfait} (estimation, à confirmer)` : 'À déterminer après analyse'}
                 </span>
               </div>
+            )}
+            {diagnostic.prix != null ? (
+              <SummaryRow label="Montant à payer" value={`${diagnostic.prix} ${diagnostic.devise || 'CAD'}`} />
+            ) : estimatedPrix && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, fontSize: 13, borderBottom: '1px solid #f1f5f9', paddingBottom: 8 }}>
+                <span style={{ color: '#64748b' }}>Montant estimé</span>
+                <span style={{ color: '#94a3b8', fontStyle: 'italic', textAlign: 'right' }}>{estimatedPrix} $ (à confirmer)</span>
+              </div>
+            )}
+            {diagnostic.payment_method && <SummaryRow label="Méthode" value={diagnostic.payment_method} />}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, borderBottom: '1px solid #f1f5f9', paddingBottom: 8 }}>
+              <span style={{ color: '#64748b' }}>Statut</span>
+              <span style={{
+                background: diagnostic.payment_status === 'paye' ? '#e1f5ee' : '#faeeda',
+                color: diagnostic.payment_status === 'paye' ? '#085041' : '#854f0b',
+                fontSize: 12, fontWeight: 700, padding: '4px 12px', borderRadius: 20
+              }}>
+                {diagnostic.payment_status === 'paye' ? 'Payé' : 'Non payé'}
+              </span>
             </div>
           </div>
-        )}
+        </div>
 
         <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 16, padding: '24px 32px', marginBottom: 20 }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a2e4a', margin: '0 0 12px' }}>Documents scolaires habituellement à préparer</h2>

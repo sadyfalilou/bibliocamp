@@ -111,13 +111,18 @@ function DiagnosticForm() {
         const json = await res.json()
         if (res.ok && json.diagnostic) {
           const d = json.diagnostic
-          setForm(prev => ({
-            ...prev,
-            ...d,
-            target_cities: (d.target_cities || []).join(', '),
-            annual_budget: d.annual_budget != null ? String(d.annual_budget) : '',
-            needs: d.needs || [],
-          }))
+          setForm(prev => {
+            const merged = { ...prev, ...d }
+            Object.keys(emptyForm).forEach(key => {
+              if (merged[key] == null) merged[key] = emptyForm[key]
+            })
+            return {
+              ...merged,
+              target_cities: (d.target_cities || []).join(', '),
+              annual_budget: d.annual_budget != null ? String(d.annual_budget) : '',
+              needs: d.needs || [],
+            }
+          })
         } else {
           setSubmitError(json.error || 'Impossible de charger cette demande.')
         }

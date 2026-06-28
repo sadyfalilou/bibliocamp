@@ -7,6 +7,26 @@ import { supabase } from '../../../lib/supabase'
 import Logo from '../../../components/Logo'
 import Footer from '../../../components/Footer'
 
+const FORFAIT_LABELS = {
+  selection_programmes: 'Sélection de programmes',
+  accompagnement_admission: 'Accompagnement admission essentiel',
+  preparation_arrivee: "Préparation à l'arrivée",
+  service_complet: 'Service complet',
+}
+const FORFAIT_PRICES = {
+  'Sélection de programmes': '99',
+  'Accompagnement admission essentiel': '149',
+  "Préparation à l'arrivée": '99',
+  'Service complet': '449',
+}
+const FORFAIT_PRIORITY = ['service_complet', 'accompagnement_admission', 'preparation_arrivee', 'selection_programmes']
+
+function suggestedForfait(needs) {
+  if (!needs || needs.length === 0) return ''
+  const top = FORFAIT_PRIORITY.find(key => needs.includes(key))
+  return top ? FORFAIT_LABELS[top] : ''
+}
+
 const STEPS = [
   { key: 'soumis', label: 'Diagnostic soumis' },
   { key: 'en_analyse', label: 'En analyse' },
@@ -161,6 +181,8 @@ export default function MesDemandesPage() {
         <div style={{ display: 'grid', gap: 16 }}>
           {diagnostics.map(d => {
             const badge = STATUS_BADGE[d.status] || STATUS_BADGE.soumis
+            const estimatedForfait = suggestedForfait(d.needs)
+            const estimatedPrix = FORFAIT_PRICES[estimatedForfait]
             return (
               <div key={d.id} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 14, padding: '20px 22px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, marginBottom: 18, flexWrap: 'wrap' }}>
@@ -186,10 +208,19 @@ export default function MesDemandesPage() {
                   ) : (
                     <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '6px 0', borderBottom: '1px solid #f1f5f9' }}>
                       <span style={{ color: '#64748b' }}>Forfait</span>
-                      <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>À déterminer après analyse</span>
+                      <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>
+                        {estimatedForfait ? `${estimatedForfait} (estimation)` : 'À déterminer après analyse'}
+                      </span>
                     </div>
                   )}
-                  {d.prix != null && <Row label="Montant à payer" value={`${d.prix} ${d.devise || 'CAD'}`} />}
+                  {d.prix != null ? (
+                    <Row label="Montant à payer" value={`${d.prix} ${d.devise || 'CAD'}`} />
+                  ) : estimatedPrix && (
+                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, padding: '6px 0', borderBottom: '1px solid #f1f5f9' }}>
+                      <span style={{ color: '#64748b' }}>Montant estimé</span>
+                      <span style={{ color: '#94a3b8', fontStyle: 'italic' }}>{estimatedPrix} $ (à confirmer)</span>
+                    </div>
+                  )}
                   {d.payment_method && <Row label="Méthode" value={d.payment_method} />}
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12, padding: '6px 0' }}>
                     <span style={{ color: '#64748b' }}>Statut</span>
