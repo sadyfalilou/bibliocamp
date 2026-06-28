@@ -7,6 +7,8 @@ import { supabase } from '../../../lib/supabase'
 import Logo from '../../../components/Logo'
 import Footer from '../../../components/Footer'
 
+const CALENDLY_URL = 'https://calendly.com/sadyfalilou1988/consultation-diagnostic-international'
+
 const FORFAIT_LABELS = {
   selection_programmes: 'Sélection de programmes',
   accompagnement_admission: 'Accompagnement admission essentiel',
@@ -238,9 +240,15 @@ export default function MesDemandesPage() {
 
                 <div style={{ background: '#f8fafc', borderRadius: 10, padding: '14px 16px', marginBottom: 14 }}>
                   <p style={{ fontSize: 12, fontWeight: 700, color: '#1a2e4a', margin: '0 0 4px' }}>Prochaine étape</p>
-                  <p style={{ fontSize: 12, color: '#64748b', margin: 0, lineHeight: 1.5 }}>
+                  <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 4px', lineHeight: 1.5 }}>
                     {NEXT_STEP_TEXT[d.status] || NEXT_STEP_TEXT.soumis}
                   </p>
+                  {!['consultation_planifiee', 'termine'].includes(d.status) && (
+                    <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
+                       style={{ fontSize: 12, fontWeight: 700, color: '#0f6e56', textDecoration: 'none' }}>
+                      Réserver ma consultation →
+                    </a>
+                  )}
                 </div>
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
