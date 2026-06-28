@@ -487,7 +487,7 @@ function CreateInner() {
                   Nom du cours <span style={{ fontSize: 12, color: '#a0aec0', fontWeight: 400 }}>(facultatif)</span>
                 </label>
                 <input
-                  placeholder="ex: Marketing international"
+                  placeholder="ex: MBA8616 - Marketing"
                   value={domain}
                   onChange={e => setDomain(e.target.value)}
                   style={fieldStyle('domain')}
