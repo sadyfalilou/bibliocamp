@@ -128,7 +128,7 @@ function HomeContent() {
   // Si ?view=tuteurs dans l'URL → redirigé depuis la landing page (recherche tuteur)
   useEffect(() => {
     const v = searchParams.get('view')
-    if (['tuteurs', 'devenir-tuteur', 'acheter', 'vendre', 'faq', 'faq-manuels', 'faq-colocs', 'colocs'].includes(v)) setView(v)
+    if (['tuteurs', 'devenir-tuteur', 'acheter', 'vendre', 'faq', 'faq-manuels', 'faq-colocs', 'colocs', 'favoris', 'mes-annonces'].includes(v)) setView(v)
   }, [searchParams])
 
   // Ouvre/ferme automatiquement les accordéons sidebar selon la vue active
