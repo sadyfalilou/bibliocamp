@@ -2,6 +2,7 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
 import Logo from '../../../components/Logo'
 
@@ -225,7 +226,9 @@ function DiagnosticForm() {
     <div style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", background: '#f8fafc', minHeight: '100vh', padding: '32px 16px' }}>
       <div style={{ maxWidth: 560, margin: '0 auto' }}>
         <div style={{ marginBottom: 20 }}>
-          <Logo variant="dark" />
+          <Link href="/app" style={{ textDecoration: 'none' }}>
+            <Logo variant="dark" />
+          </Link>
         </div>
 
         <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 16, padding: '30px 32px' }}>
