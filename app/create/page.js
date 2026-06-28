@@ -684,18 +684,32 @@ function CreateInner() {
               </div>
             )}
 
-            <button type="submit" disabled={loading} style={{
-              width: '100%', padding: '15px',
-              background: loading ? '#a0aec0' : '#1a2e4a',
-              color: 'white', border: 'none', borderRadius: 10,
-              fontWeight: 700, fontSize: 16, cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'background 0.2s'
-            }}
-              onMouseEnter={e => { if (!loading) e.target.style.background = '#00c9a7' }}
-              onMouseLeave={e => { if (!loading) e.target.style.background = '#1a2e4a' }}
-            >
-              {loading ? 'Publication en cours...' : 'Publier mon manuel'}
-            </button>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => router.push('/app')}
+                disabled={loading}
+                style={{
+                  flex: 1, padding: '15px',
+                  background: 'white', color: '#64748b', border: '1.5px solid #e2e8f0',
+                  borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: loading ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Annuler
+              </button>
+              <button type="submit" disabled={loading} style={{
+                flex: 2, padding: '15px',
+                background: loading ? '#a0aec0' : '#1a2e4a',
+                color: 'white', border: 'none', borderRadius: 10,
+                fontWeight: 700, fontSize: 16, cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'background 0.2s'
+              }}
+                onMouseEnter={e => { if (!loading) e.target.style.background = '#00c9a7' }}
+                onMouseLeave={e => { if (!loading) e.target.style.background = '#1a2e4a' }}
+              >
+                {loading ? 'Publication en cours...' : 'Publier mon manuel'}
+              </button>
+            </div>
           </form>
         </div>
 

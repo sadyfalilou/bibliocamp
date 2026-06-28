@@ -195,12 +195,25 @@ export default function PublierColocView({ setView, editId }) {
 
         {error && <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', color: '#e53e3e', borderRadius: 8, padding: 12, fontSize: 13 }}>{error}</div>}
 
-        <button type="submit" disabled={saving} style={{
-          background: saving ? '#a0aec0' : '#1a2e4a', color: 'white', border: 'none',
-          borderRadius: 8, padding: '12px', fontWeight: 700, fontSize: 14, cursor: saving ? 'not-allowed' : 'pointer'
-        }}>
-          {saving ? 'Enregistrement...' : (editId ? 'Enregistrer les modifications' : '+ Publier l\'annonce')}
-        </button>
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            type="button"
+            onClick={() => setView(editId ? 'mes-colocs' : 'colocs')}
+            disabled={saving}
+            style={{
+              flex: 1, background: 'white', color: '#64748b', border: '1.5px solid #e2e8f0',
+              borderRadius: 8, padding: '12px', fontWeight: 700, fontSize: 14, cursor: saving ? 'not-allowed' : 'pointer'
+            }}
+          >
+            Annuler
+          </button>
+          <button type="submit" disabled={saving} style={{
+            flex: 2, background: saving ? '#a0aec0' : '#1a2e4a', color: 'white', border: 'none',
+            borderRadius: 8, padding: '12px', fontWeight: 700, fontSize: 14, cursor: saving ? 'not-allowed' : 'pointer'
+          }}>
+            {saving ? 'Enregistrement...' : (editId ? 'Enregistrer les modifications' : '+ Publier l\'annonce')}
+          </button>
+        </div>
       </form>
     </div>
   )
