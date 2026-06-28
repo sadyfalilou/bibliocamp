@@ -543,6 +543,11 @@ function HomeContent() {
     listings?.map(item => item.campus || profilesMap[item.user_id]?.institution).filter(Boolean)
   )].sort()
 
+  // Noms de cours disponibles dans les listings
+  const availableDomains = [...new Set(
+    listings?.map(item => item.domain).filter(Boolean)
+  )].sort()
+
   const myListings = listings?.filter(item => item.user_id === user?.id)
 
   // Polling notifications — toutes les 5s, détecte les nouveaux messages
@@ -1129,18 +1134,15 @@ function HomeContent() {
                 </select>
 
                 {/* Nom du cours */}
-                <input
-                  type="text"
-                  value={filterDomain}
-                  onChange={e => setFilterDomain(e.target.value)}
-                  placeholder="🎓 Nom du cours"
-                  style={{
-                    padding: '8px 12px', border: `1px solid ${filterDomain ? '#00c9a7' : '#e2e8f0'}`,
-                    borderRadius: 8, fontSize: 13, outline: 'none',
-                    background: filterDomain ? '#f0fdf9' : 'white',
-                    color: filterDomain ? '#00a88a' : '#1a2e4a', fontWeight: 600, width: 150
-                  }}
-                />
+                <select value={filterDomain} onChange={e => setFilterDomain(e.target.value)} style={{
+                  padding: '8px 12px', border: `1px solid ${filterDomain ? '#00c9a7' : '#e2e8f0'}`,
+                  borderRadius: 8, fontSize: 13, outline: 'none',
+                  background: filterDomain ? '#f0fdf9' : 'white',
+                  cursor: 'pointer', color: filterDomain ? '#00a88a' : '#1a2e4a', fontWeight: 600
+                }}>
+                  <option value="">🎓 Nom du cours</option>
+                  {availableDomains.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
 
                 {/* Méthode */}
                 <select value={filterTransaction} onChange={e => setFilterTransaction(e.target.value)} style={{
