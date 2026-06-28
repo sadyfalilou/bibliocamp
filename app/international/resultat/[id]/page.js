@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useParams, useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '../../../../lib/supabase'
 import Logo from '../../../../components/Logo'
 import Footer from '../../../../components/Footer'
@@ -75,7 +76,9 @@ export default function DiagnosticResultPage() {
     <div style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", background: '#f8fafc', minHeight: '100vh' }}>
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '32px 16px 64px' }}>
         <div style={{ marginBottom: 24, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Logo variant="dark" />
+          <Link href="/app" style={{ textDecoration: 'none' }}>
+            <Logo variant="dark" />
+          </Link>
           <span onClick={() => router.push('/international/mes-demandes')} style={{ fontSize: 12, fontWeight: 700, color: '#0f6e56', cursor: 'pointer' }}>
             Mes demandes →
           </span>
@@ -99,6 +102,27 @@ export default function DiagnosticResultPage() {
             <SummaryRow label="Besoins sélectionnés" value={(diagnostic.needs || []).map(n => NEEDS_LABELS[n] || n).join(', ')} />
           </div>
         </div>
+
+        {diagnostic.forfait && (
+          <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 16, padding: '24px 32px', marginBottom: 20 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a2e4a', margin: '0 0 12px' }}>Forfait et paiement</h2>
+            <div style={{ display: 'grid', gap: 12 }}>
+              <SummaryRow label="Forfait" value={diagnostic.forfait} />
+              {diagnostic.prix != null && <SummaryRow label="Montant à payer" value={`${diagnostic.prix} ${diagnostic.devise || 'CAD'}`} />}
+              {diagnostic.payment_method && <SummaryRow label="Méthode" value={diagnostic.payment_method} />}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 13, borderBottom: '1px solid #f1f5f9', paddingBottom: 8 }}>
+                <span style={{ color: '#64748b' }}>Statut</span>
+                <span style={{
+                  background: diagnostic.payment_status === 'paye' ? '#e1f5ee' : '#faeeda',
+                  color: diagnostic.payment_status === 'paye' ? '#085041' : '#854f0b',
+                  fontSize: 12, fontWeight: 700, padding: '4px 12px', borderRadius: 20
+                }}>
+                  {diagnostic.payment_status === 'paye' ? 'Payé' : 'Non payé'}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 16, padding: '24px 32px', marginBottom: 20 }}>
           <h2 style={{ fontSize: 15, fontWeight: 700, color: '#1a2e4a', margin: '0 0 12px' }}>Documents scolaires habituellement à préparer</h2>

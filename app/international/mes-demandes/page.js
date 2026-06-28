@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { supabase } from '../../../lib/supabase'
 import Logo from '../../../components/Logo'
 import Footer from '../../../components/Footer'
@@ -108,7 +109,9 @@ export default function MesDemandesPage() {
     <div style={{ fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif", background: '#f8fafc', minHeight: '100vh' }}>
       <div style={{ maxWidth: 640, margin: '0 auto', padding: '32px 16px 64px' }}>
         <div style={{ marginBottom: 24 }}>
-          <Logo variant="dark" />
+          <Link href="/app" style={{ textDecoration: 'none' }}>
+            <Logo variant="dark" />
+          </Link>
         </div>
 
         <p style={{ fontSize: 11, fontWeight: 700, color: '#9ca3af', textTransform: 'uppercase', letterSpacing: 0.5, margin: '0 0 6px' }}>
