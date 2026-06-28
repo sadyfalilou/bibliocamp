@@ -1314,7 +1314,7 @@ function HomeContent() {
                         {item.course_code && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span style={{ fontSize: 13, color: '#718096' }}>
-                              Cours : <strong>{item.course_code}</strong>
+                              Cours : <strong>{item.course_code}{item.domain ? ` — ${item.domain}` : ''}</strong>
                             </span>
                             <button
                               onClick={e => { e.stopPropagation(); toggleSubject(item.course_code) }}
@@ -1727,7 +1727,7 @@ function HomeContent() {
                             onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
                           >{item.title}</div>
                           {item.authors && <div style={{ fontSize: 13, color: '#718096' }}>✍️ {item.authors}</div>}
-                          {item.course_code && <div style={{ fontSize: 13, color: '#718096' }}>Cours : <strong>{item.course_code}</strong></div>}
+                          {item.course_code && <div style={{ fontSize: 13, color: '#718096' }}>Cours : <strong>{item.course_code}{item.domain ? ` — ${item.domain}` : ''}</strong></div>}
                           {sellerName && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
                               <div style={{ width: 16, height: 16, background: 'linear-gradient(135deg,#1a2e4a,#00c9a7)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: 'white', fontWeight: 700 }}>
@@ -1908,7 +1908,7 @@ function HomeContent() {
                             <div style={{ fontWeight: 700, color: item.status === 'sold' ? '#94a3b8' : '#00a88a', fontSize: 14 }}>{item.title}</div>
                             {item.status === 'sold' && <span style={{ fontSize: 10, fontWeight: 700, background: '#dcfce7', color: '#16a34a', padding: '1px 6px', borderRadius: 10 }}>Vendu</span>}
                           </div>
-                          {item.course_code && <div style={{ fontSize: 12, color: '#718096' }}>Cours : <strong>{item.course_code}</strong></div>}
+                          {item.course_code && <div style={{ fontSize: 12, color: '#718096' }}>Cours : <strong>{item.course_code}{item.domain ? ` — ${item.domain}` : ''}</strong></div>}
                           <div style={{ fontSize: 11, color: '#b0bec5', marginTop: 2 }}>{timeAgo(item.created_at)}</div>
                         </div>
                       </div>
