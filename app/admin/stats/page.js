@@ -90,7 +90,7 @@ export default function AdminStatsPage() {
     </div>
   )
 
-  const { users, listings, messages, referrals, community, growth, growth_monthly, tutors, roommates } = data
+  const { users, listings, messages, referrals, community, growth, growth_monthly, tutors, roommates, international } = data
   const maxMonthUsers    = Math.max(...(growth_monthly || []).map(g => g.new_users), 1)
   const maxMonthListings = Math.max(...(growth_monthly || []).map(g => g.new_listings), 1)
   const maxMonthConv     = Math.max(...(growth_monthly || []).map(g => g.new_conv), 1)
@@ -362,6 +362,37 @@ export default function AdminStatsPage() {
               <a href="/admin/roommate-reports" style={{ fontSize: 13, color: '#00c9a7', fontWeight: 600, textDecoration: 'none' }}>
                 Voir les signalements colocs →
               </a>
+            )}
+          </Section>
+        )}
+
+        {/* ── INTERNATIONAL ── */}
+        {international && (
+          <Section title="🌍 Étudiants internationaux">
+            <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', marginBottom: 12 }}>
+              <Stat icon="📝" label="Diagnostics soumis" value={international.total} sub={`+${international.week} cette semaine`} color="#1a2e4a" highlight />
+              <Stat icon="💳" label="Forfaits payés" value={international.paid} sub={`sur ${international.total} demandes`} color="#16a34a" highlight />
+            </div>
+            <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+              {Object.keys(international.by_status).length > 0 && (
+                <Card style={{ flex: 1, minWidth: 260 }}>
+                  <CardTitle>Par statut</CardTitle>
+                  {Object.entries(international.by_status).map(([name, count]) => (
+                    <Bar key={name} label={name} value={count} max={Math.max(...Object.values(international.by_status), 1)} />
+                  ))}
+                </Card>
+              )}
+              {Object.keys(international.by_forfait).length > 0 && (
+                <Card style={{ flex: 1, minWidth: 260 }}>
+                  <CardTitle>Par forfait</CardTitle>
+                  {Object.entries(international.by_forfait).map(([name, count]) => (
+                    <Bar key={name} label={name} value={count} max={Math.max(...Object.values(international.by_forfait), 1)} color="#6c63ff" />
+                  ))}
+                </Card>
+              )}
+            </div>
+            {international.total === 0 && (
+              <p style={{ fontSize: 13, color: '#a0aec0' }}>Aucun diagnostic soumis pour l'instant.</p>
             )}
           </Section>
         )}
