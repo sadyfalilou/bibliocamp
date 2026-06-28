@@ -5,6 +5,7 @@ import imageCompression from 'browser-image-compression'
 import { supabase } from '../../../lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import Logo from '../../../components/Logo'
+import ProfileMenu from '../../../components/ProfileMenu'
 
 const ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
 const DOMAINES = ['Sciences', 'Santé', 'Droit', 'Arts', 'Éducation', 'Génie', 'Commerce', 'Autres']
@@ -14,6 +15,7 @@ export default function Edit() {
   const router = useRouter()
   const fileInputRef = useRef(null)
   const [isMobile, setIsMobile] = useState(false)
+  const [user, setUser] = useState(null)
 
   const [title, setTitle] = useState('')
   const [authors, setAuthors] = useState('')
@@ -95,6 +97,7 @@ export default function Edit() {
       ])
       if (!session) { router.push('/login'); return }
       sessionTokenRef.current = session.access_token
+      setUser(session.user)
 
       const { data, error } = await supabase
         .from('listings')
@@ -243,16 +246,7 @@ export default function Edit() {
         boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
       }}>
         <Logo variant="light" size="sm" onClick={() => router.push('/app')} style={{ cursor: 'pointer' }} />
-        <button onClick={() => router.push('/app')} style={{
-          background: 'transparent', color: '#a0aec0',
-          border: '1px solid #2d4a6b', padding: '6px 14px',
-          borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600
-        }}
-          onMouseEnter={e => { e.target.style.color = 'white'; e.target.style.borderColor = '#00c9a7' }}
-          onMouseLeave={e => { e.target.style.color = '#a0aec0'; e.target.style.borderColor = '#2d4a6b' }}
-        >
-          ← Retour
-        </button>
+        <ProfileMenu user={user} />
       </header>
 
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '20px 16px' : '36px 24px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 32, alignItems: 'flex-start' }}>
