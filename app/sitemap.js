@@ -8,6 +8,8 @@ export default async function sitemap() {
     { url: `${BASE_URL}/login`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE_URL}/faq`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE_URL}/a-propos`, changeFrequency: 'yearly', priority: 0.4 },
+    { url: `${BASE_URL}/international`, changeFrequency: 'monthly', priority: 0.6 },
+    { url: `${BASE_URL}/international/mon-histoire`, changeFrequency: 'yearly', priority: 0.5 },
     { url: `${BASE_URL}/cgu`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${BASE_URL}/confidentialite`, changeFrequency: 'yearly', priority: 0.3 },
   ]

@@ -5,12 +5,14 @@ import imageCompression from 'browser-image-compression'
 import { supabase } from '../../lib/supabase'
 import { useRouter, useSearchParams } from 'next/navigation'
 import Logo from '../../components/Logo'
+import ProfileMenu from '../../components/ProfileMenu'
 
 const ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
 
 function CreateInner() {
   const [isMobile, setIsMobile] = useState(false)
   const [userId, setUserId] = useState(null)
+  const [user, setUser] = useState(null)
   const [title, setTitle] = useState('')
   const [authors, setAuthors] = useState('')
   const [isbn, setIsbn] = useState('')
@@ -50,6 +52,7 @@ function CreateInner() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setUserId(session.user.id)
+        setUser(session.user)
         sessionTokenRef.current = session.access_token
       }
     })
@@ -269,16 +272,7 @@ function CreateInner() {
         boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
       }}>
         <Logo variant="light" size="sm" onClick={() => router.push('/app')} style={{ cursor: 'pointer' }} />
-        <button onClick={() => router.push('/app')} style={{
-          background: 'transparent', color: '#a0aec0',
-          border: '1px solid #2d4a6b', padding: '6px 14px',
-          borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600
-        }}
-          onMouseEnter={e => { e.target.style.color = 'white'; e.target.style.borderColor = '#00c9a7' }}
-          onMouseLeave={e => { e.target.style.color = '#a0aec0'; e.target.style.borderColor = '#2d4a6b' }}
-        >
-          ← Retour
-        </button>
+        <ProfileMenu user={user} />
       </header>
 
       <div style={{ maxWidth: 1000, margin: '0 auto', padding: isMobile ? '20px 16px' : '36px 24px', display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 32, alignItems: 'flex-start' }}>
@@ -446,7 +440,7 @@ function CreateInner() {
                     Code de cours
                   </label>
                   <input
-                    placeholder="ex: MKG3301"
+                    placeholder="ex: MBA8616"
                     value={course}
                     onChange={e => handleFieldChange('course', e.target.value, setCourse)}
                     onBlur={e => touch('course', e.target.value)}
@@ -484,6 +478,7 @@ function CreateInner() {
                 </div>
                 <ErrorMsg name="etat" />
               </div>
+
 
               {/* CAMPUS */}
               <div style={{ marginTop: 18 }}>
@@ -659,18 +654,32 @@ function CreateInner() {
               </div>
             )}
 
-            <button type="submit" disabled={loading} style={{
-              width: '100%', padding: '15px',
-              background: loading ? '#a0aec0' : '#1a2e4a',
-              color: 'white', border: 'none', borderRadius: 10,
-              fontWeight: 700, fontSize: 16, cursor: loading ? 'not-allowed' : 'pointer',
-              transition: 'background 0.2s'
-            }}
-              onMouseEnter={e => { if (!loading) e.target.style.background = '#00c9a7' }}
-              onMouseLeave={e => { if (!loading) e.target.style.background = '#1a2e4a' }}
-            >
-              {loading ? 'Publication en cours...' : 'Publier mon manuel'}
-            </button>
+            <div style={{ display: 'flex', gap: 12 }}>
+              <button
+                type="button"
+                onClick={() => router.push('/app')}
+                disabled={loading}
+                style={{
+                  flex: 1, padding: '15px',
+                  background: 'white', color: '#64748b', border: '1.5px solid #e2e8f0',
+                  borderRadius: 10, fontWeight: 700, fontSize: 16, cursor: loading ? 'not-allowed' : 'pointer'
+                }}
+              >
+                Annuler
+              </button>
+              <button type="submit" disabled={loading} style={{
+                flex: 2, padding: '15px',
+                background: loading ? '#a0aec0' : '#1a2e4a',
+                color: 'white', border: 'none', borderRadius: 10,
+                fontWeight: 700, fontSize: 16, cursor: loading ? 'not-allowed' : 'pointer',
+                transition: 'background 0.2s'
+              }}
+                onMouseEnter={e => { if (!loading) e.target.style.background = '#00c9a7' }}
+                onMouseLeave={e => { if (!loading) e.target.style.background = '#1a2e4a' }}
+              >
+                {loading ? 'Publication en cours...' : 'Publier mon manuel'}
+              </button>
+            </div>
           </form>
         </div>
 

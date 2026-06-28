@@ -80,6 +80,16 @@ export async function POST(request) {
   if (!user) return Response.json({ error: 'Non autorisé.' }, { status: 401 })
 
   const supabase = adminClient()
+
+  const { data: sellerProfile } = await supabase
+    .from('profiles')
+    .select('phone_verified')
+    .eq('id', user.id)
+    .single()
+  if (!sellerProfile?.phone_verified) {
+    return Response.json({ error: 'Numéro de téléphone non vérifié' }, { status: 403 })
+  }
+
   const formData = await request.formData()
   const fields = {
     title: formData.get('title') || '',
