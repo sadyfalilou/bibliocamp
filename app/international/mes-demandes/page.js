@@ -67,11 +67,12 @@ function Row({ label, value }) {
 
 function Timeline({ status }) {
   const current = stepIndex(status)
+  const finished = status === 'termine'
   return (
     <div style={{ marginBottom: 18 }}>
       {STEPS.map((step, i) => {
-        const done = i < current
-        const active = i === current
+        const done = i < current || (finished && i === current)
+        const active = i === current && !finished
         const isLast = i === STEPS.length - 1
         return (
           <div key={step.key} style={{ display: 'flex', gap: 12 }}>
