@@ -156,18 +156,6 @@ describe('POST /api/listings', () => {
     expect(body.listing).toBeDefined()
   })
 
-  test('nom du cours trop long → 400', async () => {
-    const req = makeRequest({ ...validFields, domain: 'a'.repeat(101) })
-    const res = await POST(req)
-    expect(res.status).toBe(400)
-  })
-
-  test('nom du cours libre → 200', async () => {
-    const req = makeRequest({ ...validFields, domain: 'Marketing international' })
-    const res = await POST(req)
-    expect(res.status).toBe(200)
-  })
-
   test('erreur Supabase → 500', async () => {
     mockInsert.mockResolvedValue({ data: null, error: { message: 'DB error' } })
     const req = makeRequest(validFields)

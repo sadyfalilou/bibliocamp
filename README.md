@@ -22,7 +22,6 @@
 - 🔔 Alerte courriel "manuel disponible" — un étudiant laisse son courriel sur une fiche manuel sans vendeur, et reçoit un email (Resend) dès qu'une annonce correspondante est publiée
 - 📊 Page admin stats — graphiques Chart.js (croissance hebdomadaire, top matières tuteurs, répartition des tarifs)
 - 👨‍🏫 Tuteurs — création de profil (domaines, matières, tarif, disponibilités), recherche/filtres, contact, avis/notation
-- 🎓 Filtre par domaine d'études sur les annonces de manuels (champ optionnel à la création)
 - 🌍 Module international (`/international`) — diagnostic en 7 étapes, suivi des demandes, estimation de forfait, réservation Calendly, gestion admin (`/admin/international`)
 - 🧭 Menu profil unifié (`components/ProfileMenu.js`) — favoris, messages, mes annonces, profil — partagé entre `/profile`, `/inbox`, `/create`, `/edit/[id]`
 

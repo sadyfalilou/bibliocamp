@@ -5,7 +5,7 @@ et les lire, sans aide extérieure.
 
 ---
 
-## 1. Tests unitaires / API (Jest) — 221 tests, 18 suites
+## 1. Tests unitaires / API (Jest) — 219 tests, 18 suites
 
 Vérifient la logique isolée : routes API, validation, rate limiting.
 
@@ -16,7 +16,7 @@ npm test
 Résultat attendu :
 ```
 Test Suites: 18 passed, 18 total
-Tests:       221 passed, 221 total
+Tests:       219 passed, 219 total
 ```
 
 ### Suites actuelles
@@ -24,7 +24,7 @@ Tests:       221 passed, 221 total
 | Fichier | Tests | Ce qui est couvert |
 |---|---|---|
 | `__tests__/validation.test.js` | 60 | Validation champs (isbn, prix, état, transaction, titre…) |
-| `__tests__/api.listings.test.js` | 20 | POST/PATCH annonces : auth, 403 téléphone non vérifié, ISBN requis, état requis, transaction requise, nom du cours (libre, longueur max) |
+| `__tests__/api.listings.test.js` | 18 | POST/PATCH annonces : auth, 403 téléphone non vérifié, ISBN requis, état requis, transaction requise |
 | `__tests__/api.listings.status.test.js` | 7 | PATCH statut annonce : 401, 400, 404, 403, 200 |
 | `__tests__/api.invite.test.js` | 6 | GET/POST parrainage : code, 404 parrain introuvable, 400 auto-parrainage |
 | `__tests__/api.conversations.test.js` | 8 | POST conversation (manuel) : auth, 400 auto-contact, 403 téléphone non vérifié, conv existante, nouvelle conv |

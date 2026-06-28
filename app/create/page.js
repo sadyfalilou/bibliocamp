@@ -20,7 +20,6 @@ function CreateInner() {
   const [price, setPrice] = useState('')
   const [originalPrice, setOriginalPrice] = useState('')
   const [etat, setEtat] = useState('')
-  const [domain, setDomain] = useState('')
   const [campus, setCampus] = useState('')
   const [meetCampus, setMeetCampus] = useState(false)
   const [meetCity, setMeetCity] = useState(false)
@@ -236,7 +235,6 @@ function CreateInner() {
     formData.append('price', price)
     formData.append('original_price', originalPrice)
     formData.append('description', etat)
-    formData.append('domain', domain)
     formData.append('campus', campus)
     formData.append('meet_campus', meetCampus)
     formData.append('meet_city', meetCity)
@@ -442,7 +440,7 @@ function CreateInner() {
                     Code de cours
                   </label>
                   <input
-                    placeholder="ex: MKG3301"
+                    placeholder="ex: MBA8616"
                     value={course}
                     onChange={e => handleFieldChange('course', e.target.value, setCourse)}
                     onBlur={e => touch('course', e.target.value)}
@@ -481,18 +479,6 @@ function CreateInner() {
                 <ErrorMsg name="etat" />
               </div>
 
-              {/* NOM DU COURS */}
-              <div style={{ marginTop: 18 }}>
-                <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
-                  Nom du cours <span style={{ fontSize: 12, color: '#a0aec0', fontWeight: 400 }}>(facultatif)</span>
-                </label>
-                <input
-                  placeholder="ex: MBA8616 - Marketing"
-                  value={domain}
-                  onChange={e => setDomain(e.target.value)}
-                  style={fieldStyle('domain')}
-                />
-              </div>
 
               {/* CAMPUS */}
               <div style={{ marginTop: 18 }}>

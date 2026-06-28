@@ -94,7 +94,7 @@ export async function GET(request) {
     supabase.from('listings').select('*', { count: 'exact', head: true }).eq('status', 'active'),
     supabase.from('listings').select('*', { count: 'exact', head: true }).eq('status', 'sold'),
     supabase.from('listings').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString()),
-    supabase.from('listings').select('title, isbn, price, original_price, description, status, campus, domain, created_at, user_id'),
+    supabase.from('listings').select('title, isbn, price, original_price, description, status, campus, created_at, user_id'),
 
     supabase.from('listings').select('*', { count: 'exact', head: true }).eq('meet_campus', true),
     supabase.from('listings').select('*', { count: 'exact', head: true }).eq('meet_city', true),
@@ -166,12 +166,6 @@ export async function GET(request) {
     else if (p <= 40) price_ranges['21-40$']++
     else if (p <= 60) price_ranges['41-60$']++
     else price_ranges['60$+']++
-  })
-
-  // Répartition par domaine d'études
-  const domain_counts = {}
-  ;(all_listings || []).forEach(l => {
-    if (l.domain) domain_counts[l.domain] = (domain_counts[l.domain] || 0) + 1
   })
 
   // Top livres (par ISBN)
@@ -329,7 +323,6 @@ export async function GET(request) {
       max_price,
       total_savings: Math.round(savings),
       by_etat: etat_counts,
-      by_domain: domain_counts,
       price_ranges,
       meet_campus: meet_campus || 0,
       meet_city: meet_city || 0,

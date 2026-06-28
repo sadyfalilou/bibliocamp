@@ -93,7 +93,7 @@ function HomeContent() {
   const [filterInstitution, setFilterInstitution] = useState('')
   const [filterCampus, setFilterCampus] = useState('')
   const [filterEtat, setFilterEtat] = useState('')
-  const [filterDomain, setFilterDomain] = useState('')
+  const [filterCourse, setFilterCourse] = useState('')
   const [filterTransaction, setFilterTransaction] = useState('')
   const [expandedSeller, setExpandedSeller] = useState(null)
   const [showSellerBooks, setShowSellerBooks] = useState(null)
@@ -513,7 +513,7 @@ function HomeContent() {
       if (!matchTitle && !matchCourse && !matchIsbn && !matchAuthors) return false
     }
     if (filterEtat && item.description !== filterEtat) return false
-    if (filterDomain && !item.domain?.toLowerCase().includes(filterDomain.toLowerCase())) return false
+    if (filterCourse && item.course_code !== filterCourse) return false
     if (filterTransaction === 'campus' && !item.meet_campus) return false
     if (filterTransaction === 'city' && !item.meet_city) return false
     if (filterTransaction === 'post' && !item.post) return false
@@ -543,9 +543,9 @@ function HomeContent() {
     listings?.map(item => item.campus || profilesMap[item.user_id]?.institution).filter(Boolean)
   )].sort()
 
-  // Noms de cours disponibles dans les listings
-  const availableDomains = [...new Set(
-    listings?.map(item => item.domain).filter(Boolean)
+  // Codes de cours disponibles dans les listings
+  const availableCourses = [...new Set(
+    listings?.map(item => item.course_code).filter(Boolean)
   )].sort()
 
   const myListings = listings?.filter(item => item.user_id === user?.id)
@@ -1133,15 +1133,15 @@ function HomeContent() {
                   {['Neuf', 'Très bon état', 'Bon état', 'Acceptable'].map(e => <option key={e} value={e}>{e}</option>)}
                 </select>
 
-                {/* Nom du cours */}
-                <select value={filterDomain} onChange={e => setFilterDomain(e.target.value)} style={{
-                  padding: '8px 12px', border: `1px solid ${filterDomain ? '#00c9a7' : '#e2e8f0'}`,
+                {/* Code de cours */}
+                <select value={filterCourse} onChange={e => setFilterCourse(e.target.value)} style={{
+                  padding: '8px 12px', border: `1px solid ${filterCourse ? '#00c9a7' : '#e2e8f0'}`,
                   borderRadius: 8, fontSize: 13, outline: 'none',
-                  background: filterDomain ? '#f0fdf9' : 'white',
-                  cursor: 'pointer', color: filterDomain ? '#00a88a' : '#1a2e4a', fontWeight: 600
+                  background: filterCourse ? '#f0fdf9' : 'white',
+                  cursor: 'pointer', color: filterCourse ? '#00a88a' : '#1a2e4a', fontWeight: 600
                 }}>
-                  <option value="">🎓 Nom du cours</option>
-                  {availableDomains.map(d => <option key={d} value={d}>{d}</option>)}
+                  <option value="">🎓 Code de cours</option>
+                  {availableCourses.map(c => <option key={c} value={c}>{c}</option>)}
                 </select>
 
                 {/* Méthode */}
@@ -1192,8 +1192,8 @@ function HomeContent() {
                 )}
 
                 {/* Reset si filtres actifs */}
-                {(filterInstitution || filterCampus || filterEtat || filterDomain || filterTransaction || sortBy !== 'recent') && (
-                  <button onClick={() => { setFilterInstitution(''); setFilterCampus(''); setFilterEtat(''); setFilterDomain(''); setFilterTransaction(''); setSortBy('recent') }} style={{
+                {(filterInstitution || filterCampus || filterEtat || filterCourse || filterTransaction || sortBy !== 'recent') && (
+                  <button onClick={() => { setFilterInstitution(''); setFilterCampus(''); setFilterEtat(''); setFilterCourse(''); setFilterTransaction(''); setSortBy('recent') }} style={{
                     padding: '8px 12px', background: '#fff5f5', color: '#e53e3e',
                     border: '1px solid #fed7d7', borderRadius: 8,
                     fontSize: 13, cursor: 'pointer', fontWeight: 600
@@ -1207,7 +1207,7 @@ function HomeContent() {
                 {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
                 {search && ` pour "${search}"`}
                 {filterEtat && ` · ${filterEtat}`}
-                {filterDomain && ` · ${filterDomain}`}
+                {filterCourse && ` · ${filterCourse}`}
                 {filterInstitution && ` · ${filterInstitution}`}
                 {filterTransaction && ` · ${filterTransaction === 'campus' ? 'Campus' : filterTransaction === 'city' ? 'En ville' : 'Postal'}`}
               </p>
@@ -1314,7 +1314,7 @@ function HomeContent() {
                         {item.course_code && (
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                             <span style={{ fontSize: 13, color: '#718096' }}>
-                              Cours : <strong>{item.course_code}{item.domain ? ` — ${item.domain}` : ''}</strong>
+                              Cours : <strong>{item.course_code}</strong>
                             </span>
                             <button
                               onClick={e => { e.stopPropagation(); toggleSubject(item.course_code) }}
@@ -1427,7 +1427,7 @@ function HomeContent() {
                 </div>
               )}
 
-              {view === 'acheter' && !search && !filterEtat && !filterDomain && !filterTransaction && !filterInstitution && hasMore && (
+              {view === 'acheter' && !search && !filterEtat && !filterCourse && !filterTransaction && !filterInstitution && hasMore && (
                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
                   <button onClick={loadMore} disabled={loadingMore} style={{
                     padding: '12px 32px', background: loadingMore ? '#a0aec0' : '#1a2e4a',
@@ -1727,7 +1727,7 @@ function HomeContent() {
                             onMouseLeave={e => e.currentTarget.style.textDecoration = 'none'}
                           >{item.title}</div>
                           {item.authors && <div style={{ fontSize: 13, color: '#718096' }}>✍️ {item.authors}</div>}
-                          {item.course_code && <div style={{ fontSize: 13, color: '#718096' }}>Cours : <strong>{item.course_code}{item.domain ? ` — ${item.domain}` : ''}</strong></div>}
+                          {item.course_code && <div style={{ fontSize: 13, color: '#718096' }}>Cours : <strong>{item.course_code}</strong></div>}
                           {sellerName && (
                             <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
                               <div style={{ width: 16, height: 16, background: 'linear-gradient(135deg,#1a2e4a,#00c9a7)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 8, color: 'white', fontWeight: 700 }}>
@@ -1908,7 +1908,7 @@ function HomeContent() {
                             <div style={{ fontWeight: 700, color: item.status === 'sold' ? '#94a3b8' : '#00a88a', fontSize: 14 }}>{item.title}</div>
                             {item.status === 'sold' && <span style={{ fontSize: 10, fontWeight: 700, background: '#dcfce7', color: '#16a34a', padding: '1px 6px', borderRadius: 10 }}>Vendu</span>}
                           </div>
-                          {item.course_code && <div style={{ fontSize: 12, color: '#718096' }}>Cours : <strong>{item.course_code}{item.domain ? ` — ${item.domain}` : ''}</strong></div>}
+                          {item.course_code && <div style={{ fontSize: 12, color: '#718096' }}>Cours : <strong>{item.course_code}</strong></div>}
                           <div style={{ fontSize: 11, color: '#b0bec5', marginTop: 2 }}>{timeAgo(item.created_at)}</div>
                         </div>
                       </div>
