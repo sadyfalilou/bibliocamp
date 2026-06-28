@@ -11,11 +11,16 @@ const mockDeleteResult = jest.fn()
 const mockUpload = jest.fn()
 const mockGetPublicUrl = jest.fn()
 const mockRemove = jest.fn()
+const mockProfileSingle = jest.fn()
 
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
     auth: { getUser: mockGetUser },
-    from: jest.fn(() => ({
+    from: jest.fn((table) => {
+      if (table === 'profiles') {
+        return { select: jest.fn(() => ({ eq: jest.fn(() => ({ single: mockProfileSingle })) })) }
+      }
+      return {
       select: jest.fn(() => {
         const chain = {}
         chain.eq = jest.fn(() => chain)
@@ -42,7 +47,8 @@ jest.mock('@supabase/supabase-js', () => ({
         chain.then = (resolve, reject) => mockDeleteResult().then(resolve, reject)
         return chain
       }),
-    })),
+      }
+    }),
     storage: {
       from: jest.fn(() => ({
         upload: mockUpload,
@@ -124,6 +130,7 @@ describe('POST /api/roommates', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-123' } } })
+    mockProfileSingle.mockResolvedValue({ data: { phone_verified: true }, error: null })
     mockInsertSingle.mockResolvedValue({ data: { id: 1, ...validFields }, error: null })
   })
 
@@ -131,6 +138,13 @@ describe('POST /api/roommates', () => {
     const req = makeFormRequest(validFields, false)
     const res = await POST(req)
     expect(res.status).toBe(401)
+  })
+
+  test('téléphone non vérifié → 403', async () => {
+    mockProfileSingle.mockResolvedValue({ data: { phone_verified: false }, error: null })
+    const req = makeFormRequest(validFields)
+    const res = await POST(req)
+    expect(res.status).toBe(403)
   })
 
   test('titre vide → 400', async () => {

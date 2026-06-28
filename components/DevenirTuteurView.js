@@ -129,12 +129,21 @@ export default function DevenirTuteurView({ user, setView }) {
     if (!validate()) return
     setSaving(true)
     try {
-      const { error } = await supabase.from('tutors').insert({
-        user_id: user.id, domains, subjects, rate_per_hour: rate,
-        meet_campus: meetCampus, meet_online: meetOnline, meet_city: meetCity,
-        availabilities, bio: bio.trim(), languages, is_active: true,
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/tutors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` },
+        body: JSON.stringify({
+          domains, subjects, rate_per_hour: rate,
+          meet_campus: meetCampus, meet_online: meetOnline, meet_city: meetCity,
+          availabilities, bio: bio.trim(), languages,
+        }),
       })
-      if (error) throw error
+      const json = await res.json()
+      if (!res.ok) {
+        setErrors({ submit: json.error || "Erreur lors de l'enregistrement. Réessaie." })
+        return
+      }
       setStep(4)
     } catch {
       setErrors({ submit: "Erreur lors de l'enregistrement. Réessaie." })
