@@ -21,6 +21,8 @@ import ListingWarningBadge from '../../components/ListingWarningBadge'
 import ListingReportBadge from '../../components/ListingReportBadge'
 import Footer from '../../components/Footer'
 
+const DOMAINES = ['Sciences', 'Santé', 'Droit', 'Arts', 'Éducation', 'Génie', 'Commerce', 'Autres']
+
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
   const days = Math.floor(diff / 86400000)
@@ -92,6 +94,7 @@ function HomeContent() {
   const [filterInstitution, setFilterInstitution] = useState('')
   const [filterCampus, setFilterCampus] = useState('')
   const [filterEtat, setFilterEtat] = useState('')
+  const [filterDomain, setFilterDomain] = useState('')
   const [filterTransaction, setFilterTransaction] = useState('')
   const [expandedSeller, setExpandedSeller] = useState(null)
   const [showSellerBooks, setShowSellerBooks] = useState(null)
@@ -511,6 +514,7 @@ function HomeContent() {
       if (!matchTitle && !matchCourse && !matchIsbn && !matchAuthors) return false
     }
     if (filterEtat && item.description !== filterEtat) return false
+    if (filterDomain && item.domain !== filterDomain) return false
     if (filterTransaction === 'campus' && !item.meet_campus) return false
     if (filterTransaction === 'city' && !item.meet_city) return false
     if (filterTransaction === 'post' && !item.post) return false
@@ -1125,6 +1129,17 @@ function HomeContent() {
                   {['Neuf', 'Très bon état', 'Bon état', 'Acceptable'].map(e => <option key={e} value={e}>{e}</option>)}
                 </select>
 
+                {/* Domaine */}
+                <select value={filterDomain} onChange={e => setFilterDomain(e.target.value)} style={{
+                  padding: '8px 12px', border: `1px solid ${filterDomain ? '#00c9a7' : '#e2e8f0'}`,
+                  borderRadius: 8, fontSize: 13, outline: 'none',
+                  background: filterDomain ? '#f0fdf9' : 'white',
+                  cursor: 'pointer', color: filterDomain ? '#00a88a' : '#1a2e4a', fontWeight: 600
+                }}>
+                  <option value="">🎓 Domaine</option>
+                  {DOMAINES.map(d => <option key={d} value={d}>{d}</option>)}
+                </select>
+
                 {/* Méthode */}
                 <select value={filterTransaction} onChange={e => setFilterTransaction(e.target.value)} style={{
                   padding: '8px 12px', border: `1px solid ${filterTransaction ? '#00c9a7' : '#e2e8f0'}`,
@@ -1173,8 +1188,8 @@ function HomeContent() {
                 )}
 
                 {/* Reset si filtres actifs */}
-                {(filterInstitution || filterCampus || filterEtat || filterTransaction || sortBy !== 'recent') && (
-                  <button onClick={() => { setFilterInstitution(''); setFilterCampus(''); setFilterEtat(''); setFilterTransaction(''); setSortBy('recent') }} style={{
+                {(filterInstitution || filterCampus || filterEtat || filterDomain || filterTransaction || sortBy !== 'recent') && (
+                  <button onClick={() => { setFilterInstitution(''); setFilterCampus(''); setFilterEtat(''); setFilterDomain(''); setFilterTransaction(''); setSortBy('recent') }} style={{
                     padding: '8px 12px', background: '#fff5f5', color: '#e53e3e',
                     border: '1px solid #fed7d7', borderRadius: 8,
                     fontSize: 13, cursor: 'pointer', fontWeight: 600
@@ -1188,6 +1203,7 @@ function HomeContent() {
                 {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
                 {search && ` pour "${search}"`}
                 {filterEtat && ` · ${filterEtat}`}
+                {filterDomain && ` · ${filterDomain}`}
                 {filterInstitution && ` · ${filterInstitution}`}
                 {filterTransaction && ` · ${filterTransaction === 'campus' ? 'Campus' : filterTransaction === 'city' ? 'En ville' : 'Postal'}`}
               </p>
@@ -1407,7 +1423,7 @@ function HomeContent() {
                 </div>
               )}
 
-              {view === 'acheter' && !search && !filterEtat && !filterTransaction && !filterInstitution && hasMore && (
+              {view === 'acheter' && !search && !filterEtat && !filterDomain && !filterTransaction && !filterInstitution && hasMore && (
                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
                   <button onClick={loadMore} disabled={loadingMore} style={{
                     padding: '12px 32px', background: loadingMore ? '#a0aec0' : '#1a2e4a',

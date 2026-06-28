@@ -3,10 +3,11 @@ import * as Sentry from '@sentry/nextjs'
 import { sendEmail } from '../../../lib/sendEmail'
 
 const VALID_ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
+const VALID_DOMAINS = ['Sciences', 'Santé', 'Droit', 'Arts', 'Éducation', 'Génie', 'Commerce', 'Autres']
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5 MB
 
-function validate({ title, authors, isbn, course_code, price, original_price, campus, description, meet_campus, meet_city, post }) {
+function validate({ title, authors, isbn, course_code, price, original_price, campus, description, domain, meet_campus, meet_city, post }) {
   if (!title || title.trim().length === 0) return 'Le titre est obligatoire.'
   if (title.trim().length > 150) return 'Le titre ne peut pas dépasser 150 caractères.'
   if (authors && authors.length > 200) return 'Le champ auteurs ne peut pas dépasser 200 caractères.'
@@ -19,6 +20,7 @@ function validate({ title, authors, isbn, course_code, price, original_price, ca
   if (campus && campus.length > 100) return 'Le campus ne peut pas dépasser 100 caractères.'
   if (!description || description.trim().length === 0) return "L'état du livre est obligatoire."
   if (!VALID_ETATS.includes(description)) return 'État du livre invalide.'
+  if (domain && !VALID_DOMAINS.includes(domain)) return 'Domaine invalide.'
   if (!meet_campus && !meet_city && !post) return 'Choisis au moins une méthode de transaction.'
   return null
 }
@@ -98,6 +100,7 @@ export async function POST(request) {
     original_price: formData.get('original_price') || null,
     description: formData.get('description') || '',
     campus: formData.get('campus') || '',
+    domain: formData.get('domain') || '',
     meet_campus: meetCampus,
     meet_city: meetCity,
     post: postVal,
@@ -136,6 +139,7 @@ export async function POST(request) {
     original_price: fields.original_price ? Number(fields.original_price) : null,
     description: fields.description,
     campus: fields.campus.trim(),
+    domain: fields.domain || null,
     meet_campus: fields.meet_campus,
     meet_city: fields.meet_city,
     post: fields.post,
@@ -179,6 +183,7 @@ export async function PATCH(request) {
     original_price: formData.get('original_price') || null,
     description: formData.get('description') || '',
     campus: formData.get('campus') || '',
+    domain: formData.get('domain') || '',
     meet_campus: meetCampusPatch,
     meet_city: meetCityPatch,
     post: postPatch,
@@ -219,6 +224,7 @@ export async function PATCH(request) {
       original_price: fields.original_price ? Number(fields.original_price) : null,
       description: fields.description,
       campus: fields.campus.trim(),
+      domain: fields.domain || null,
       meet_campus: fields.meet_campus,
       meet_city: fields.meet_city,
       post: fields.post,

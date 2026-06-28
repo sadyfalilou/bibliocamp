@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import Logo from '../../components/Logo'
 
 const ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
+const DOMAINES = ['Sciences', 'Santé', 'Droit', 'Arts', 'Éducation', 'Génie', 'Commerce', 'Autres']
 
 function CreateInner() {
   const [isMobile, setIsMobile] = useState(false)
@@ -18,6 +19,7 @@ function CreateInner() {
   const [price, setPrice] = useState('')
   const [originalPrice, setOriginalPrice] = useState('')
   const [etat, setEtat] = useState('')
+  const [domain, setDomain] = useState('')
   const [campus, setCampus] = useState('')
   const [meetCampus, setMeetCampus] = useState(false)
   const [meetCity, setMeetCity] = useState(false)
@@ -232,6 +234,7 @@ function CreateInner() {
     formData.append('price', price)
     formData.append('original_price', originalPrice)
     formData.append('description', etat)
+    formData.append('domain', domain)
     formData.append('campus', campus)
     formData.append('meet_campus', meetCampus)
     formData.append('meet_city', meetCity)
@@ -483,6 +486,34 @@ function CreateInner() {
                   ))}
                 </div>
                 <ErrorMsg name="etat" />
+              </div>
+
+              {/* DOMAINE */}
+              <div style={{ marginTop: 18 }}>
+                <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
+                  Domaine d'études <span style={{ fontSize: 12, color: '#a0aec0', fontWeight: 400 }}>(facultatif)</span>
+                </label>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  {DOMAINES.map(d => (
+                    <button
+                      key={d}
+                      type="button"
+                      onClick={() => setDomain(domain === d ? '' : d)}
+                      style={{
+                        padding: '8px 16px',
+                        border: `2px solid ${domain === d ? '#00c9a7' : '#cbd5e0'}`,
+                        borderRadius: 20,
+                        background: domain === d ? '#f0fdf9' : 'white',
+                        color: domain === d ? '#00c9a7' : '#4a5568',
+                        fontWeight: domain === d ? 700 : 500,
+                        fontSize: 13, cursor: 'pointer',
+                        transition: 'all 0.15s'
+                      }}
+                    >
+                      {d}
+                    </button>
+                  ))}
+                </div>
               </div>
 
               {/* CAMPUS */}

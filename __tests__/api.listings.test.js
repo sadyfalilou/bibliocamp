@@ -156,6 +156,18 @@ describe('POST /api/listings', () => {
     expect(body.listing).toBeDefined()
   })
 
+  test('domaine invalide → 400', async () => {
+    const req = makeRequest({ ...validFields, domain: 'Astrologie' })
+    const res = await POST(req)
+    expect(res.status).toBe(400)
+  })
+
+  test('domaine valide → 200', async () => {
+    const req = makeRequest({ ...validFields, domain: 'Sciences' })
+    const res = await POST(req)
+    expect(res.status).toBe(200)
+  })
+
   test('erreur Supabase → 500', async () => {
     mockInsert.mockResolvedValue({ data: null, error: { message: 'DB error' } })
     const req = makeRequest(validFields)
