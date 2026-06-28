@@ -7,6 +7,7 @@ const mockUpdate = jest.fn()
 const mockGetUser = jest.fn()
 const mockUpload = jest.fn()
 const mockGetPublicUrl = jest.fn()
+const mockProfileSingle = jest.fn()
 
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
@@ -17,6 +18,13 @@ jest.mock('@supabase/supabase-js', () => ({
         chain.select = jest.fn(() => ({ ...chain, then: (resolve) => resolve({ data: [] }) }))
         chain.update = jest.fn(() => chain)
         return chain
+      }
+      if (table === 'profiles') {
+        return {
+          select: jest.fn(() => ({
+            eq: jest.fn(() => ({ single: mockProfileSingle })),
+          })),
+        }
       }
       return {
         insert: jest.fn(() => ({
@@ -69,6 +77,7 @@ describe('POST /api/listings', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockGetUser.mockResolvedValue({ data: { user: { id: 'user-123' } } })
+    mockProfileSingle.mockResolvedValue({ data: { phone_verified: true }, error: null })
     mockInsert.mockResolvedValue({ data: { id: 'listing-1', ...validFields }, error: null })
   })
 
@@ -78,6 +87,15 @@ describe('POST /api/listings', () => {
     expect(res.status).toBe(401)
     const body = await res.json()
     expect(body.error).toMatch(/autorisé/i)
+  })
+
+  test('téléphone non vérifié → 403', async () => {
+    mockProfileSingle.mockResolvedValue({ data: { phone_verified: false }, error: null })
+    const req = makeRequest(validFields)
+    const res = await POST(req)
+    expect(res.status).toBe(403)
+    const body = await res.json()
+    expect(body.error).toMatch(/téléphone/i)
   })
 
   test('titre vide → 400', async () => {

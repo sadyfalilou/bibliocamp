@@ -76,6 +76,15 @@ export async function POST(request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
+  const { data: sellerProfile } = await supabase
+    .from('profiles')
+    .select('phone_verified')
+    .eq('id', user.id)
+    .single()
+  if (!sellerProfile?.phone_verified) {
+    return Response.json({ error: 'Numéro de téléphone non vérifié' }, { status: 403 })
+  }
+
   const formData = await request.formData()
   const meetCampus = formData.get('meet_campus') === 'true'
   const meetCity = formData.get('meet_city') === 'true'
