@@ -108,6 +108,7 @@ export default function MesDemandesPage() {
   const [error, setError] = useState('')
   const [deletingId, setDeletingId] = useState(null)
   const [actionError, setActionError] = useState('')
+  const [confirmDeleteId, setConfirmDeleteId] = useState(null)
 
   useEffect(() => {
     const load = async () => {
@@ -125,7 +126,7 @@ export default function MesDemandesPage() {
   }, [router])
 
   const handleDelete = async (id) => {
-    if (!window.confirm('Supprimer cette demande ? Cette action est irréversible.')) return
+    setConfirmDeleteId(null)
     setActionError('')
     setDeletingId(id)
     const { data: { session } } = await supabase.auth.getSession()
@@ -258,7 +259,7 @@ export default function MesDemandesPage() {
                         Modifier
                       </span>
                       <span
-                        onClick={() => deletingId !== d.id && handleDelete(d.id)}
+                        onClick={() => deletingId !== d.id && setConfirmDeleteId(d.id)}
                         style={{ fontSize: 12, fontWeight: 700, color: '#b91c1c', cursor: 'pointer', opacity: deletingId === d.id ? 0.5 : 1 }}
                       >
                         {deletingId === d.id ? 'Suppression…' : 'Supprimer'}
@@ -271,6 +272,35 @@ export default function MesDemandesPage() {
           })}
         </div>
       </div>
+
+      {confirmDeleteId && (
+        <div style={{
+          position: 'fixed', inset: 0, background: 'rgba(15, 23, 42, 0.45)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 16, zIndex: 100
+        }}>
+          <div style={{ background: 'white', borderRadius: 16, padding: '24px 28px', maxWidth: 380, width: '100%' }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, color: '#1a2e4a', margin: '0 0 8px' }}>Supprimer cette demande ?</h2>
+            <p style={{ fontSize: 13, color: '#64748b', margin: '0 0 22px', lineHeight: 1.6 }}>
+              Cette action est définitive. Toutes les informations associées à cette demande seront supprimées et ne pourront pas être récupérées.
+            </p>
+            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                style={{ background: 'white', color: '#1a2e4a', border: '1px solid #e2e8f0', padding: '10px 18px', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Annuler
+              </button>
+              <button
+                onClick={() => handleDelete(confirmDeleteId)}
+                style={{ background: '#b91c1c', color: 'white', border: 'none', padding: '10px 18px', borderRadius: 9, fontSize: 13, fontWeight: 700, cursor: 'pointer' }}
+              >
+                Supprimer définitivement
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Footer />
     </div>
   )
