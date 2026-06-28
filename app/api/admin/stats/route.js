@@ -79,6 +79,11 @@ export async function GET(request) {
     { count: roommates_rented },
     { count: roommates_week },
     { count: roommate_reports_pending },
+
+    // International
+    { count: intl_total },
+    { count: intl_week },
+    { data: intl_raw },
   ] = await Promise.all([
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
     supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString()),
@@ -125,6 +130,11 @@ export async function GET(request) {
     supabase.from('roommate_listings').select('*', { count: 'exact', head: true }).eq('status', 'rented'),
     supabase.from('roommate_listings').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString()),
     supabase.from('roommate_reports').select('roommate_listing_id', { count: 'exact', head: true }),
+
+    // International
+    supabase.from('international_diagnostics').select('*', { count: 'exact', head: true }),
+    supabase.from('international_diagnostics').select('*', { count: 'exact', head: true }).gte('created_at', startOfWeek.toISOString()),
+    supabase.from('international_diagnostics').select('status, forfait, payment_status'),
   ])
 
   // ── Calculs ─────────────────────────────────────────────────────────────
@@ -280,6 +290,16 @@ export async function GET(request) {
     ? (rated_tutors.reduce((s,t) => s + Number(t.avg_rating), 0) / rated_tutors.length).toFixed(1)
     : null
 
+  // ── Stats international ─────────────────────────────────────────────────
+  const intl_by_status = {}
+  const intl_by_forfait = {}
+  let intl_paid = 0
+  ;(intl_raw || []).forEach(d => {
+    if (d.status) intl_by_status[d.status] = (intl_by_status[d.status] || 0) + 1
+    if (d.forfait) intl_by_forfait[d.forfait] = (intl_by_forfait[d.forfait] || 0) + 1
+    if (d.payment_status === 'paye') intl_paid++
+  })
+
   return NextResponse.json({
     generated_at: now.toISOString(),
     users: {
@@ -345,6 +365,13 @@ export async function GET(request) {
       week: roommates_week || 0,
       total: (roommates_active || 0) + (roommates_rented || 0),
       pending_reports: roommate_reports_pending || 0,
+    },
+    international: {
+      total: intl_total || 0,
+      week: intl_week || 0,
+      paid: intl_paid,
+      by_status: intl_by_status,
+      by_forfait: intl_by_forfait,
     },
   })
 }

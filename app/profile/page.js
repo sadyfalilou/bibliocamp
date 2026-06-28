@@ -5,6 +5,7 @@ import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Logo from '../../components/Logo'
 import BadgeList from '../../components/BadgeList'
+import ProfileMenu from '../../components/ProfileMenu'
 
 function InviteSection({ userId }) {
   const [inviteCode, setInviteCode] = useState(null)
@@ -299,17 +300,14 @@ export default function Profile() {
         boxShadow: '0 2px 10px rgba(0,0,0,0.3)'
       }}>
         <Logo variant="light" size="sm" onClick={() => router.push('/app')} style={{ cursor: 'pointer' }} />
-        <button onClick={() => router.push('/app')} style={{ background: 'transparent', color: '#a0aec0', border: '1px solid #2d4a6b', padding: '6px 14px', borderRadius: 8, cursor: 'pointer', fontSize: 13, fontWeight: 600 }}
-          onMouseEnter={e => { e.currentTarget.style.color = 'white'; e.currentTarget.style.borderColor = '#00c9a7' }}
-          onMouseLeave={e => { e.currentTarget.style.color = '#a0aec0'; e.currentTarget.style.borderColor = '#2d4a6b' }}
-        >← Retour</button>
+        <ProfileMenu user={user} />
       </header>
 
       <div style={{ maxWidth: 640, margin: '0 auto', padding: isMobile ? '20px 16px' : '36px 24px' }}>
 
         {/* Breadcrumb */}
         <div style={{ fontSize: 13, color: '#a0aec0', marginBottom: 8 }}>
-          Accueil / <span style={{ color: '#1a2e4a', fontWeight: 600 }}>Mon profil</span>
+          <span onClick={() => router.push('/app')} style={{ cursor: 'pointer' }}>Accueil</span> / <span style={{ color: '#1a2e4a', fontWeight: 600 }}>Mon profil</span>
         </div>
         <h1 style={{ fontSize: 26, fontWeight: 900, color: '#1a2e4a', margin: '0 0 24px' }}>Mon profil</h1>
 

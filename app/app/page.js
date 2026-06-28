@@ -21,6 +21,7 @@ import ListingWarningBadge from '../../components/ListingWarningBadge'
 import ListingReportBadge from '../../components/ListingReportBadge'
 import Footer from '../../components/Footer'
 
+
 function timeAgo(dateStr) {
   const diff = Date.now() - new Date(dateStr).getTime()
   const days = Math.floor(diff / 86400000)
@@ -92,6 +93,7 @@ function HomeContent() {
   const [filterInstitution, setFilterInstitution] = useState('')
   const [filterCampus, setFilterCampus] = useState('')
   const [filterEtat, setFilterEtat] = useState('')
+  const [filterCourse, setFilterCourse] = useState('')
   const [filterTransaction, setFilterTransaction] = useState('')
   const [expandedSeller, setExpandedSeller] = useState(null)
   const [showSellerBooks, setShowSellerBooks] = useState(null)
@@ -111,6 +113,7 @@ function HomeContent() {
   const [tutorsMenuOpen, setTutorsMenuOpen] = useState(false)
   const [manualsMenuOpen, setManualsMenuOpen] = useState(false)
   const [colocsMenuOpen, setColocsMenuOpen] = useState(false)
+  const [internationalMenuOpen, setInternationalMenuOpen] = useState(false)
   const [editingRoommateId, setEditingRoommateId] = useState(null)
   const [soldConfirmId, setSoldConfirmId] = useState(null)
   const [markingAsSold, setMarkingAsSold] = useState(false)
@@ -127,7 +130,7 @@ function HomeContent() {
   // Si ?view=tuteurs dans l'URL → redirigé depuis la landing page (recherche tuteur)
   useEffect(() => {
     const v = searchParams.get('view')
-    if (['tuteurs', 'devenir-tuteur', 'acheter', 'vendre', 'faq', 'faq-manuels', 'faq-colocs', 'colocs'].includes(v)) setView(v)
+    if (['tuteurs', 'devenir-tuteur', 'acheter', 'vendre', 'faq', 'faq-manuels', 'faq-colocs', 'colocs', 'favoris', 'mes-annonces'].includes(v)) setView(v)
   }, [searchParams])
 
   // Ouvre/ferme automatiquement les accordéons sidebar selon la vue active
@@ -510,6 +513,7 @@ function HomeContent() {
       if (!matchTitle && !matchCourse && !matchIsbn && !matchAuthors) return false
     }
     if (filterEtat && item.description !== filterEtat) return false
+    if (filterCourse && item.course_code !== filterCourse) return false
     if (filterTransaction === 'campus' && !item.meet_campus) return false
     if (filterTransaction === 'city' && !item.meet_city) return false
     if (filterTransaction === 'post' && !item.post) return false
@@ -537,6 +541,11 @@ function HomeContent() {
   // Institutions disponibles dans les listings
   const availableInstitutions = [...new Set(
     listings?.map(item => item.campus || profilesMap[item.user_id]?.institution).filter(Boolean)
+  )].sort()
+
+  // Codes de cours disponibles dans les listings
+  const availableCourses = [...new Set(
+    listings?.map(item => item.course_code).filter(Boolean)
   )].sort()
 
   const myListings = listings?.filter(item => item.user_id === user?.id)
@@ -931,6 +940,21 @@ function HomeContent() {
                 { label: 'FAQ', action: () => { setView('faq-colocs'); if (isMobile) setSidebarOpen(false) }, active: view === 'faq-colocs' },
               ]
             },
+            {
+              id: 'international',
+              isOpen: internationalMenuOpen,
+              toggle: () => setInternationalMenuOpen(o => !o),
+              icon: (
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15 15 0 0 1 0 20 15 15 0 0 1 0-20z"/>
+                </svg>
+              ),
+              label: 'International',
+              items: [
+                { label: 'Faire mon diagnostic', action: () => { router.push('/international/diagnostic'); if (isMobile) setSidebarOpen(false) }, active: false },
+                { label: 'Mes demandes', action: () => { router.push('/international/mes-demandes'); if (isMobile) setSidebarOpen(false) }, active: false },
+              ]
+            },
           ].map(section => (
             <div key={section.id}>
               {/* Parent */}
@@ -1109,6 +1133,17 @@ function HomeContent() {
                   {['Neuf', 'Très bon état', 'Bon état', 'Acceptable'].map(e => <option key={e} value={e}>{e}</option>)}
                 </select>
 
+                {/* Code de cours */}
+                <select value={filterCourse} onChange={e => setFilterCourse(e.target.value)} style={{
+                  padding: '8px 12px', border: `1px solid ${filterCourse ? '#00c9a7' : '#e2e8f0'}`,
+                  borderRadius: 8, fontSize: 13, outline: 'none',
+                  background: filterCourse ? '#f0fdf9' : 'white',
+                  cursor: 'pointer', color: filterCourse ? '#00a88a' : '#1a2e4a', fontWeight: 600
+                }}>
+                  <option value="">🎓 Code de cours</option>
+                  {availableCourses.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+
                 {/* Méthode */}
                 <select value={filterTransaction} onChange={e => setFilterTransaction(e.target.value)} style={{
                   padding: '8px 12px', border: `1px solid ${filterTransaction ? '#00c9a7' : '#e2e8f0'}`,
@@ -1157,8 +1192,8 @@ function HomeContent() {
                 )}
 
                 {/* Reset si filtres actifs */}
-                {(filterInstitution || filterCampus || filterEtat || filterTransaction || sortBy !== 'recent') && (
-                  <button onClick={() => { setFilterInstitution(''); setFilterCampus(''); setFilterEtat(''); setFilterTransaction(''); setSortBy('recent') }} style={{
+                {(filterInstitution || filterCampus || filterEtat || filterCourse || filterTransaction || sortBy !== 'recent') && (
+                  <button onClick={() => { setFilterInstitution(''); setFilterCampus(''); setFilterEtat(''); setFilterCourse(''); setFilterTransaction(''); setSortBy('recent') }} style={{
                     padding: '8px 12px', background: '#fff5f5', color: '#e53e3e',
                     border: '1px solid #fed7d7', borderRadius: 8,
                     fontSize: 13, cursor: 'pointer', fontWeight: 600
@@ -1172,6 +1207,7 @@ function HomeContent() {
                 {filtered.length} résultat{filtered.length !== 1 ? 's' : ''}
                 {search && ` pour "${search}"`}
                 {filterEtat && ` · ${filterEtat}`}
+                {filterCourse && ` · ${filterCourse}`}
                 {filterInstitution && ` · ${filterInstitution}`}
                 {filterTransaction && ` · ${filterTransaction === 'campus' ? 'Campus' : filterTransaction === 'city' ? 'En ville' : 'Postal'}`}
               </p>
@@ -1391,7 +1427,7 @@ function HomeContent() {
                 </div>
               )}
 
-              {view === 'acheter' && !search && !filterEtat && !filterTransaction && !filterInstitution && hasMore && (
+              {view === 'acheter' && !search && !filterEtat && !filterCourse && !filterTransaction && !filterInstitution && hasMore && (
                 <div style={{ display: 'flex', justifyContent: 'center', marginTop: 24 }}>
                   <button onClick={loadMore} disabled={loadingMore} style={{
                     padding: '12px 32px', background: loadingMore ? '#a0aec0' : '#1a2e4a',
