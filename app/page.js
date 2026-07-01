@@ -430,9 +430,9 @@ export default function Landing() {
                 onClick={() => router.push('/login')}
                 style={{ flex: '0 0 170px', scrollSnapAlign: 'start', cursor: 'pointer' }}
               >
-                <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 130, background: coverGradients[idx % coverGradients.length], marginBottom: 8 }}>
+                <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 160, background: listing.image_url ? '#f0f2f5' : coverGradients[idx % coverGradients.length], marginBottom: 8, boxShadow: '0 2px 10px rgba(0,0,0,0.10)' }}>
                   {listing.image_url && (
-                    <img src={listing.image_url} alt={listing.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                    <img src={listing.image_url} alt={listing.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} />
                   )}
                   {!listing.image_url && (
                     <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', fontSize: 30, opacity: 0.5 }}>📖</div>

@@ -134,9 +134,9 @@ export default function AccueilView({ userProfile, userId, router, setView, onSe
               onClick={() => onSelectListing ? onSelectListing(listing) : setView('acheter')}
               style={{ flex: '0 0 150px', scrollSnapAlign: 'start', cursor: 'pointer' }}
             >
-              <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', height: 110, background: coverGradients[idx % coverGradients.length], marginBottom: 6 }}>
+              <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', height: 150, background: listing.image_url ? '#f0f2f5' : coverGradients[idx % coverGradients.length], marginBottom: 6, boxShadow: '0 2px 8px rgba(0,0,0,0.10)' }}>
                 {listing.image_url ? (
-                  <img src={listing.image_url} alt={listing.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={listing.image_url} alt={listing.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain', padding: '4px' }} />
                 ) : (
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 12px', textAlign: 'center' }}>
                     <span style={{ color: 'rgba(255,255,255,0.92)', fontSize: 12, fontWeight: 700, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
