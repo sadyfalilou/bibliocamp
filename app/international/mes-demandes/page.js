@@ -30,8 +30,9 @@ function suggestedForfait(needs) {
 }
 
 const STEPS = [
-  { key: 'soumis', label: 'Diagnostic soumis' },
+  { key: 'soumis', label: 'Soumis' },
   { key: 'en_analyse', label: 'En analyse' },
+  { key: 'resultat_disponible', label: 'Résultat disponible' },
   { key: 'consultation_planifiee', label: 'Consultation planifiée' },
   { key: 'termine', label: 'Terminé' },
 ]
@@ -53,7 +54,6 @@ const NEXT_STEP_TEXT = {
 }
 
 function stepIndex(status) {
-  if (status === 'resultat_disponible') return 1
   const i = STEPS.findIndex(s => s.key === status)
   return i === -1 ? 0 : i
 }
