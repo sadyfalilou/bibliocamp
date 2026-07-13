@@ -39,7 +39,10 @@ function useFallback(ip) {
 }
 
 export async function POST(request) {
-  const ip = request.headers.get('x-forwarded-for') || 'unknown'
+  // x-forwarded-for peut contenir une chaîne "client, proxy1, proxy2" ; seule la
+  // première entrée est l'IP réelle du client. Prendre toute la chaîne
+  // permettrait de la faire varier pour contourner la limite de débit.
+  const ip = (request.headers.get('x-forwarded-for') || 'unknown').split(',')[0].trim()
   const allowed = await checkRateLimit(ip)
   if (!allowed) {
     return Response.json(

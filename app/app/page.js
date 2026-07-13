@@ -427,9 +427,13 @@ function HomeContent() {
 
     // Envoyer le code via Twilio Verify (sans toucher à la session Supabase)
     try {
+      const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch('/api/send-otp', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session ? { Authorization: `Bearer ${session.access_token}` } : {})
+        },
         body: JSON.stringify({ phone: formatted })
       })
       const result = await res.json()

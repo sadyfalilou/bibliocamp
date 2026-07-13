@@ -6,16 +6,30 @@ const supabaseAdmin = () => createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY
 )
 
+// Identifie l'utilisateur via son token JWT. L'identité vient TOUJOURS du token,
+// jamais d'un paramètre fourni par le client, pour empêcher l'usurpation.
+async function getUser(request) {
+  const auth = request.headers.get('authorization')
+  if (!auth?.startsWith('Bearer ')) return null
+  const anon = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  )
+  const { data: { user } } = await anon.auth.getUser(auth.slice(7))
+  return user
+}
+
 // Génère un code aléatoire lisible (ex: "abc123")
 function generateCode() {
   const chars = 'abcdefghjkmnpqrstuvwxyz23456789'
   return Array.from({ length: 7 }, () => chars[Math.floor(Math.random() * chars.length)]).join('')
 }
 
-// GET /api/invite?user_id=xxx → retourne ou génère le code d'invitation
+// GET /api/invite → retourne ou génère le code d'invitation de l'utilisateur connecté
 export async function GET(request) {
-  const userId = new URL(request.url).searchParams.get('user_id')
-  if (!userId) return NextResponse.json({ error: 'user_id requis' }, { status: 400 })
+  const user = await getUser(request)
+  if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
+  const userId = user.id
 
   const supabase = supabaseAdmin()
 
@@ -54,11 +68,15 @@ export async function GET(request) {
 }
 
 // POST /api/invite → enregistre le parrainage lors de l'inscription
-// Body: { user_id, ref_code }
+// Body: { ref_code } — le filleul est l'utilisateur connecté (dérivé du token)
 export async function POST(request) {
-  const { user_id, ref_code } = await request.json()
-  if (!user_id || !ref_code) return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 })
+  const user = await getUser(request)
+  if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
+  const { ref_code } = await request.json()
+  if (!ref_code) return NextResponse.json({ error: 'Paramètres manquants' }, { status: 400 })
+
+  const user_id = user.id
   const supabase = supabaseAdmin()
 
   // Vérifie que le code existe et n'est pas le sien propre
