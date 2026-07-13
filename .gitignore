@@ -45,3 +45,10 @@ backups/
 /test-results/
 /playwright-report/
 /playwright/.cache/
+
+# Scripts utilitaires locaux (accès Supabase via .env.local — jamais dans le dépôt).
+# Les scripts de sauvegarde (backup-db.ps1/.sh) restent suivis car non .js.
+scripts/*.js
+
+# Log du serveur de dev
+devserver.log
