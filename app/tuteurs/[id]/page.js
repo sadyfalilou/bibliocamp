@@ -142,21 +142,22 @@ export default function TuteurProfilePage() {
     if (isOwn) return
     setContacting(true)
     try {
-      const { data: existing } = await supabase
-        .from('conversations').select('id')
-        .eq('tutor_id', tutor.id)
-        .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-        .maybeSingle()
-
-      let convId = existing?.id
-      if (!convId) {
-        const { data: newConv } = await supabase
-          .from('conversations')
-          .insert({ user1_id: user.id, user2_id: tutor.user_id, context_type: 'tuteur', tutor_id: tutor.id })
-          .select('id').single()
-        convId = newConv?.id
-      }
-      router.push(`/inbox?conv=${convId}`)
+      // Passe par l'API : elle impose la verification du telephone, empeche
+      // l'auto-contact et renseigne last_message_at (contrairement a une
+      // insertion directe cote client).
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/tutors/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session?.access_token}`,
+        },
+        body: JSON.stringify({ tutor_id: tutor.id, owner_id: tutor.user_id }),
+      })
+      if (res.status === 403) { router.push('/app?verify=1'); return }
+      const json = await res.json()
+      if (!res.ok || !json.conversation_id) { setContacting(false); return }
+      router.push(`/inbox?conv=${json.conversation_id}`)
     } catch { setContacting(false) }
   }
 
