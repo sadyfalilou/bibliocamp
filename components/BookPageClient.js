@@ -110,18 +110,14 @@ export default function BookPageClient() {
         const d = await listingsRes.json()
         const ls = d.listings ?? []
         setListings(ls)
-        // Charger les profils des vendeurs
+        // Charger tous les profils vendeurs en une seule requête (évite le N+1)
         const userIds = [...new Set(ls.map(l => l.user_id).filter(Boolean))]
         if (userIds.length > 0) {
-          const profiles = {}
-          await Promise.all(userIds.map(async uid => {
-            const r = await fetch(`/api/seller?id=${uid}`)
-            if (r.ok) {
-              const sd = await r.json()
-              if (sd.profile) profiles[uid] = sd.profile
-            }
-          }))
-          setSellerProfiles(profiles)
+          const r = await fetch(`/api/sellers?ids=${userIds.join(',')}`)
+          if (r.ok) {
+            const sd = await r.json()
+            setSellerProfiles(sd.profiles || {})
+          }
         }
       }
       setLoading(false)
@@ -163,8 +159,6 @@ export default function BookPageClient() {
     if (diff < 604800) return `il y a ${Math.floor(diff / 86400)} jours`
     return new Date(dateStr).toLocaleDateString('fr-CA', { day: 'numeric', month: 'long' })
   }
-
-  const cheapest = listings.length > 0 ? Math.min(...listings.map(l => l.price)) : null
 
   // Fallback sur les données de la première annonce si Google Books n'a rien retourné
   const displayTitle = book?.title || listings[0]?.title || 'Titre inconnu'
@@ -439,7 +433,7 @@ export default function BookPageClient() {
                                 borderRadius: 20, padding: '2px 8px',
                                 fontSize: 11, fontWeight: 700, marginTop: 2
                               }}>
-                                Save {Math.round(((listing.original_price - listing.price) / listing.original_price) * 100)}%
+                                Économise {Math.round(((listing.original_price - listing.price) / listing.original_price) * 100)}%
                               </div>
                             )}
                             {listing.user_id === userId ? (
