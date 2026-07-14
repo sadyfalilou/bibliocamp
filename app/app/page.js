@@ -145,6 +145,23 @@ function HomeContent() {
     if (view !== 'publier-coloc') setEditingRoommateId(null)
   }, [view])
 
+  const loadProfilesFor = async (rows) => {
+    const userIds = [...new Set(rows.map(l => l.user_id).filter(Boolean))]
+    if (userIds.length === 0) return
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, first_name, last_name, campus, institution')
+      .in('id', userIds)
+    if (profiles) {
+      setProfilesMap(prev => {
+        const map = { ...prev }
+        profiles.forEach(p => { map[p.id] = p })
+        return map
+      })
+    }
+  }
+
+  // Mode navigation : pagination classique par pages de 24 (aucun filtre actif)
   const fetchListings = async (offset = 0, append = false) => {
     const { data, error } = await supabase
       .from('listings')
@@ -154,18 +171,35 @@ function HomeContent() {
     if (!error && data) {
       setListings(prev => append ? [...prev, ...data] : data)
       setHasMore(data.length === LISTINGS_PER_PAGE)
-      const userIds = [...new Set(data.map(l => l.user_id).filter(Boolean))]
-      if (userIds.length > 0) {
-        const { data: profiles } = await supabase
-          .from('profiles')
-          .select('id, first_name, last_name, campus, institution')
-          .in('id', userIds)
-        if (profiles) {
-          const map = {}
-          profiles.forEach(p => { map[p.id] = p })
-          setProfilesMap(prev => ({ ...prev, ...map }))
-        }
-      }
+      await loadProfilesFor(data)
+    }
+  }
+
+  // Mode recherche/filtre : interroge le serveur sur TOUT le catalogue actif
+  // (jusqu'à 100 résultats) au lieu de filtrer seulement les annonces déjà
+  // chargées. Le filtre "institution" reste dérivé côté client (voir `filtered`).
+  const fetchFilteredListings = async () => {
+    let query = supabase.from('listings').select('*').eq('status', 'active')
+
+    // Anti-injection PostgREST : on retire les caractères qui ont un sens dans
+    // la grammaire des filtres (,()*%:\") avant de les injecter dans .or().
+    const term = search.trim().replace(/[,()*%:\\]/g, ' ').trim()
+    if (term) {
+      const isbnTerm = term.replace(/[-\s]/g, '')
+      query = query.or(`title.ilike.%${term}%,course_code.ilike.%${term}%,authors.ilike.%${term}%,isbn.ilike.%${isbnTerm}%`)
+    }
+    if (filterEtat) query = query.eq('description', filterEtat)
+    if (filterCourse) query = query.eq('course_code', filterCourse)
+    if (filterTransaction === 'campus') query = query.eq('meet_campus', true)
+    else if (filterTransaction === 'city') query = query.eq('meet_city', true)
+    else if (filterTransaction === 'post') query = query.eq('post', true)
+    if (filterCampus) query = query.eq('campus', filterCampus)
+
+    const { data, error } = await query.order('created_at', { ascending: false }).limit(100)
+    if (!error && data) {
+      setListings(data)
+      setHasMore(false)
+      await loadProfilesFor(data)
     }
   }
 
@@ -485,6 +519,24 @@ function HomeContent() {
 
   const searchIsbn = search.replace(/[-\s]/g, '')
   const searchLooksLikeIsbn = /^\d{10,13}$/.test(searchIsbn)
+
+  // Un filtre est actif dès que la recherche ou l'un des filtres est renseigné.
+  const filtersActive = !!(search.trim() || filterEtat || filterCourse || filterTransaction || filterCampus || filterInstitution)
+
+  // Bascule entre mode recherche (requête serveur sur tout le catalogue) et mode
+  // navigation (pagination). Debounce la saisie pour ne pas requêter à chaque frappe.
+  const firstFilterRunRef = useRef(true)
+  useEffect(() => {
+    if (loading) return
+    // À l'initialisation en mode navigation, init() a déjà chargé la 1re page.
+    if (firstFilterRunRef.current) {
+      firstFilterRunRef.current = false
+      if (!filtersActive) return
+    }
+    if (!filtersActive) { fetchListings(); return }
+    const handle = setTimeout(fetchFilteredListings, 300)
+    return () => clearTimeout(handle)
+  }, [loading, search, filterEtat, filterCourse, filterTransaction, filterCampus, filterInstitution])
 
   useEffect(() => {
     setAlertStatus(null)
