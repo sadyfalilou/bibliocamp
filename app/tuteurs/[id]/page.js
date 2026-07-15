@@ -246,7 +246,9 @@ export default function TuteurProfilePage() {
   )
   if (!tutor) return null
 
-  const name = `${tutor.first_name || ''} ${tutor.last_name || ''}`.trim()
+  // Profil public (accessible sans connexion) : on n'affiche que l'initiale du
+  // nom de famille, comme la liste et les avis (confidentialité, Loi 25).
+  const name = `${tutor.first_name || ''}${tutor.last_name ? ' ' + tutor.last_name[0].toUpperCase() + '.' : ''}`.trim() || 'Tuteur'
   const displayedReviews = showAllReviews ? reviews : reviews.slice(0, 3)
 
   return (

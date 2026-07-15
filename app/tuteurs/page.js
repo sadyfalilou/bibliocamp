@@ -8,7 +8,9 @@ import Footer from '../../components/Footer'
 import { BADGE_LABELS } from '../../lib/tutorBadge'
 
 const DOMAINS = ['Sciences', 'Santé', 'Droit', 'Arts', 'Éducation', 'Génie', 'Commerce', 'Autres']
-const TODAY_KEY = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'][new Date().getDay()]
+// Calculé à l'appel (et non au chargement du module) pour rester juste même si
+// l'onglet reste ouvert après minuit.
+const todayKey = () => ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'][new Date().getDay()]
 
 function StarRating({ rating, count }) {
   if (!count) return <span style={{ fontSize: 12, color: '#a0aec0' }}>Aucun avis</span>
@@ -29,7 +31,7 @@ function TutorCard({ tutor, onClick }) {
     tutor.meet_city   && { icon: '🏙️', label: 'Ville' },
   ].filter(Boolean)
 
-  const availableToday = (tutor.availabilities?.[TODAY_KEY] || []).length > 0
+  const availableToday = (tutor.availabilities?.[todayKey()] || []).length > 0
 
   return (
     <div
@@ -201,7 +203,7 @@ export default function TuteursPage() {
     }
 
     // Disponible aujourd'hui
-    if (filterDispoToday) list = list.filter(t => (t.availabilities?.[TODAY_KEY] || []).length > 0)
+    if (filterDispoToday) list = list.filter(t => (t.availabilities?.[todayKey()] || []).length > 0)
 
     // Langue
     if (filterLang) list = list.filter(t => t.languages?.includes(filterLang))
