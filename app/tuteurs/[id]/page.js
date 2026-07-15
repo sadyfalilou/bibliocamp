@@ -6,6 +6,7 @@ import { useRouter, useParams } from 'next/navigation'
 import Logo from '../../../components/Logo'
 import Footer from '../../../components/Footer'
 import { BADGE_LABELS } from '../../../lib/tutorBadge'
+import { useTutorProfile } from '../../../components/useTutorProfile'
 
 const DAYS = [
   { key: 'lundi',     label: 'Lun' },
@@ -67,24 +68,22 @@ const RATING_LABELS = { 1: 'Très décevant', 2: 'Décevant', 3: 'Correct', 4: '
 export default function TuteurProfilePage() {
   const { id } = useParams()
   const router = useRouter()
-  const [tutor, setTutor]         = useState(null)
-  const [reviews, setReviews]     = useState([])
-  const [user, setUser]           = useState(null)
-  const [loading, setLoading]     = useState(true)
-  const [isOwn, setIsOwn]         = useState(false)
   const [contacting, setContacting] = useState(false)
-  const [showAllReviews, setShowAllReviews] = useState(false)
   const [isMobile, setIsMobile]   = useState(false)
 
-  // Avis
-  const [myReview, setMyReview]       = useState(null) // avis existant
-  const [hasContacted, setHasContacted] = useState(false)
-  const [showReviewForm, setShowReviewForm] = useState(false)
-  const [reviewRating, setReviewRating]     = useState(0)
-  const [reviewComment, setReviewComment]   = useState('')
-  const [reviewError, setReviewError]       = useState('')
-  const [submittingReview, setSubmittingReview] = useState(false)
-  const [reviewSuccess, setReviewSuccess]   = useState(false)
+  // Toute la logique (chargement, avis, "déjà contacté") est partagée avec le
+  // panneau in-app via ce hook. Seuls le rendu et le contact restent ici.
+  const {
+    user, tutor, reviews, loading, isOwn,
+    showAllReviews, setShowAllReviews,
+    myReview, hasContacted,
+    showReviewForm, setShowReviewForm,
+    reviewRating, setReviewRating,
+    reviewComment, setReviewComment,
+    reviewError, setReviewError,
+    submittingReview, reviewSuccess, setReviewSuccess,
+    submitReview, openEditReview, deleteReview,
+  } = useTutorProfile({ tutorId: id, onNotFound: () => router.push('/tuteurs') })
 
   useEffect(() => {
     setIsMobile(window.innerWidth < 768)
@@ -92,61 +91,6 @@ export default function TuteurProfilePage() {
     window.addEventListener('resize', h)
     return () => window.removeEventListener('resize', h)
   }, [])
-
-  useEffect(() => {
-    const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-
-      const { data: tutorData, error } = await supabase
-        .from('tutors_with_rating').select('*').eq('id', id).single()
-      if (error || !tutorData) { router.push('/tuteurs'); return }
-      // Rediriger si profil inactif et pas le propriétaire
-      if (!tutorData.is_active && user?.id !== tutorData.user_id) { router.push('/tuteurs'); return }
-      setTutor(tutorData)
-      setIsOwn(user?.id === tutorData.user_id)
-
-      // Badge de réactivité
-      fetch(`/api/tutors/badges?ids=${tutorData.user_id}`)
-        .then(res => res.ok ? res.json() : null)
-        .then(json => {
-          if (json) setTutor(prev => prev ? { ...prev, response_badge: json.badges[tutorData.user_id] ?? null } : prev)
-        })
-        .catch(() => {})
-
-      // Incrémenter vues (atomique)
-      if (user?.id !== tutorData.user_id) {
-        supabase.rpc('increment_tutor_views', { tutor_id: id }).then(() => {})
-      }
-
-      // Charger avis
-      const { data: reviewsData } = await supabase
-        .from('tutor_reviews')
-        .select('*, profiles(first_name, last_name, avatar_url)')
-        .eq('tutor_id', id)
-        .order('created_at', { ascending: false })
-      setReviews(reviewsData || [])
-
-      // Mon avis existant ?
-      if (user) {
-        const existing = (reviewsData || []).find(r => r.reviewer_id === user.id)
-        if (existing) setMyReview(existing)
-        // Un avis n'est possible qu'après avoir contacté le tuteur (garde-fou
-        // aligné sur la politique RLS). On vérifie l'existence d'une conversation.
-        if (user.id !== tutorData.user_id) {
-          const { data: conv } = await supabase
-            .from('conversations').select('id')
-            .eq('tutor_id', id)
-            .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
-            .maybeSingle()
-          if (conv) setHasContacted(true)
-        }
-      }
-
-      setLoading(false)
-    }
-    load()
-  }, [id])
 
   const handleContact = async () => {
     if (!user) { router.push('/login'); return }
@@ -170,73 +114,6 @@ export default function TuteurProfilePage() {
       if (!res.ok || !json.conversation_id) { setContacting(false); return }
       router.push(`/inbox?conv=${json.conversation_id}`)
     } catch { setContacting(false) }
-  }
-
-  const submitReview = async () => {
-    setReviewError('')
-    if (reviewRating === 0) { setReviewError('Choisis une note.'); return }
-    if (reviewComment.trim().length > 0 && reviewComment.trim().length < 10) {
-      setReviewError('Le commentaire doit faire au moins 10 caractères.')
-      return
-    }
-    setSubmittingReview(true)
-    try {
-      if (myReview) {
-        // Modifier l'avis existant
-        const { error } = await supabase.from('tutor_reviews')
-          .update({ rating: reviewRating, comment: reviewComment.trim() || null })
-          .eq('id', myReview.id)
-        if (error) throw error
-      } else {
-        // Nouvel avis
-        const { error } = await supabase.from('tutor_reviews').insert({
-          tutor_id: id,
-          reviewer_id: user.id,
-          rating: reviewRating,
-          comment: reviewComment.trim() || null,
-        })
-        if (error) throw error
-      }
-
-      // Recharger les avis
-      const { data: refreshed } = await supabase
-        .from('tutor_reviews')
-        .select('*, profiles(first_name, last_name, avatar_url)')
-        .eq('tutor_id', id)
-        .order('created_at', { ascending: false })
-      setReviews(refreshed || [])
-      const newMine = (refreshed || []).find(r => r.reviewer_id === user.id)
-      setMyReview(newMine || null)
-
-      // Recharger la note moyenne
-      const { data: refreshedTutor } = await supabase
-        .from('tutors_with_rating').select('avg_rating, review_count').eq('id', id).single()
-      if (refreshedTutor) setTutor(prev => ({ ...prev, ...refreshedTutor }))
-
-      setReviewSuccess(true)
-      setShowReviewForm(false)
-      setReviewComment('')
-    } catch {
-      setReviewError('Erreur lors de l\'envoi. Réessaie.')
-    } finally {
-      setSubmittingReview(false)
-    }
-  }
-
-  const openEditReview = () => {
-    setReviewRating(myReview.rating)
-    setReviewComment(myReview.comment || '')
-    setReviewSuccess(false)
-    setShowReviewForm(true)
-  }
-
-  const deleteReview = async () => {
-    if (!myReview) return
-    await supabase.from('tutor_reviews').delete().eq('id', myReview.id)
-    setMyReview(null)
-    setReviews(prev => prev.filter(r => r.id !== myReview.id))
-    setReviewRating(0)
-    setReviewComment('')
   }
 
   if (loading) return (
