@@ -78,6 +78,7 @@ export default function TuteurProfilePage() {
 
   // Avis
   const [myReview, setMyReview]       = useState(null) // avis existant
+  const [hasContacted, setHasContacted] = useState(false)
   const [showReviewForm, setShowReviewForm] = useState(false)
   const [reviewRating, setReviewRating]     = useState(0)
   const [reviewComment, setReviewComment]   = useState('')
@@ -130,6 +131,16 @@ export default function TuteurProfilePage() {
       if (user) {
         const existing = (reviewsData || []).find(r => r.reviewer_id === user.id)
         if (existing) setMyReview(existing)
+        // Un avis n'est possible qu'après avoir contacté le tuteur (garde-fou
+        // aligné sur la politique RLS). On vérifie l'existence d'une conversation.
+        if (user.id !== tutorData.user_id) {
+          const { data: conv } = await supabase
+            .from('conversations').select('id')
+            .eq('tutor_id', id)
+            .or(`user1_id.eq.${user.id},user2_id.eq.${user.id}`)
+            .maybeSingle()
+          if (conv) setHasContacted(true)
+        }
       }
 
       setLoading(false)
@@ -388,10 +399,14 @@ export default function TuteurProfilePage() {
                 <button onClick={openEditReview} style={{ fontSize: 12, fontWeight: 600, color: '#6c63ff', background: 'none', border: '1px solid #6c63ff', borderRadius: 8, padding: '5px 12px', cursor: 'pointer' }}>
                   Modifier mon avis
                 </button>
-              ) : (
+              ) : hasContacted ? (
                 <button onClick={() => { setShowReviewForm(true); setReviewSuccess(false) }} style={{ fontSize: 12, fontWeight: 700, color: 'white', background: '#1a2e4a', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}>
                   + Laisser un avis
                 </button>
+              ) : (
+                <span style={{ fontSize: 11, color: '#a0aec0', fontStyle: 'italic' }}>
+                  Contacte le tuteur pour laisser un avis
+                </span>
               )
             )}
           </div>
