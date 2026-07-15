@@ -1,16 +1,13 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
-import { supabase } from '../../lib/supabase'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Logo from '../../components/Logo'
 import Footer from '../../components/Footer'
 import { BADGE_LABELS } from '../../lib/tutorBadge'
+import { useTutorList, todayKey } from '../../components/useTutorList'
 
 const DOMAINS = ['Sciences', 'Santé', 'Droit', 'Arts', 'Éducation', 'Génie', 'Commerce', 'Autres']
-// Calculé à l'appel (et non au chargement du module) pour rester juste même si
-// l'onglet reste ouvert après minuit.
-const todayKey = () => ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'][new Date().getDay()]
 
 function StarRating({ rating, count }) {
   if (!count) return <span style={{ fontSize: 12, color: '#a0aec0' }}>Aucun avis</span>
@@ -123,23 +120,20 @@ function TutorCard({ tutor, onClick }) {
 }
 
 export default function TuteursPage() {
-  const [tutors, setTutors]             = useState([])
-  const [loading, setLoading]           = useState(true)
-  const [user, setUser]                 = useState(null)
-  const [isTutor, setIsTutor]           = useState(false)
-  const [isMobile, setIsMobile]         = useState(false)
-  const [showFilters, setShowFilters]   = useState(false)
-
-  // Filtres
-  const [search, setSearch]             = useState('')
-  const [filterDomain, setFilterDomain] = useState('')
-  const [filterMode, setFilterMode]     = useState('')
-  const [filterPrice, setFilterPrice]   = useState('')
-  const [filterDispoToday, setFilterDispoToday] = useState(false)
-  const [filterLang, setFilterLang]     = useState('')
-  const [sortBy, setSortBy]             = useState('recommended')
-
+  const [isMobile, setIsMobile] = useState(false)
   const router = useRouter()
+
+  // Chargement + filtrage partagés avec la vue in-app via le hook.
+  const {
+    user, filtered, loading, isTutor, hasFilters, resetFilters,
+    search, setSearch,
+    filterDomain, setFilterDomain,
+    filterMode, setFilterMode,
+    filterPrice, setFilterPrice,
+    filterDispoToday, setFilterDispoToday,
+    filterLang, setFilterLang,
+    sortBy, setSortBy,
+  } = useTutorList()
 
   useEffect(() => {
     setIsMobile(window.innerWidth < 768)
@@ -147,89 +141,6 @@ export default function TuteursPage() {
     window.addEventListener('resize', h)
     return () => window.removeEventListener('resize', h)
   }, [])
-
-  useEffect(() => {
-    const load = async () => {
-      const { data: { user } } = await supabase.auth.getUser()
-      setUser(user)
-      if (user) {
-        const { data: t } = await supabase.from('tutors').select('id').eq('user_id', user.id).single()
-        setIsTutor(!!t)
-      }
-      const { data } = await supabase.from('tutors_with_rating').select('*').eq('is_active', true)
-      const list = data || []
-      setTutors(list)
-      setLoading(false)
-
-      if (list.length > 0) {
-        const ids = list.map(t => t.user_id).join(',')
-        const res = await fetch(`/api/tutors/badges?ids=${ids}`)
-        if (res.ok) {
-          const { badges } = await res.json()
-          setTutors(prev => prev.map(t => ({ ...t, response_badge: badges[t.user_id] ?? null })))
-        }
-      }
-    }
-    load()
-  }, [])
-
-  const filtered = useMemo(() => {
-    let list = [...tutors]
-
-    // Recherche
-    if (search) {
-      const q = search.toLowerCase()
-      list = list.filter(t =>
-        `${t.first_name} ${t.last_name}`.toLowerCase().includes(q) ||
-        t.subjects?.some(s => s.toLowerCase().includes(q)) ||
-        t.domains?.some(d => d.toLowerCase().includes(q)) ||
-        t.bio?.toLowerCase().includes(q) ||
-        t.institution?.toLowerCase().includes(q)
-      )
-    }
-
-    // Domaine
-    if (filterDomain) list = list.filter(t => t.domains?.includes(filterDomain))
-
-    // Mode
-    if (filterMode === 'campus') list = list.filter(t => t.meet_campus)
-    if (filterMode === 'online') list = list.filter(t => t.meet_online)
-    if (filterMode === 'city')   list = list.filter(t => t.meet_city)
-
-    // Prix
-    if (filterPrice) {
-      const [min, max] = filterPrice.split('-').map(Number)
-      list = list.filter(t => t.rate_per_hour >= min && t.rate_per_hour <= max)
-    }
-
-    // Disponible aujourd'hui
-    if (filterDispoToday) list = list.filter(t => (t.availabilities?.[todayKey()] || []).length > 0)
-
-    // Langue
-    if (filterLang) list = list.filter(t => t.languages?.includes(filterLang))
-
-    // Tri
-    if (sortBy === 'recommended') {
-      list.sort((a, b) => {
-        if (b.is_pro !== a.is_pro) return b.is_pro ? 1 : -1
-        const ra = a.avg_rating || 0, rb = b.avg_rating || 0
-        return rb - ra
-      })
-    } else if (sortBy === 'price_asc')  list.sort((a, b) => a.rate_per_hour - b.rate_per_hour)
-    else if (sortBy === 'price_desc')   list.sort((a, b) => b.rate_per_hour - a.rate_per_hour)
-    else if (sortBy === 'rating')       list.sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0))
-    else if (sortBy === 'recent')       list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-
-    return list
-  }, [tutors, search, filterDomain, filterMode, filterPrice, filterDispoToday, filterLang, sortBy])
-
-  const activeFilterCount = [filterDomain, filterMode, filterPrice, filterDispoToday, filterLang].filter(Boolean).length
-  const hasFilters = search || activeFilterCount > 0
-
-  const resetFilters = () => {
-    setSearch(''); setFilterDomain(''); setFilterMode(''); setFilterPrice('')
-    setFilterDispoToday(false); setFilterLang('')
-  }
 
   const selectStyle = {
     padding: '8px 12px', borderRadius: 8, border: '1.5px solid #e2e8f0',
