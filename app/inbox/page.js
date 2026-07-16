@@ -203,10 +203,6 @@ function InboxInner() {
   const sendMessage = async (e) => {
     e.preventDefault()
     if (!newMessage.trim() || !selectedConv || sending) return
-    if (newMessage.trim().length > 1000) {
-      alert('Le message ne peut pas dépasser 1 000 caractères.')
-      return
-    }
     setSending(true)
     const content = newMessage.trim()
     setNewMessage('')
