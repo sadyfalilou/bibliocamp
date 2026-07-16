@@ -126,4 +126,16 @@ describe('POST /api/check-phone — rate limiting', () => {
     expect(body.valid).toBe(false)
     expect(body.error).toMatch(/tentatives/i)
   })
+
+  test('x-forwarded-for multi-IP : seule la première IP compte (anti-contournement)', async () => {
+    delete process.env.TWILIO_ACCOUNT_SID
+    delete process.env.TWILIO_AUTH_TOKEN
+
+    // Même client (1.1.1.1) mais chaîne de proxy variable → doit rester la même clé
+    for (let i = 0; i < 5; i++) {
+      await POST(makeRequest({ phone: '+15141234567' }, `1.1.1.1, 10.0.0.${i}`))
+    }
+    const res = await POST(makeRequest({ phone: '+15141234567' }, '1.1.1.1, 10.0.0.99'))
+    expect(res.status).toBe(429) // bloqué : le proxy variable ne réinitialise pas le compteur
+  })
 })

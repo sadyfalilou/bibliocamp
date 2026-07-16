@@ -5,9 +5,10 @@ et les lire, sans aide extérieure.
 
 ---
 
-## 1. Tests unitaires / API (Jest) — 219 tests, 18 suites
+## 1. Tests unitaires / API (Jest) — 238 tests, 22 suites
 
-Vérifient la logique isolée : routes API, validation, rate limiting.
+Vérifient la logique isolée : routes API, validation, rate limiting, contrôles
+de sécurité (auth, anti-injection, PII).
 
 ```powershell
 npm test
@@ -15,8 +16,8 @@ npm test
 
 Résultat attendu :
 ```
-Test Suites: 18 passed, 18 total
-Tests:       219 passed, 219 total
+Test Suites: 22 passed, 22 total
+Tests:       238 passed, 238 total
 ```
 
 ### Suites actuelles
@@ -24,25 +25,31 @@ Tests:       219 passed, 219 total
 | Fichier | Tests | Ce qui est couvert |
 |---|---|---|
 | `__tests__/validation.test.js` | 60 | Validation champs (isbn, prix, état, transaction, titre…) |
-| `__tests__/api.listings.test.js` | 18 | POST/PATCH annonces : auth, 403 téléphone non vérifié, ISBN requis, état requis, transaction requise |
+| `__tests__/api.listings.test.js` | 19 | POST/PATCH annonces : auth, 403 téléphone non vérifié, ISBN requis, état requis, transaction requise |
 | `__tests__/api.listings.status.test.js` | 7 | PATCH statut annonce : 401, 400, 404, 403, 200 |
-| `__tests__/api.invite.test.js` | 6 | GET/POST parrainage : code, 404 parrain introuvable, 400 auto-parrainage |
+| `__tests__/api.invite.test.js` | 6 | GET/POST parrainage : **auth requise (401 sans token)**, code, 404 parrain introuvable, 400 auto-parrainage |
 | `__tests__/api.conversations.test.js` | 8 | POST conversation (manuel) : auth, 400 auto-contact, 403 téléphone non vérifié, conv existante, nouvelle conv |
-| `__tests__/api.check-phone.test.js` | 7 | Vérification SMS du numéro de téléphone |
-| `__tests__/api.roommates.test.js` | 26 | GET liste/filtres, POST publication (403 téléphone non vérifié), PATCH statut (JSON) + édition complète (multipart, photos), DELETE — auth, validation, 403/500 |
-| `__tests__/api.roommates.contact.test.js` | 8 | POST contact coloc : auth, 400 auto-contact, 403 téléphone non vérifié, conv existante (par `roommate_listing_id`), nouvelle conv |
-| `__tests__/api.tutors.test.js` | 11 | POST création profil tuteur : auth, 403 téléphone non vérifié, 409 déjà tuteur, validation (domaines, matières, tarif, bio, mode de rencontre), 200, erreur 500 |
-| `__tests__/api.tutors.contact.test.js` | 8 | POST contact tuteur : auth, 400 auto-contact, 403 téléphone non vérifié, conv existante (par `tutor_id`), nouvelle conv |
-| `__tests__/api.seller.test.js` | 4 | GET profil vendeur : 400 sans id, 404 introuvable, calcul `avgRating`/`reviewCount` à partir de `seller_reviews` |
+| `__tests__/api.check-phone.test.js` | 8 | Vérification SMS du numéro ; rate-limit par IP ; **`x-forwarded-for` multi-IP → seule la 1re IP compte** |
+| `__tests__/api.send-otp.test.js` | 6 | POST envoi OTP : **401 sans token / token invalide**, 400 sans numéro, 500 config Twilio, 200 envoi, **429 rate-limit anti-fraude SMS** |
+| `__tests__/api.roommates.test.js` | 27 | GET liste/filtres (+ **anti-injection `.or`**), POST publication (403 téléphone), PATCH statut + édition multipart, DELETE — auth, validation, 403/500 |
+| `__tests__/api.roommates.contact.test.js` | 8 | POST contact coloc : auth, 400 auto-contact, 403 téléphone non vérifié, conv existante, nouvelle conv |
+| `__tests__/api.tutors.test.js` | 10 | POST création profil tuteur : auth, 403 téléphone, 409 déjà tuteur, validation, 200, 500 |
+| `__tests__/api.tutors.contact.test.js` | 8 | POST contact tuteur : auth, 400 auto-contact, 403 téléphone non vérifié, conv existante, nouvelle conv |
+| `__tests__/api.tutors.badges.test.js` | 4 | GET badges réactivité : {} sans ids, calcul, **anti-injection (UUID uniquement)** |
+| `__tests__/api.seller.test.js` | 5 | GET profil vendeur : 400/404, calcul `avgRating`, **nom de famille réduit à l'initiale (PII)** |
+| `__tests__/api.sellers.test.js` | 3 | GET profils vendeurs **par lot** (évite le N+1) : {} sans ids, profils indexés + nom en initiale, 500 |
 | `__tests__/api.book-alerts.test.js` | 4 | POST alerte manuel : courriel/ISBN invalides, upsert valide, erreur 500 |
 | `__tests__/api.newsletter-unsubscribe.test.js` | 4 | GET désabonnement infolettre : token manquant/invalide/valide, erreur 500 |
-| `__tests__/api.cron-newsletter.test.js` | 5 | Cron infolettre rentrée : secret invalide, hors date, déjà envoyée, envoi aux abonnés, aucun abonné |
-| `__tests__/api.international-diagnostics.test.js` | 6 | POST diagnostic international : auth, infos incomplètes, niveau requis, consentement requis, soumission valide, erreur 500 |
-| `__tests__/api.international-diagnostics.id.test.js` | 4 | GET diagnostic par id : auth, 404 introuvable, 403 si autre utilisateur, 200 si propriétaire |
-| `__tests__/api.international-diagnostics-id.test.js` | 4 | PATCH/édition diagnostic par id : auth, validation, 200 |
-| `__tests__/api.admin.international.test.js` | 4 | GET liste admin des diagnostics : 403 sans auth/non-admin, 200 avec liste, erreur 500 |
+| `__tests__/api.cron-newsletter.test.js` | 5 | Cron infolettre rentrée : secret invalide, hors date, déjà envoyée, envoi, aucun abonné |
+| `__tests__/api.international-diagnostics.test.js` | 9 | POST diagnostic international : auth, infos incomplètes, niveau/consentement requis, soumission, 500 |
+| `__tests__/api.international-diagnostics.id.test.js` | 17 | GET/PATCH/DELETE diagnostic par id : auth, 404, 403 autre utilisateur, 200 propriétaire, statut de traitement |
+| `__tests__/api.international-diagnostics-id.test.js` | 4 | Édition diagnostic par id : auth, validation, 200 |
+| `__tests__/api.admin.international.test.js` | 13 | GET/PATCH admin diagnostics : **contrôle `is_admin`** (403 sans token/non-admin), 200, validations, 500 |
+| `__tests__/api.admin.reports.test.js` | 3 | Signalements admin : **contrôle `is_admin`** (403 sans token/non-admin, 200 admin) |
 
-> Vérification de sécurité (`phone_verified`) : couverte à la fois pour la création d'annonces manuels (`listings`), la publication d'annonces coloc (`roommates`) et la création de profil tuteur (`tutors`) — un compte dont le numéro n'est pas vérifié reçoit un `403` sur les trois routes.
+> **Sécurité `phone_verified`** : couverte pour la création d'annonces manuels (`listings`), coloc (`roommates`) et profil tuteur (`tutors`) — un compte non vérifié reçoit `403`.
+>
+> **Correctifs de sécurité récents couverts** : authentification (`send-otp`, `invite`), anti-injection PostgREST (`roommates`, `tutors/badges`), minimisation de PII (`seller`, `sellers`), contrôle admin unifié `is_admin` (`admin/reports`, `admin/international`), et rate-limit non contournable (`check-phone`). Les correctifs RLS (`schema/tutors-rls.sql`, `schema/messages-rls.sql`) sont de niveau base de données — non testables en Jest ; à vérifier via le diagnostic `pg_policies` documenté dans ces fichiers.
 
 ### Règles de validation testées
 

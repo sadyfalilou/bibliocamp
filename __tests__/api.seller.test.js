@@ -59,4 +59,12 @@ describe('GET /api/seller', () => {
     expect(body.avgRating).toBe(4)
     expect(body.reviewCount).toBe(2)
   })
+
+  test('confidentialité : nom de famille réduit à l\'initiale', async () => {
+    mockProfileSingle.mockResolvedValue({ data: { id: 'seller-1', first_name: 'Sady', last_name: 'Diallo' } })
+    const res = await GET(makeRequest('?id=seller-1'))
+    const body = await res.json()
+    expect(body.profile.first_name).toBe('Sady')
+    expect(body.profile.last_name).toBe('D')
+  })
 })

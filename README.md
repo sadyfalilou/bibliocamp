@@ -21,15 +21,18 @@
 - 📚 Catalogue maison de manuels (Coop UQAM, Chenelière) prioritaire avant les APIs externes
 - 🔔 Alerte courriel "manuel disponible" — un étudiant laisse son courriel sur une fiche manuel sans vendeur, et reçoit un email (Resend) dès qu'une annonce correspondante est publiée
 - 📊 Page admin stats — graphiques Chart.js (croissance hebdomadaire, top matières tuteurs, répartition des tarifs)
-- 👨‍🏫 Tuteurs — création de profil (domaines, matières, tarif, disponibilités), recherche/filtres, contact, avis/notation
+- 👨‍🏫 Tuteurs — création de profil (domaines, matières, tarif, disponibilités), recherche/filtres, contact, avis/notation, **profils publics** (`/tuteurs`, `/tuteurs/[id]`) pour la découverte/SEO
 - 🌍 Module international (`/international`) — diagnostic en 7 étapes, suivi des demandes, estimation de forfait, réservation Calendly, gestion admin (`/admin/international`)
 - 🧭 Menu profil unifié (`components/ProfileMenu.js`) — favoris, messages, mes annonces, profil — partagé entre `/profile`, `/inbox`, `/create`, `/edit/[id]`
 
 ## 🛡️ Sécurité
 
-- RLS Supabase sur toutes les tables (SELECT, INSERT, UPDATE, DELETE)
+- RLS Supabase sur toutes les tables (SELECT/INSERT/UPDATE/DELETE), politiques limitées au propriétaire ; fichiers versionnés dans `schema/` (`rls-policies.sql`, `tutors-rls.sql`, `messages-rls.sql`)
+- **Accès admin** via la colonne `profiles.is_admin` (source de vérité unique) — `ADMIN_EMAILS` ne sert plus qu'aux notifications courriel du module international
 - `SUPABASE_SERVICE_ROLE_KEY` uniquement côté serveur (routes API)
-- Rate limiting (messages, annonces, API)
+- Rate limiting non contournable (messages, envoi OTP, `check-phone` par 1re IP)
+- Anti-injection PostgREST sur les recherches (`.or` nettoyé) et validation UUID des identifiants
+- Minimisation de PII sur les profils publics (nom de famille réduit à l'initiale)
 - Validation des champs côté client (`lib/validation.js`) et côté serveur (routes API)
 - ISBN, état du livre et méthode de transaction obligatoires à la création
 - Vérification du téléphone obligatoire (`phone_verified`) avant toute publication publique — annonce manuel, annonce coloc, profil tuteur — sinon `403`
@@ -68,7 +71,7 @@ SUPABASE_SERVICE_ROLE_KEY=
 TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_VERIFY_SERVICE_SID=
-ADMIN_EMAILS=
+ADMIN_EMAILS=                 # notifications courriel (international) — l'ACCÈS admin passe par profiles.is_admin
 NEXT_PUBLIC_SENTRY_DSN=
 SENTRY_DSN=
 ```
