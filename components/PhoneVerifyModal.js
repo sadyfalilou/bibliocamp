@@ -1,5 +1,7 @@
 'use client'
 
+import { useRef } from 'react'
+
 // Modale de vérification du téléphone, superposée à n'importe quelle vue.
 // Décorrélée de l'espace "Vendre un manuel" (où la vérification vivait avant),
 // pour qu'on ne quitte jamais son contexte (Tuteurs, Colocs, Manuels).
@@ -11,6 +13,47 @@ export default function PhoneVerifyModal({
   phoneStep, setPhoneStep,
   otp, setOtp, otpError, setOtpError, handleVerifyOtp, verifyingCode,
 }) {
+  const OTP_LEN = 6
+  const inputsRef = useRef([])
+
+  // Cases séparées : `otp` reste une chaîne compacte (source de vérité côté /app),
+  // chaque case affiche otp[i]. La saisie est séquentielle (focus auto).
+  const setDigit = (i, digit) => {
+    const arr = Array.from({ length: OTP_LEN }, (_, k) => otp[k] || '')
+    arr[i] = digit
+    setOtp(arr.join(''))
+    setOtpError('')
+  }
+
+  const handleOtpChange = (i, e) => {
+    const digit = e.target.value.replace(/\D/g, '').slice(-1)
+    if (!digit) return
+    setDigit(i, digit)
+    if (i < OTP_LEN - 1) inputsRef.current[i + 1]?.focus()
+  }
+
+  const handleOtpKeyDown = (i, e) => {
+    if (e.key === 'Enter') { handleVerifyOtp(); return }
+    if (e.key === 'Backspace') {
+      e.preventDefault()
+      if (otp[i]) { setDigit(i, '') }
+      else if (i > 0) { setDigit(i - 1, ''); inputsRef.current[i - 1]?.focus() }
+    } else if (e.key === 'ArrowLeft' && i > 0) {
+      inputsRef.current[i - 1]?.focus()
+    } else if (e.key === 'ArrowRight' && i < OTP_LEN - 1) {
+      inputsRef.current[i + 1]?.focus()
+    }
+  }
+
+  const handleOtpPaste = (e) => {
+    const text = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, OTP_LEN)
+    if (!text) return
+    e.preventDefault()
+    setOtp(text)
+    setOtpError('')
+    inputsRef.current[Math.min(text.length, OTP_LEN - 1)]?.focus()
+  }
+
   if (!open) return null
 
   return (
@@ -104,15 +147,29 @@ export default function PhoneVerifyModal({
             <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 8 }}>
               Code de vérification
             </label>
-            <input
-              placeholder="ex: 123456"
-              value={otp}
-              onChange={e => { setOtp(e.target.value); setOtpError('') }}
-              maxLength={6}
-              style={{ width: '100%', padding: '12px 14px', border: `1px solid ${otpError ? '#e53e3e' : '#cbd5e0'}`, borderRadius: 8, fontSize: 20, outline: 'none', boxSizing: 'border-box', letterSpacing: 6, textAlign: 'center', marginBottom: 16 }}
-              onFocus={e => e.target.style.borderColor = '#00c9a7'}
-              onBlur={e => e.target.style.borderColor = otpError ? '#e53e3e' : '#cbd5e0'}
-            />
+            <div onPaste={handleOtpPaste} style={{ display: 'flex', gap: 8, marginBottom: 16, justifyContent: 'space-between' }}>
+              {Array.from({ length: OTP_LEN }).map((_, i) => (
+                <input
+                  key={i}
+                  ref={el => { inputsRef.current[i] = el }}
+                  value={otp[i] || ''}
+                  onChange={e => handleOtpChange(i, e)}
+                  onKeyDown={e => handleOtpKeyDown(i, e)}
+                  onFocus={e => { e.target.select(); e.target.style.borderColor = '#00c9a7' }}
+                  onBlur={e => e.target.style.borderColor = otpError ? '#e53e3e' : '#cbd5e0'}
+                  inputMode="numeric"
+                  autoComplete={i === 0 ? 'one-time-code' : 'off'}
+                  aria-label={`Chiffre ${i + 1}`}
+                  autoFocus={i === 0}
+                  style={{
+                    width: '100%', maxWidth: 52, aspectRatio: '1 / 1', padding: 0,
+                    border: `1.5px solid ${otpError ? '#e53e3e' : (otp[i] ? '#00c9a7' : '#cbd5e0')}`,
+                    borderRadius: 10, fontSize: 24, fontWeight: 700, color: '#1a2e4a',
+                    textAlign: 'center', outline: 'none', boxSizing: 'border-box', background: 'white',
+                  }}
+                />
+              ))}
+            </div>
 
             {otpError && <p style={{ color: '#e53e3e', fontSize: 13, margin: '-8px 0 12px' }}>{otpError}</p>}
 

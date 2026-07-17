@@ -109,6 +109,7 @@ function HomeContent() {
   // Niveau 2 : contact à ouvrir automatiquement une fois le téléphone vérifié.
   const [pendingContact, setPendingContact] = useState(null) // { type: 'listing'|'tutor'|'roommate', id, ownerId }
   const [verifyOpen, setVerifyOpen] = useState(false) // modale de vérification du téléphone (superposée, décorrélée des vues)
+  const [stayAfterVerify, setStayAfterVerify] = useState(false) // vérif lancée depuis un formulaire de création : on reste sur place après succès
   const [otp, setOtp] = useState('')
   const [otpError, setOtpError] = useState('')
   const [sendingCode, setSendingCode] = useState(false)
@@ -541,6 +542,11 @@ function HomeContent() {
       if (pendingContact) {
         await executeContact(pendingContact)
         setPendingContact(null)
+      } else if (stayAfterVerify) {
+        // Vérif lancée depuis un formulaire de création (Devenir tuteur, Publier
+        // une annonce coloc) : on reste sur le formulaire, l'utilisateur n'a plus
+        // qu'à re-soumettre.
+        setStayAfterVerify(false)
       } else {
         router.push(verifyRedirect)
       }
@@ -1553,7 +1559,7 @@ function HomeContent() {
 
           {/* ===== VUE DEVENIR TUTEUR ===== */}
           {view === 'devenir-tuteur' && (
-            <DevenirTuteurView user={user} setView={setView} />
+            <DevenirTuteurView user={user} setView={setView} phoneSaved={phoneSaved} onVerifyPhone={() => { setPendingContact(null); setStayAfterVerify(true); setVerifyOpen(true) }} />
           )}
 
           {/* ===== VUE FAQ TUTEURS ===== */}
@@ -1573,7 +1579,7 @@ function HomeContent() {
 
           {/* ===== VUE PUBLIER COLOC ===== */}
           {view === 'publier-coloc' && (
-            <PublierColocView setView={setView} editId={editingRoommateId} />
+            <PublierColocView setView={setView} editId={editingRoommateId} phoneSaved={phoneSaved} onVerifyPhone={() => { setPendingContact(null); setStayAfterVerify(true); setVerifyOpen(true) }} />
           )}
 
           {/* ===== VUE MES COLOCS ===== */}
@@ -1969,7 +1975,7 @@ function HomeContent() {
       {/* Modale de vérification du téléphone — superposée, décorrélée des vues */}
       <PhoneVerifyModal
         open={verifyOpen}
-        onClose={() => { setVerifyOpen(false); setPhoneStep('enter'); setOtp(''); setOtpError(''); setPhoneError(''); setPendingContact(null) }}
+        onClose={() => { setVerifyOpen(false); setPhoneStep('enter'); setOtp(''); setOtpError(''); setPhoneError(''); setPendingContact(null); setStayAfterVerify(false) }}
         phone={phone} setPhone={setPhone} phoneError={phoneError} setPhoneError={setPhoneError}
         handleSendCode={handleSendCode} sendingCode={sendingCode}
         phoneStep={phoneStep} setPhoneStep={setPhoneStep}
