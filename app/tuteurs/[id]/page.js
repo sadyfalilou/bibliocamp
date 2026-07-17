@@ -70,6 +70,7 @@ export default function TuteurProfilePage() {
   const router = useRouter()
   const [contacting, setContacting] = useState(false)
   const [isMobile, setIsMobile]   = useState(false)
+  const [phoneVerified, setPhoneVerified] = useState(false)
 
   // Toute la logique (chargement, avis, "déjà contacté") est partagée avec le
   // panneau in-app via ce hook. Seuls le rendu et le contact restent ici.
@@ -92,14 +93,18 @@ export default function TuteurProfilePage() {
     return () => window.removeEventListener('resize', h)
   }, [])
 
+  // Charge l'état "téléphone vérifié" pour afficher le bon bouton (page publique).
+  useEffect(() => {
+    if (!user) { setPhoneVerified(false); return }
+    supabase.from('profiles').select('phone_verified').eq('id', user.id).single()
+      .then(({ data }) => setPhoneVerified(!!data?.phone_verified))
+  }, [user])
+
+  // Appelé uniquement quand connecté ET numéro vérifié (voir le rendu du bouton).
   const handleContact = async () => {
-    if (!user) { router.push('/login'); return }
     if (isOwn) return
     setContacting(true)
     try {
-      // Passe par l'API : elle impose la verification du telephone, empeche
-      // l'auto-contact et renseigne last_message_at (contrairement a une
-      // insertion directe cote client).
       const { data: { session } } = await supabase.auth.getSession()
       const res = await fetch('/api/tutors/contact', {
         method: 'POST',
@@ -109,11 +114,16 @@ export default function TuteurProfilePage() {
         },
         body: JSON.stringify({ tutor_id: tutor.id, owner_id: tutor.user_id }),
       })
-      if (res.status === 403) { router.push('/app?verify=1'); return }
       const json = await res.json()
       if (!res.ok || !json.conversation_id) { setContacting(false); return }
       router.push(`/inbox?conv=${json.conversation_id}`)
     } catch { setContacting(false) }
+  }
+
+  // Non vérifié : on redirige vers /app avec le contact en attente, qui s'ouvrira
+  // tout seul une fois le téléphone vérifié (Niveau 2).
+  const startVerify = () => {
+    router.push(`/app?verify=1&ct=tutor&cid=${tutor.id}&co=${tutor.user_id}`)
   }
 
   if (loading) return (
@@ -183,13 +193,27 @@ export default function TuteurProfilePage() {
               <Stars rating={tutor.avg_rating} count={tutor.review_count} />
             </div>
 
-            {!isOwn ? (
-              <button onClick={handleContact} disabled={contacting} style={{ width: '100%', padding: '13px', background: contacting ? '#e2e8f0' : 'linear-gradient(135deg,#1a2e4a,#2d4a6b)', color: contacting ? '#94a3b8' : 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: contacting ? 'default' : 'pointer' }}>
-                {contacting ? 'Redirection...' : `💬 Contacter ${tutor.first_name}`}
-              </button>
-            ) : (
+            {isOwn ? (
               <button onClick={() => router.push('/tuteurs/modifier')} style={{ width: '100%', padding: '13px', background: 'none', color: '#6c63ff', border: '2px solid #6c63ff', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                 Modifier mon profil tuteur
+              </button>
+            ) : !user ? (
+              <button onClick={() => router.push(`/login?redirect=/tuteurs/${id}`)} style={{ width: '100%', padding: '13px', background: 'linear-gradient(135deg,#1a2e4a,#2d4a6b)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
+                Se connecter pour contacter
+              </button>
+            ) : !phoneVerified ? (
+              <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 12, padding: '14px 16px' }}>
+                <div style={{ fontWeight: 700, color: '#7b5e00', fontSize: 14, marginBottom: 4 }}>🇨🇦 Numéro canadien requis</div>
+                <div style={{ color: '#a07020', fontSize: 13, marginBottom: 12, lineHeight: 1.4 }}>
+                  Tu dois vérifier un numéro canadien (+1) pour contacter ce tuteur.
+                </div>
+                <button onClick={startVerify} style={{ width: '100%', padding: '11px', background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                  Vérifier mon numéro →
+                </button>
+              </div>
+            ) : (
+              <button onClick={handleContact} disabled={contacting} style={{ width: '100%', padding: '13px', background: contacting ? '#e2e8f0' : 'linear-gradient(135deg,#1a2e4a,#2d4a6b)', color: contacting ? '#94a3b8' : 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: contacting ? 'default' : 'pointer' }}>
+                {contacting ? 'Redirection...' : `💬 Contacter ${tutor.first_name}`}
               </button>
             )}
           </div>

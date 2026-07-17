@@ -105,6 +105,8 @@ function HomeContent() {
   const [phoneSaved, setPhoneSaved] = useState(false)
   const [phoneStep, setPhoneStep] = useState('enter') // 'enter' | 'verify'
   const [verifyRedirect, setVerifyRedirect] = useState('/create')
+  // Niveau 2 : contact à ouvrir automatiquement une fois le téléphone vérifié.
+  const [pendingContact, setPendingContact] = useState(null) // { type: 'listing'|'tutor'|'roommate', id, ownerId }
   const [otp, setOtp] = useState('')
   const [otpError, setOtpError] = useState('')
   const [sendingCode, setSendingCode] = useState(false)
@@ -120,10 +122,14 @@ function HomeContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
 
-  // Si ?verify=1 dans l'URL → redirigé depuis book page, ouvrir la vue vendre (contient la vérification)
+  // Si ?verify=1 dans l'URL → redirigé depuis une fiche (livre, tuteur, coloc),
+  // ouvrir la vue vendre (contient la vérification). Les params ct/cid/co portent
+  // le contact à rouvrir après la vérif (Niveau 2), depuis une page standalone.
   useEffect(() => {
     if (searchParams.get('verify') === '1' && !phoneSaved) {
       setView('vendre')
+      const ct = searchParams.get('ct'), cid = searchParams.get('cid'), co = searchParams.get('co')
+      if (ct && cid && co) setPendingContact({ type: ct, id: cid, ownerId: co })
     }
   }, [searchParams, phoneSaved])
 
@@ -484,6 +490,24 @@ function HomeContent() {
     }
   }
 
+  // Ouvre (ou retrouve) la conversation avec la cible, puis y redirige.
+  const executeContact = async (pending) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession()
+      const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` }
+      const routes = {
+        listing:  ['/api/conversations',    { listing_id: pending.id, seller_id: pending.ownerId }],
+        tutor:    ['/api/tutors/contact',    { tutor_id: pending.id, owner_id: pending.ownerId }],
+        roommate: ['/api/roommates/contact', { roommate_listing_id: pending.id, owner_id: pending.ownerId }],
+      }
+      const entry = routes[pending.type]
+      if (!entry) { router.push('/inbox'); return }
+      const res = await fetch(entry[0], { method: 'POST', headers, body: JSON.stringify(entry[1]) })
+      const json = await res.json()
+      router.push(json.conversation_id ? `/inbox?conv=${json.conversation_id}` : '/inbox')
+    } catch { router.push('/inbox') }
+  }
+
   const handleVerifyOtp = async () => {
     setOtpError('')
     if (otp.length < 4) { setOtpError('Entre le code reçu par SMS.'); return }
@@ -509,7 +533,14 @@ function HomeContent() {
       // Rafraîchir la session pour que le nouveau JWT inclue phone_verified: true
       await supabase.auth.refreshSession()
       setPhoneSaved(true)
-      router.push(verifyRedirect)
+      // Niveau 2 : s'il y a un contact en attente, on l'ouvre directement ;
+      // sinon, comportement historique (redirection générique).
+      if (pendingContact) {
+        await executeContact(pendingContact)
+        setPendingContact(null)
+      } else {
+        router.push(verifyRedirect)
+      }
     } catch {
       setOtpError('Erreur inattendue. Réessaie.')
     } finally {
@@ -1534,7 +1565,7 @@ function HomeContent() {
 
           {/* ===== VUE COLOCS ===== */}
           {view === 'colocs' && (
-            <RoommatesView user={user} setView={setView} initialSearch={roommateSearchQuery} phoneSaved={phoneSaved} setVerifyRedirect={setVerifyRedirect} />
+            <RoommatesView user={user} setView={setView} initialSearch={roommateSearchQuery} phoneSaved={phoneSaved} setVerifyRedirect={setVerifyRedirect} setPendingContact={setPendingContact} />
           )}
 
           {/* ===== VUE PUBLIER COLOC ===== */}
@@ -2053,6 +2084,7 @@ function HomeContent() {
           setView={setView}
           phoneSaved={phoneSaved}
           setVerifyRedirect={setVerifyRedirect}
+          setPendingContact={setPendingContact}
         />
       )}
 
@@ -2377,7 +2409,7 @@ function HomeContent() {
                                 </div>
                                 <button
                                   onClick={() => {
-                                    setVerifyRedirect('/inbox')
+                                    setPendingContact({ type: 'listing', id: s.id, ownerId: s.user_id })
                                     setSelectedBook(null)
                                     setView('vendre')
                                   }}

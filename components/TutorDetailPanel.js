@@ -62,7 +62,7 @@ function StarPicker({ value, onChange }) {
 
 const RATING_LABELS = { 1: 'Très décevant', 2: 'Décevant', 3: 'Correct', 4: 'Bien', 5: 'Excellent !' }
 
-export default function TutorDetailPanel({ tutorId, currentUser, onClose, router, setView, phoneSaved, setVerifyRedirect }) {
+export default function TutorDetailPanel({ tutorId, currentUser, onClose, router, setView, phoneSaved, setVerifyRedirect, setPendingContact }) {
   const [contacting, setContacting] = useState(false)
 
   // Logique partagée avec la fiche publique via le hook (chargement, avis,
@@ -79,15 +79,9 @@ export default function TutorDetailPanel({ tutorId, currentUser, onClose, router
     submitReview, openEditReview, deleteReview,
   } = useTutorProfile({ tutorId, onNotFound: onClose })
 
+  // Appelé uniquement quand le numéro est déjà vérifié (voir le rendu du bouton).
   const handleContact = async () => {
-    if (!currentUser) { router.push('/login'); return }
     if (isOwn) return
-    if (!phoneSaved) {
-      setVerifyRedirect('/inbox')
-      onClose()
-      setView('vendre')
-      return
-    }
     setContacting(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -103,6 +97,14 @@ export default function TutorDetailPanel({ tutorId, currentUser, onClose, router
       if (!res.ok) { setContacting(false); return }
       router.push(`/inbox?conv=${json.conversation_id}`)
     } catch { setContacting(false) }
+  }
+
+  // Numéro non vérifié : on mémorise le contact et on ouvre la vérification.
+  // Après vérif, la conversation s'ouvre automatiquement (Niveau 2).
+  const startVerify = () => {
+    setPendingContact({ type: 'tutor', id: tutor.id, ownerId: tutor.user_id })
+    onClose()
+    setView('vendre')
   }
 
   return (
@@ -176,13 +178,23 @@ export default function TutorDetailPanel({ tutorId, currentUser, onClose, router
                     <Stars rating={tutor.avg_rating} count={tutor.review_count} />
                   </div>
 
-                  {!isOwn ? (
-                    <button onClick={handleContact} disabled={contacting} style={{ width: '100%', padding: '13px', background: contacting ? '#e2e8f0' : 'linear-gradient(135deg,#1a2e4a,#2d4a6b)', color: contacting ? '#94a3b8' : 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: contacting ? 'default' : 'pointer' }}>
-                      {contacting ? 'Redirection...' : `💬 Contacter ${tutor.first_name}`}
-                    </button>
-                  ) : (
+                  {isOwn ? (
                     <button onClick={() => router.push('/tuteurs/modifier')} style={{ width: '100%', padding: '13px', background: 'none', color: '#6c63ff', border: '2px solid #6c63ff', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                       Modifier mon profil tuteur
+                    </button>
+                  ) : !phoneSaved ? (
+                    <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 12, padding: '14px 16px' }}>
+                      <div style={{ fontWeight: 700, color: '#7b5e00', fontSize: 14, marginBottom: 4 }}>🇨🇦 Numéro canadien requis</div>
+                      <div style={{ color: '#a07020', fontSize: 13, marginBottom: 12, lineHeight: 1.4 }}>
+                        Tu dois vérifier un numéro canadien (+1) pour contacter ce tuteur.
+                      </div>
+                      <button onClick={startVerify} style={{ width: '100%', padding: '11px', background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                        Vérifier mon numéro →
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={handleContact} disabled={contacting} style={{ width: '100%', padding: '13px', background: contacting ? '#e2e8f0' : 'linear-gradient(135deg,#1a2e4a,#2d4a6b)', color: contacting ? '#94a3b8' : 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: contacting ? 'default' : 'pointer' }}>
+                      {contacting ? 'Redirection...' : `💬 Contacter ${tutor.first_name}`}
                     </button>
                   )}
                 </div>
