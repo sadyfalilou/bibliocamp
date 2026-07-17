@@ -62,7 +62,7 @@ function StarPicker({ value, onChange }) {
 
 const RATING_LABELS = { 1: 'Très décevant', 2: 'Décevant', 3: 'Correct', 4: 'Bien', 5: 'Excellent !' }
 
-export default function TutorDetailPanel({ tutorId, currentUser, onClose, router, setView, phoneSaved, setVerifyRedirect, setPendingContact }) {
+export default function TutorDetailPanel({ tutorId, currentUser, onClose, router, setView, phoneSaved, setVerifyRedirect, setPendingContact, setVerifyOpen }) {
   const [contacting, setContacting] = useState(false)
 
   // Logique partagée avec la fiche publique via le hook (chargement, avis,
@@ -104,7 +104,7 @@ export default function TutorDetailPanel({ tutorId, currentUser, onClose, router
   const startVerify = () => {
     setPendingContact({ type: 'tutor', id: tutor.id, ownerId: tutor.user_id })
     onClose()
-    setView('vendre')
+    setVerifyOpen(true)
   }
 
   return (

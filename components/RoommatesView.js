@@ -19,7 +19,7 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
 }
 
-export default function RoommatesView({ user, setView, initialSearch, phoneSaved, setVerifyRedirect, setPendingContact }) {
+export default function RoommatesView({ user, setView, initialSearch, phoneSaved, setVerifyRedirect, setPendingContact, setVerifyOpen }) {
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [city, setCity] = useState(initialSearch || '')
@@ -66,7 +66,7 @@ export default function RoommatesView({ user, setView, initialSearch, phoneSaved
   const startVerify = (listing) => {
     setPendingContact({ type: 'roommate', id: listing.id, ownerId: listing.user_id })
     setSelected(null)
-    setView('vendre')
+    setVerifyOpen(true)
   }
 
   const closeReportModal = () => { setReportModal(null); setReportReason(''); setReportSent(false) }

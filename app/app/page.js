@@ -14,6 +14,7 @@ import TuteursFaqView from '../../components/TuteursFaqView'
 import ManuelsFaqView from '../../components/ManuelsFaqView'
 import ColocsFaqView from '../../components/ColocsFaqView'
 import RoommatesView from '../../components/RoommatesView'
+import PhoneVerifyModal from '../../components/PhoneVerifyModal'
 import PublierColocView from '../../components/PublierColocView'
 import MesColocsView from '../../components/MesColocsView'
 import RemovedListingNotices from '../../components/RemovedListingNotices'
@@ -107,6 +108,7 @@ function HomeContent() {
   const [verifyRedirect, setVerifyRedirect] = useState('/create')
   // Niveau 2 : contact à ouvrir automatiquement une fois le téléphone vérifié.
   const [pendingContact, setPendingContact] = useState(null) // { type: 'listing'|'tutor'|'roommate', id, ownerId }
+  const [verifyOpen, setVerifyOpen] = useState(false) // modale de vérification du téléphone (superposée, décorrélée des vues)
   const [otp, setOtp] = useState('')
   const [otpError, setOtpError] = useState('')
   const [sendingCode, setSendingCode] = useState(false)
@@ -127,7 +129,7 @@ function HomeContent() {
   // le contact à rouvrir après la vérif (Niveau 2), depuis une page standalone.
   useEffect(() => {
     if (searchParams.get('verify') === '1' && !phoneSaved) {
-      setView('vendre')
+      setVerifyOpen(true)
       const ct = searchParams.get('ct'), cid = searchParams.get('cid'), co = searchParams.get('co')
       if (ct && cid && co) setPendingContact({ type: ct, id: cid, ownerId: co })
     }
@@ -510,7 +512,7 @@ function HomeContent() {
 
   const handleVerifyOtp = async () => {
     setOtpError('')
-    if (otp.length < 4) { setOtpError('Entre le code reçu par SMS.'); return }
+    if (otp.length < 6) { setOtpError('Entre les 6 chiffres reçus par SMS.'); return }
     setVerifyingCode(true)
     const digits = phone.replace(/\D/g, '')
     const dialCode = COUNTRIES.find(c => c.code === countryCode)?.dial || '+1'
@@ -533,6 +535,7 @@ function HomeContent() {
       // Rafraîchir la session pour que le nouveau JWT inclue phone_verified: true
       await supabase.auth.refreshSession()
       setPhoneSaved(true)
+      setVerifyOpen(false)
       // Niveau 2 : s'il y a un contact en attente, on l'ouvre directement ;
       // sinon, comportement historique (redirection générique).
       if (pendingContact) {
@@ -1565,7 +1568,7 @@ function HomeContent() {
 
           {/* ===== VUE COLOCS ===== */}
           {view === 'colocs' && (
-            <RoommatesView user={user} setView={setView} initialSearch={roommateSearchQuery} phoneSaved={phoneSaved} setVerifyRedirect={setVerifyRedirect} setPendingContact={setPendingContact} />
+            <RoommatesView user={user} setView={setView} initialSearch={roommateSearchQuery} phoneSaved={phoneSaved} setVerifyRedirect={setVerifyRedirect} setPendingContact={setPendingContact} setVerifyOpen={setVerifyOpen} />
           )}
 
           {/* ===== VUE PUBLIER COLOC ===== */}
@@ -1620,152 +1623,26 @@ function HomeContent() {
                   </button>
                 </div>
 
-              ) : phoneStep === 'enter' ? (
-                /* ÉTAPE 1 — Saisie du numéro */
+              ) : (
                 <div style={{
                   background: 'white', borderRadius: 14, padding: '36px',
                   border: '1px solid #e2e8f0', maxWidth: 560
                 }}>
                   <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a2e4a', margin: '0 0 8px' }}>
-                    Vérifie ton numéro de téléphone
+                    Vérifie ton numéro pour publier
                   </h2>
-                  <p style={{ color: '#718096', fontSize: 14, margin: '0 0 16px' }}>
-                    Pour la sécurité des membres, nous demandons un numéro de téléphone vérifié.
+                  <p style={{ color: '#718096', fontSize: 14, margin: '0 0 20px' }}>
+                    Pour la sécurité des membres, on vérifie ton numéro nord-américain (+1) avant toute publication.
                   </p>
-
-                  {/* Restriction Canada/USA */}
-                  <div style={{
-                    background: '#f0f4f8', border: '1px solid #e2e8f0',
-                    borderRadius: 10, padding: '12px 16px', marginBottom: 20,
-                    display: 'flex', alignItems: 'center', gap: 10, fontSize: 13, color: '#4a5568'
-                  }}>
-                    <span style={{ fontSize: 20 }}>🇨🇦</span>
-                    <span>La vente est réservée aux membres avec un <strong>numéro nord-américain (+1)</strong> — Canada et États-Unis.</span>
-                  </div>
-
-                  {/* TÉLÉPHONE */}
-                  <div style={{ marginBottom: 20 }}>
-                    <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 8 }}>
-                      Numéro de téléphone
-                    </label>
-                    <div style={{ display: 'flex', alignItems: 'center', border: `1px solid ${phoneError ? '#e53e3e' : '#cbd5e0'}`, borderRadius: 8, overflow: 'hidden' }}>
-                      <span style={{
-                        padding: '12px 14px', background: '#f0f4f8',
-                        borderRight: '1px solid #cbd5e0', color: '#1a2e4a',
-                        fontWeight: 800, fontSize: 15, whiteSpace: 'nowrap',
-                        display: 'flex', alignItems: 'center', gap: 6
-                      }}>
-                        🇨🇦 +1
-                      </span>
-                      <input
-                        placeholder="ex: 5145551234"
-                        value={phone}
-                        onChange={e => { setPhone(e.target.value); setPhoneError('') }}
-                        style={{
-                          flex: 1, padding: '12px 14px',
-                          border: 'none', fontSize: 15, outline: 'none',
-                          boxSizing: 'border-box'
-                        }}
-                      />
-                    </div>
-                  </div>
-
-                  {phoneError && (
-                    <p style={{ color: '#e53e3e', fontSize: 13, margin: '-12px 0 16px' }}>{phoneError}</p>
-                  )}
-
-                  <p style={{ fontSize: 12, color: '#a0aec0', margin: '0 0 24px' }}>
-                    10 chiffres sans espaces ni tirets · ex: 5145551234
-                  </p>
-
                   <button
-                    onClick={handleSendCode}
-                    disabled={sendingCode}
+                    onClick={() => setVerifyOpen(true)}
                     style={{
-                      background: sendingCode ? '#a0aec0' : '#00c9a7',
-                      color: 'white', border: 'none', borderRadius: 8,
-                      padding: '12px 28px', fontWeight: 700, fontSize: 15,
-                      cursor: sendingCode ? 'not-allowed' : 'pointer'
+                      background: '#00c9a7', color: 'white', border: 'none', borderRadius: 8,
+                      padding: '12px 28px', fontWeight: 700, fontSize: 15, cursor: 'pointer'
                     }}
                   >
-                    {sendingCode ? 'Envoi en cours...' : 'Envoyer le code de vérification'}
+                    Vérifier mon numéro →
                   </button>
-                </div>
-
-              ) : (
-                /* ÉTAPE 2 — Saisie du code SMS */
-                <div style={{
-                  background: 'white', borderRadius: 14, padding: '36px',
-                  border: '1px solid #e2e8f0', maxWidth: 560
-                }}>
-                  {/* Bannière succès envoi */}
-                  <div style={{
-                    background: '#f0fdf9', border: '1px solid #00c9a7',
-                    borderRadius: 8, padding: '12px 16px', marginBottom: 28,
-                    display: 'flex', alignItems: 'center', gap: 10,
-                    fontSize: 14, color: '#00a88a', fontWeight: 600
-                  }}>
-                    <span>👍</span>
-                    Le code de vérification a été envoyé à ton téléphone.
-                  </div>
-
-                  <h2 style={{ fontSize: 22, fontWeight: 800, color: '#1a2e4a', margin: '0 0 8px' }}>
-                    Entre ton code de vérification
-                  </h2>
-                  <p style={{ color: '#718096', fontSize: 14, margin: '0 0 28px' }}>
-                    Vérifie tes SMS. Le code peut prendre une à deux minutes à arriver.
-                  </p>
-
-                  <div style={{ display: 'flex', gap: 24, marginBottom: 20 }}>
-                    <div style={{ flex: 1 }}>
-                      <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 8 }}>
-                        Code de vérification
-                      </label>
-                      <input
-                        placeholder="ex: 123456"
-                        value={otp}
-                        onChange={e => { setOtp(e.target.value); setOtpError('') }}
-                        maxLength={6}
-                        style={{
-                          width: '100%', padding: '12px 14px',
-                          border: `1px solid ${otpError ? '#e53e3e' : '#cbd5e0'}`,
-                          borderRadius: 8, fontSize: 20, outline: 'none',
-                          boxSizing: 'border-box', letterSpacing: 6, textAlign: 'center'
-                        }}
-                        onFocus={e => e.target.style.borderColor = '#00c9a7'}
-                        onBlur={e => e.target.style.borderColor = otpError ? '#e53e3e' : '#cbd5e0'}
-                      />
-                    </div>
-                  </div>
-
-                  {otpError && (
-                    <p style={{ color: '#e53e3e', fontSize: 13, margin: '-12px 0 16px' }}>{otpError}</p>
-                  )}
-
-                  <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                    <button
-                      onClick={handleVerifyOtp}
-                      disabled={verifyingCode}
-                      style={{
-                        background: verifyingCode ? '#a0aec0' : '#00c9a7',
-                        color: 'white', border: 'none', borderRadius: 8,
-                        padding: '12px 28px', fontWeight: 700, fontSize: 15,
-                        cursor: verifyingCode ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      {verifyingCode ? 'Vérification...' : 'Vérifier mon numéro'}
-                    </button>
-                    <button
-                      onClick={() => { setPhoneStep('enter'); setOtp(''); setOtpError('') }}
-                      style={{
-                        background: 'transparent', color: '#718096',
-                        border: 'none', fontSize: 14, cursor: 'pointer',
-                        textDecoration: 'underline'
-                      }}
-                    >
-                      Changer de numéro
-                    </button>
-                  </div>
                 </div>
               )}
             </>
@@ -2085,8 +1962,20 @@ function HomeContent() {
           phoneSaved={phoneSaved}
           setVerifyRedirect={setVerifyRedirect}
           setPendingContact={setPendingContact}
+          setVerifyOpen={setVerifyOpen}
         />
       )}
+
+      {/* Modale de vérification du téléphone — superposée, décorrélée des vues */}
+      <PhoneVerifyModal
+        open={verifyOpen}
+        onClose={() => { setVerifyOpen(false); setPhoneStep('enter'); setOtp(''); setOtpError(''); setPhoneError(''); setPendingContact(null) }}
+        phone={phone} setPhone={setPhone} phoneError={phoneError} setPhoneError={setPhoneError}
+        handleSendCode={handleSendCode} sendingCode={sendingCode}
+        phoneStep={phoneStep} setPhoneStep={setPhoneStep}
+        otp={otp} setOtp={setOtp} otpError={otpError} setOtpError={setOtpError}
+        handleVerifyOtp={handleVerifyOtp} verifyingCode={verifyingCode}
+      />
 
       {selectedBook && (() => {
         const allSellers = [selectedBook, ...relatedListings].sort((a, b) => a.price - b.price)
@@ -2411,7 +2300,7 @@ function HomeContent() {
                                   onClick={() => {
                                     setPendingContact({ type: 'listing', id: s.id, ownerId: s.user_id })
                                     setSelectedBook(null)
-                                    setView('vendre')
+                                    setVerifyOpen(true)
                                   }}
                                   style={{ width: '100%', padding: '8px', background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer' }}
                                 >
