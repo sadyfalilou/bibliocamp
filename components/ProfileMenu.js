@@ -46,6 +46,9 @@ export default function ProfileMenu({ user }) {
   }, [user])
 
   const handleLogout = async () => {
+    // Purge le brouillon de diagnostic international (PII : nom, email, budget…)
+    // pour ne pas le laisser accessible sur un poste partagé après déconnexion.
+    try { localStorage.removeItem('bibliocamp_international_diagnostic_draft') } catch {}
     await supabase.auth.signOut()
     window.location.replace('/')
   }
