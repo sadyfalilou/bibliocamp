@@ -52,3 +52,6 @@ scripts/*.js
 
 # Log du serveur de dev
 devserver.log
+
+# Claude Code — réglages personnels locaux (launch.json reste suivi, partageable)
+.claude/settings.local.json
