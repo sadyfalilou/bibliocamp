@@ -134,9 +134,9 @@ export default function AccueilView({ userProfile, userId, router, setView, onSe
               onClick={() => onSelectListing ? onSelectListing(listing) : setView('acheter')}
               style={{ flex: '0 0 150px', scrollSnapAlign: 'start', cursor: 'pointer' }}
             >
-              <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', height: 110, background: coverGradients[idx % coverGradients.length], marginBottom: 6 }}>
+              <div style={{ position: 'relative', borderRadius: 10, overflow: 'hidden', height: 110, background: listing.image_url ? '#e8edf2' : coverGradients[idx % coverGradients.length], marginBottom: 6 }}>
                 {listing.image_url ? (
-                  <img src={listing.image_url} alt={listing.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
+                  <img src={listing.image_url} alt={listing.title} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
                 ) : (
                   <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '10px 12px', textAlign: 'center' }}>
                     <span style={{ color: 'rgba(255,255,255,0.92)', fontSize: 12, fontWeight: 700, lineHeight: 1.3, display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
