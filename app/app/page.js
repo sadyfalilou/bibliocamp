@@ -499,9 +499,9 @@ function HomeContent() {
       const { data: { session } } = await supabase.auth.getSession()
       const headers = { 'Content-Type': 'application/json', Authorization: `Bearer ${session?.access_token}` }
       const routes = {
-        listing:  ['/api/conversations',    { listing_id: pending.id, seller_id: pending.ownerId }],
-        tutor:    ['/api/tutors/contact',    { tutor_id: pending.id, owner_id: pending.ownerId }],
-        roommate: ['/api/roommates/contact', { roommate_listing_id: pending.id, owner_id: pending.ownerId }],
+        listing:  ['/api/conversations',    { listing_id: pending.id }],
+        tutor:    ['/api/tutors/contact',    { tutor_id: pending.id }],
+        roommate: ['/api/roommates/contact', { roommate_listing_id: pending.id }],
       }
       const entry = routes[pending.type]
       if (!entry) { router.push('/inbox'); return }

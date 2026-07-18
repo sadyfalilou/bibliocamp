@@ -55,7 +55,7 @@ export default function BookPageClient() {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.access_token}`
         },
-        body: JSON.stringify({ listing_id: listing.id, seller_id: listing.user_id })
+        body: JSON.stringify({ listing_id: listing.id })
       })
       const d = await res.json()
       if (d.conversation_id) {

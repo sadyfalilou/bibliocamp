@@ -23,6 +23,8 @@
 
 DROP POLICY IF EXISTS "tutors_update_own" ON tutors;
 DROP POLICY IF EXISTS "tuteur modifie son profil" ON tutors;
+-- Nom final aussi, pour que le script soit ré-exécutable sans erreur 42710.
+DROP POLICY IF EXISTS "tutors: modification par le proprietaire (badges verrouilles)" ON tutors;
 
 CREATE POLICY "tutors: modification par le proprietaire (badges verrouilles)"
   ON tutors FOR UPDATE
@@ -41,6 +43,7 @@ CREATE POLICY "tutors: modification par le proprietaire (badges verrouilles)"
 -- existe, pour éviter un refus RLS déroutant.
 
 DROP POLICY IF EXISTS "user cree un avis" ON tutor_reviews;
+DROP POLICY IF EXISTS "tutor_reviews: creation par un client ayant contacte le tuteur" ON tutor_reviews;
 
 CREATE POLICY "tutor_reviews: creation par un client ayant contacte le tuteur"
   ON tutor_reviews FOR INSERT

@@ -111,7 +111,7 @@ export default function TutorProfilePageClient({ id }) {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session?.access_token}`,
         },
-        body: JSON.stringify({ tutor_id: tutor.id, owner_id: tutor.user_id }),
+        body: JSON.stringify({ tutor_id: tutor.id }),
       })
       const json = await res.json()
       if (!res.ok || !json.conversation_id) { setContacting(false); return }

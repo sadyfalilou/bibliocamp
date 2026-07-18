@@ -19,7 +19,10 @@ jest.mock('@supabase/supabase-js', () => ({
 }))
 
 jest.mock('@sentry/nextjs', () => ({ captureException: jest.fn() }))
-jest.mock('../lib/sendEmail', () => ({ sendEmail: jest.fn().mockResolvedValue() }))
+jest.mock('../lib/sendEmail', () => ({
+  sendEmail: jest.fn().mockResolvedValue(),
+  escapeHtml: (v) => String(v ?? ''),
+}))
 
 function makeRequest(body, withAuth = true) {
   const headers = new Headers()

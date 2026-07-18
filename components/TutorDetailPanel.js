@@ -91,7 +91,7 @@ export default function TutorDetailPanel({ tutorId, currentUser, onClose, router
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session?.access_token}`
         },
-        body: JSON.stringify({ tutor_id: tutor.id, owner_id: tutor.user_id })
+        body: JSON.stringify({ tutor_id: tutor.id })
       })
       const json = await res.json()
       if (!res.ok) { setContacting(false); return }

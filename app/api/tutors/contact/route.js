@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-// POST { tutor_id, owner_id } — trouve ou crée une conversation tuteur, retourne { conversation_id }
+// POST { tutor_id } — trouve ou crée une conversation tuteur, retourne { conversation_id }
 export async function POST(request) {
-  const { tutor_id, owner_id } = await request.json()
-  if (!tutor_id || !owner_id) {
-    return NextResponse.json({ error: 'tutor_id et owner_id requis' }, { status: 400 })
+  const { tutor_id } = await request.json()
+  if (!tutor_id) {
+    return NextResponse.json({ error: 'tutor_id requis' }, { status: 400 })
   }
 
   const auth = request.headers.get('authorization')
@@ -19,14 +19,26 @@ export async function POST(request) {
   const { data: { user } } = await supabaseAnon.auth.getUser(token)
   if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
-  if (user.id === owner_id) {
-    return NextResponse.json({ error: 'Impossible de se contacter soi-même' }, { status: 400 })
-  }
-
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
+
+  // Le propriétaire du profil tuteur est TOUJOURS dérivé côté serveur, jamais
+  // d'un champ fourni par le client.
+  const { data: tutor } = await supabase
+    .from('tutors')
+    .select('user_id')
+    .eq('id', tutor_id)
+    .single()
+  if (!tutor) {
+    return NextResponse.json({ error: 'Tuteur introuvable' }, { status: 404 })
+  }
+  const owner_id = tutor.user_id
+
+  if (user.id === owner_id) {
+    return NextResponse.json({ error: 'Impossible de se contacter soi-même' }, { status: 400 })
+  }
 
   const { data: requesterProfile } = await supabase
     .from('profiles')

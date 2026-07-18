@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 import * as Sentry from '@sentry/nextjs'
-import { sendEmail } from '../../../lib/sendEmail'
+import { sendEmail, escapeHtml } from '../../../lib/sendEmail'
 
 function getAdminEmails() {
   return (process.env.ADMIN_EMAILS || '')
@@ -99,16 +99,21 @@ export async function POST(request) {
   }
 
   const adminEmails = getAdminEmails()
+  const safeFirst = escapeHtml(first_name.trim())
+  const safeLast = escapeHtml(last_name.trim())
+  const safeEmail = escapeHtml(email.trim())
+  const safeCountry = escapeHtml(country.trim())
+  const safeTargetLevel = escapeHtml(target_level)
   await Promise.allSettled([
     sendEmail({
       to: email.trim(),
       subject: 'Ton diagnostic BiblioCamp International est reçu',
-      html: `<p>Salut ${first_name.trim()},</p><p>On a bien reçu ton diagnostic pour ton projet d'études au Québec. On l'analyse et on revient vers toi rapidement avec des recommandations.</p><p>Tu peux consulter ton résultat préliminaire dès maintenant dans ton espace BiblioCamp. Si tu choisis un service payant, tu pourras choisir ta méthode de paiement (virement bancaire, Sendwave ou Western Union) — les détails te seront envoyés directement.</p>`,
+      html: `<p>Salut ${safeFirst},</p><p>On a bien reçu ton diagnostic pour ton projet d'études au Québec. On l'analyse et on revient vers toi rapidement avec des recommandations.</p><p>Tu peux consulter ton résultat préliminaire dès maintenant dans ton espace BiblioCamp. Si tu choisis un service payant, tu pourras choisir ta méthode de paiement (virement bancaire, Sendwave ou Western Union) — les détails te seront envoyés directement.</p>`,
     }),
     ...adminEmails.map(to => sendEmail({
       to,
       subject: `Nouveau diagnostic international — ${first_name.trim()} ${last_name.trim()}`,
-      html: `<p>Nouveau diagnostic soumis.</p><p><b>Nom :</b> ${first_name.trim()} ${last_name.trim()}<br/><b>Courriel :</b> ${email.trim()}<br/><b>Pays :</b> ${country.trim()}<br/><b>Niveau recherché :</b> ${target_level}</p>`,
+      html: `<p>Nouveau diagnostic soumis.</p><p><b>Nom :</b> ${safeFirst} ${safeLast}<br/><b>Courriel :</b> ${safeEmail}<br/><b>Pays :</b> ${safeCountry}<br/><b>Niveau recherché :</b> ${safeTargetLevel}</p>`,
     })),
   ]).then(results => {
     results.forEach(r => { if (r.status === 'rejected') Sentry.captureException(r.reason, { extra: { route: 'POST /api/international-diagnostics' } }) })

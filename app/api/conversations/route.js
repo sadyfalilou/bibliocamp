@@ -1,11 +1,11 @@
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
 
-// POST { listing_id, seller_id } — trouve ou crée une conversation, retourne { conversation_id }
+// POST { listing_id } — trouve ou crée une conversation, retourne { conversation_id }
 export async function POST(request) {
-  const { listing_id, seller_id } = await request.json()
-  if (!listing_id || !seller_id) {
-    return NextResponse.json({ error: 'listing_id et seller_id requis' }, { status: 400 })
+  const { listing_id } = await request.json()
+  if (!listing_id) {
+    return NextResponse.json({ error: 'listing_id requis' }, { status: 400 })
   }
 
   // Auth via Authorization header (token JWT)
@@ -21,14 +21,27 @@ export async function POST(request) {
   if (!user) return NextResponse.json({ error: 'Non autorisé' }, { status: 401 })
 
   const buyer_id = user.id
-  if (buyer_id === seller_id) {
-    return NextResponse.json({ error: 'Impossible de se contacter soi-même' }, { status: 400 })
-  }
 
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
+
+  // Le vendeur est TOUJOURS dérivé de l'annonce côté serveur, jamais d'un champ
+  // fourni par le client, pour empêcher de forger une conversation avec un tiers.
+  const { data: listing } = await supabase
+    .from('listings')
+    .select('user_id')
+    .eq('id', listing_id)
+    .single()
+  if (!listing) {
+    return NextResponse.json({ error: 'Annonce introuvable' }, { status: 404 })
+  }
+  const seller_id = listing.user_id
+
+  if (buyer_id === seller_id) {
+    return NextResponse.json({ error: 'Impossible de se contacter soi-même' }, { status: 400 })
+  }
 
   const { data: buyerProfile } = await supabase
     .from('profiles')
