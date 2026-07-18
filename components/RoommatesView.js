@@ -19,7 +19,7 @@ function timeAgo(dateStr) {
   return new Date(dateStr).toLocaleDateString('fr-CA', { day: 'numeric', month: 'short' })
 }
 
-export default function RoommatesView({ user, setView, initialSearch, phoneSaved, setVerifyRedirect }) {
+export default function RoommatesView({ user, setView, initialSearch, phoneSaved, setVerifyRedirect, setPendingContact, setVerifyOpen }) {
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [city, setCity] = useState(initialSearch || '')
@@ -49,14 +49,8 @@ export default function RoommatesView({ user, setView, initialSearch, phoneSaved
     return () => clearTimeout(timeout)
   }, [city, maxPrice, roomType])
 
+  // Appelé uniquement quand le numéro est déjà vérifié (voir le rendu des boutons).
   const handleContact = async (listing) => {
-    if (!user) return
-    if (!phoneSaved) {
-      setVerifyRedirect('/inbox')
-      setSelected(null)
-      setView('vendre')
-      return
-    }
     const { data: { session } } = await supabase.auth.getSession()
     const res = await fetch('/api/roommates/contact', {
       method: 'POST',
@@ -65,6 +59,14 @@ export default function RoommatesView({ user, setView, initialSearch, phoneSaved
     })
     const json = await res.json()
     if (res.ok) window.location.href = `/inbox?conv=${json.conversation_id}`
+  }
+
+  // Numéro non vérifié : on mémorise le contact et on ouvre la vérification.
+  // Après vérif, la conversation s'ouvre automatiquement (Niveau 2).
+  const startVerify = (listing) => {
+    setPendingContact({ type: 'roommate', id: listing.id, ownerId: listing.user_id })
+    setSelected(null)
+    setVerifyOpen(true)
   }
 
   const closeReportModal = () => { setReportModal(null); setReportReason(''); setReportSent(false) }
@@ -162,15 +164,19 @@ export default function RoommatesView({ user, setView, initialSearch, phoneSaved
               <div onClick={e => e.stopPropagation()} style={{ textAlign: 'right', flexShrink: 0 }}>
                 <div style={{ fontSize: 18, fontWeight: 900, color: '#1a2e4a' }}>{item.rent_price} $/mois</div>
                 <button
-                  onClick={() => handleContact(item)}
+                  onClick={() => {
+                    if (item.user_id === user?.id) return
+                    if (!phoneSaved) return startVerify(item)
+                    handleContact(item)
+                  }}
                   disabled={item.user_id === user?.id}
                   style={{
                     marginTop: 6, background: item.user_id === user?.id ? '#e2e8f0' : '#1a2e4a',
                     color: 'white', border: 'none', borderRadius: 7, padding: '7px 14px',
-                    fontSize: 12, fontWeight: 600, cursor: item.user_id === user?.id ? 'not-allowed' : 'pointer'
+                    fontSize: 12, fontWeight: 600, cursor: item.user_id === user?.id ? 'not-allowed' : 'pointer', whiteSpace: 'nowrap'
                   }}
                 >
-                  {item.user_id === user?.id ? 'Ton annonce' : 'Contacter'}
+                  {item.user_id === user?.id ? 'Ton annonce' : !phoneSaved ? 'Vérifier mon numéro' : 'Contacter'}
                 </button>
                 {item.user_id !== user?.id && (
                   <div style={{ marginTop: 6 }}>
@@ -290,12 +296,22 @@ export default function RoommatesView({ user, setView, initialSearch, phoneSaved
                   )}
                 </div>
 
-                {selected.user_id !== user?.id ? (
+                {selected.user_id === user?.id ? (
+                  <div style={{ textAlign: 'center', fontSize: 13, color: '#a0aec0' }}>Ceci est ton annonce</div>
+                ) : !phoneSaved ? (
+                  <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 12, padding: '14px 16px' }}>
+                    <div style={{ fontWeight: 700, color: '#7b5e00', fontSize: 14, marginBottom: 4 }}>🇨🇦 Numéro canadien requis</div>
+                    <div style={{ color: '#a07020', fontSize: 13, marginBottom: 12, lineHeight: 1.4 }}>
+                      Tu dois vérifier un numéro canadien (+1) pour contacter cette annonce.
+                    </div>
+                    <button onClick={() => startVerify(selected)} style={{ width: '100%', padding: '11px', background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                      Vérifier mon numéro →
+                    </button>
+                  </div>
+                ) : (
                   <button onClick={() => handleContact(selected)} style={{ width: '100%', padding: '13px', background: 'linear-gradient(135deg,#1a2e4a,#2d4a6b)', color: 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                     💬 Contacter
                   </button>
-                ) : (
-                  <div style={{ textAlign: 'center', fontSize: 13, color: '#a0aec0' }}>Ceci est ton annonce</div>
                 )}
 
                 {selected.user_id !== user?.id && (

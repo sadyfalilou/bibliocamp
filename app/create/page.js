@@ -49,12 +49,19 @@ function CreateInner() {
   }, [])
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session?.user) {
-        setUserId(session.user.id)
-        setUser(session.user)
-        sessionTokenRef.current = session.access_token
-      }
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session?.user) return
+      setUserId(session.user.id)
+      setUser(session.user)
+      sessionTokenRef.current = session.access_token
+      // Le téléphone doit être vérifié pour publier (l'API le refuse sinon) :
+      // on redirige tôt vers la vérification plutôt qu'après tout le formulaire.
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('phone_verified')
+        .eq('id', session.user.id)
+        .single()
+      if (!profile?.phone_verified) router.push('/app?verify=1')
     })
     const t = searchParams.get('title')
     const a = searchParams.get('authors')

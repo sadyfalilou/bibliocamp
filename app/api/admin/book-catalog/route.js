@@ -1,26 +1,24 @@
 import { createClient } from '@supabase/supabase-js'
 
-function getAdminEmails() {
-  return (process.env.ADMIN_EMAILS || '')
-    .split(',')
-    .map(e => e.trim().toLowerCase())
-    .filter(Boolean)
-}
-
 async function getAdminUser(request) {
   const auth = request.headers.get('authorization')
   if (!auth?.startsWith('Bearer ')) return null
 
-  const supabase = createClient(
+  const anon = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   )
   const token = auth.replace('Bearer ', '')
-  const { data: { user } } = await supabase.auth.getUser(token)
-  if (!user?.email) return null
+  const { data: { user } } = await anon.auth.getUser(token)
+  if (!user) return null
 
-  const adminEmails = getAdminEmails()
-  if (!adminEmails.includes(user.email.toLowerCase())) return null
+  // Source de vérité unique des droits admin : la colonne profiles.is_admin
+  const admin = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY
+  )
+  const { data: profile } = await admin.from('profiles').select('is_admin').eq('id', user.id).single()
+  if (!profile?.is_admin) return null
 
   return user
 }

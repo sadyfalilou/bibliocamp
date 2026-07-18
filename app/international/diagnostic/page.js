@@ -134,22 +134,32 @@ function DiagnosticForm() {
       setCheckingAuth(false)
       const detectedTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC'
       const draft = localStorage.getItem(STORAGE_KEY)
+      let restored = false
       if (draft) {
         try {
           const parsed = JSON.parse(draft)
-          setForm(prev => ({ ...prev, ...parsed, timezone: parsed.timezone || detectedTimezone }))
-          if (parsed.__step) setStep(parsed.__step)
-        } catch {}
-      } else {
+          // N'applique le brouillon que s'il appartient à l'utilisateur courant :
+          // sur un poste partagé, le brouillon d'un autre compte est ignoré et purgé
+          // (sinon ses PII — nom, email, budget… — seraient pré-remplies pour l'autre).
+          if (parsed.__uid === data.user.id) {
+            setForm(prev => ({ ...prev, ...parsed, timezone: parsed.timezone || detectedTimezone }))
+            if (parsed.__step) setStep(parsed.__step)
+            restored = true
+          } else {
+            localStorage.removeItem(STORAGE_KEY)
+          }
+        } catch { localStorage.removeItem(STORAGE_KEY) }
+      }
+      if (!restored) {
         setForm(prev => ({ ...prev, email: data.user.email || '', timezone: detectedTimezone }))
       }
     })
   }, [router, editId])
 
   useEffect(() => {
-    if (checkingAuth || editId) return
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...form, __step: step }))
-  }, [form, step, checkingAuth, editId])
+    if (checkingAuth || editId || !user) return
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...form, __step: step, __uid: user.id }))
+  }, [form, step, checkingAuth, editId, user])
 
   const set = (key, value) => setForm(prev => ({ ...prev, [key]: value }))
 

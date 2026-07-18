@@ -104,11 +104,14 @@ function LoginInner() {
       await supabase.from('profiles').upsert({ id: data.user.id, first_name: firstName.trim(), last_name: lastName.trim(), newsletter_opt_in: newsletterOptIn })
       // Enregistre le parrainage si un code ref est présent dans l'URL
       const refCode = searchParams.get('ref')
-      if (refCode) {
+      if (refCode && data.session) {
         await fetch('/api/invite', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ user_id: data.user.id, ref_code: refCode })
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${data.session.access_token}`
+          },
+          body: JSON.stringify({ ref_code: refCode })
         })
       }
     }

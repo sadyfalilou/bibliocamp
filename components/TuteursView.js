@@ -1,12 +1,10 @@
 'use client'
 
-import { useEffect, useState, useMemo } from 'react'
-import { supabase } from '../lib/supabase'
 import { useRouter } from 'next/navigation'
 import { BADGE_LABELS } from '../lib/tutorBadge'
+import { useTutorList, todayKey } from './useTutorList'
 
 const DOMAINS = ['Sciences', 'Santé', 'Droit', 'Arts', 'Éducation', 'Génie', 'Commerce', 'Autres']
-const TODAY_KEY = ['dimanche','lundi','mardi','mercredi','jeudi','vendredi','samedi'][new Date().getDay()]
 
 function StarRating({ rating, count }) {
   if (!count) return <span style={{ fontSize: 12, color: '#a0aec0' }}>Aucun avis</span>
@@ -26,7 +24,7 @@ function TutorCard({ tutor, onClick }) {
     tutor.meet_online && { icon: '💻', label: 'En ligne' },
     tutor.meet_city   && { icon: '🏙️', label: 'Ville' },
   ].filter(Boolean)
-  const availableToday = (tutor.availabilities?.[TODAY_KEY] || []).length > 0
+  const availableToday = (tutor.availabilities?.[todayKey()] || []).length > 0
 
   return (
     <div
@@ -111,79 +109,18 @@ function TutorCard({ tutor, onClick }) {
 }
 
 export default function TuteursView({ user, setView, onSelectTutor, initialSearch }) {
-  const [tutors, setTutors]   = useState([])
-  const [loading, setLoading] = useState(true)
-  const [isTutor, setIsTutor] = useState(false)
-  const [search, setSearch]   = useState(initialSearch || '')
-  const [filterDomain, setFilterDomain] = useState('')
-  const [filterMode, setFilterMode]     = useState('')
-  const [filterPrice, setFilterPrice]   = useState('')
-  const [filterDispoToday, setFilterDispoToday] = useState(false)
-  const [filterLang, setFilterLang]     = useState('')
-  const [sortBy, setSortBy]             = useState('recommended')
   const router = useRouter()
-
-  useEffect(() => {
-    const load = async () => {
-      if (user) {
-        const { data: t } = await supabase.from('tutors').select('id').eq('user_id', user.id).single()
-        setIsTutor(!!t)
-      }
-      const { data } = await supabase.from('tutors_with_rating').select('*').eq('is_active', true)
-      const list = data || []
-      setTutors(list)
-      setLoading(false)
-
-      if (list.length > 0) {
-        const ids = list.map(t => t.user_id).join(',')
-        const res = await fetch(`/api/tutors/badges?ids=${ids}`)
-        if (res.ok) {
-          const { badges } = await res.json()
-          setTutors(prev => prev.map(t => ({ ...t, response_badge: badges[t.user_id] ?? null })))
-        }
-      }
-    }
-    load()
-  }, [user])
-
-  const filtered = useMemo(() => {
-    let list = [...tutors]
-    if (search) {
-      const q = search.toLowerCase()
-      list = list.filter(t =>
-        `${t.first_name} ${t.last_name}`.toLowerCase().includes(q) ||
-        t.subjects?.some(s => s.toLowerCase().includes(q)) ||
-        t.domains?.some(d => d.toLowerCase().includes(q)) ||
-        t.bio?.toLowerCase().includes(q) ||
-        t.institution?.toLowerCase().includes(q)
-      )
-    }
-    if (filterDomain) list = list.filter(t => t.domains?.includes(filterDomain))
-    if (filterMode === 'campus') list = list.filter(t => t.meet_campus)
-    if (filterMode === 'online') list = list.filter(t => t.meet_online)
-    if (filterMode === 'city')   list = list.filter(t => t.meet_city)
-    if (filterPrice) {
-      const [min, max] = filterPrice.split('-').map(Number)
-      list = list.filter(t => t.rate_per_hour >= min && t.rate_per_hour <= max)
-    }
-    if (filterDispoToday) list = list.filter(t => (t.availabilities?.[TODAY_KEY] || []).length > 0)
-    if (filterLang) list = list.filter(t => t.languages?.includes(filterLang))
-
-    if (sortBy === 'recommended') {
-      list.sort((a, b) => {
-        if (b.is_pro !== a.is_pro) return b.is_pro ? 1 : -1
-        return (b.avg_rating || 0) - (a.avg_rating || 0)
-      })
-    } else if (sortBy === 'price_asc')  list.sort((a, b) => a.rate_per_hour - b.rate_per_hour)
-    else if (sortBy === 'price_desc')   list.sort((a, b) => b.rate_per_hour - a.rate_per_hour)
-    else if (sortBy === 'rating')       list.sort((a, b) => (b.avg_rating || 0) - (a.avg_rating || 0))
-    else if (sortBy === 'recent')       list.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
-
-    return list
-  }, [tutors, search, filterDomain, filterMode, filterPrice, filterDispoToday, filterLang, sortBy])
-
-  const hasFilters = search || filterDomain || filterMode || filterPrice || filterDispoToday || filterLang
-  const resetFilters = () => { setSearch(''); setFilterDomain(''); setFilterMode(''); setFilterPrice(''); setFilterDispoToday(false); setFilterLang('') }
+  // Chargement + filtrage partagés avec la liste publique via le hook.
+  const {
+    filtered, loading, isTutor, hasFilters, resetFilters,
+    search, setSearch,
+    filterDomain, setFilterDomain,
+    filterMode, setFilterMode,
+    filterPrice, setFilterPrice,
+    filterDispoToday, setFilterDispoToday,
+    filterLang, setFilterLang,
+    sortBy, setSortBy,
+  } = useTutorList({ initialSearch })
 
   const selectStyle = {
     padding: '7px 11px', borderRadius: 8, border: '1.5px solid #e2e8f0',

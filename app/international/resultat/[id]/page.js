@@ -181,12 +181,27 @@ export default function DiagnosticResultPage() {
           </ol>
         </div>
 
-        <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
-             style={{ display: 'inline-block', background: '#00c9a7', color: '#073e35', padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
-            Recevoir une analyse personnalisée
-          </a>
-        </div>
+        {/* Même règle que sur "Mes demandes" : la consultation n'est réservable
+            qu'une fois le résultat disponible. Sans ce garde-fou, le CTA d'ici
+            contournerait la condition (la carte "Mes demandes" pointe ici). */}
+        {diagnostic.status === 'resultat_disponible' ? (
+          <div style={{ textAlign: 'center', marginBottom: 20 }}>
+            <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
+               style={{ display: 'inline-block', background: '#00c9a7', color: '#073e35', padding: '14px 28px', borderRadius: 10, fontSize: 15, fontWeight: 700, textDecoration: 'none' }}>
+              Recevoir une analyse personnalisée
+            </a>
+          </div>
+        ) : (
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '14px 16px', marginBottom: 20, textAlign: 'center' }}>
+            <p style={{ fontSize: 13, color: '#64748b', margin: 0, lineHeight: 1.6 }}>
+              {diagnostic.status === 'consultation_planifiee'
+                ? 'Ta consultation est planifiée — rendez-vous à ton créneau.'
+                : diagnostic.status === 'termine'
+                ? 'Ton accompagnement pour cette demande est terminé.'
+                : 'Ton diagnostic est en cours d’analyse. Tu recevras un courriel dès qu’une consultation pourra être planifiée.'}
+            </p>
+          </div>
+        )}
 
         <div style={{ background: '#eef2f6', borderRadius: 10, padding: '14px 16px', display: 'flex', gap: 10, alignItems: 'flex-start' }}>
           <span style={{ fontSize: 16 }}>ℹ️</span>

@@ -18,6 +18,8 @@ async function getSellerData(id) {
       .eq('seller_id', id),
   ])
   if (!profile) return null
+  // Confidentialité : profil public non authentifié → initiale du nom seulement
+  if (profile.last_name) profile.last_name = profile.last_name[0].toUpperCase()
   const reviewList = reviews ?? []
   const avgRating = reviewList.length
     ? Math.round((reviewList.reduce((sum, r) => sum + r.rating, 0) / reviewList.length) * 10) / 10
@@ -77,7 +79,7 @@ export default async function SellerPage({ params }) {
       {jsonLd && (
         <script
           type="application/ld+json"
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c') }}
         />
       )}
       <SellerPageClient />

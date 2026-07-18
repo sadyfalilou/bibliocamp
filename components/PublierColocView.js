@@ -11,7 +11,7 @@ const ROOM_TYPES = [
 
 const MAX_IMAGES = 6
 
-export default function PublierColocView({ setView, editId }) {
+export default function PublierColocView({ setView, editId, phoneSaved, onVerifyPhone }) {
   const [form, setForm] = useState({
     title: '', description: '', rent_price: '', room_type: 'chambre_privee',
     campus: '', city: '', available_from: '', num_spots: 1,
@@ -114,6 +114,19 @@ export default function PublierColocView({ setView, editId }) {
         {editId ? 'Modifier mon annonce' : 'Publier une annonce'}
       </h1>
 
+      {/* Prévenir dès l'ouverture : le numéro doit être vérifié pour publier. */}
+      {!phoneSaved && (
+        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 12, padding: '14px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 260px', minWidth: 0 }}>
+            <div style={{ fontWeight: 800, fontSize: 14, color: '#7b5e00', marginBottom: 2 }}>📱 Vérifie ton numéro avant de publier</div>
+            <div style={{ fontSize: 13, color: '#7b5e00' }}>Ton annonce ne pourra être publiée qu&apos;avec un numéro nord-américain (+1) vérifié. Autant le faire maintenant.</div>
+          </div>
+          <button type="button" onClick={onVerifyPhone} style={{ background: '#00c9a7', color: 'white', border: 'none', borderRadius: 8, padding: '10px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            Vérifier mon numéro →
+          </button>
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} style={{ background: 'white', border: '1px solid #e2e8f0', borderRadius: 14, padding: 24, display: 'flex', flexDirection: 'column', gap: 16 }}>
         <div>
           <label style={labelStyle}>Titre *</label>
@@ -193,7 +206,22 @@ export default function PublierColocView({ setView, editId }) {
           {totalImages > 0 && <span style={{ fontSize: 12, color: '#718096', marginLeft: 10 }}>{totalImages}/{MAX_IMAGES}</span>}
         </div>
 
-        {error && <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', color: '#e53e3e', borderRadius: 8, padding: 12, fontSize: 13 }}>{error}</div>}
+        {error && /v[ée]rif/i.test(error) ? (
+          phoneSaved ? (
+            <div style={{ background: '#f0fdf9', border: '1px solid #00c9a7', color: '#00a88a', borderRadius: 8, padding: 12, fontSize: 13 }}>
+              👍 Numéro vérifié. Clique de nouveau sur « Publier l&apos;annonce » pour finaliser.
+            </div>
+          ) : (
+            <div style={{ background: '#fff8e1', border: '1px solid #ffe082', color: '#7b5e00', borderRadius: 8, padding: 12, fontSize: 13 }}>
+              <p style={{ margin: '0 0 10px' }}>Ton numéro de téléphone n&apos;est pas encore vérifié. Il faut un numéro nord-américain (+1) pour publier une annonce.</p>
+              <button onClick={onVerifyPhone} style={{ background: '#00c9a7', color: 'white', border: 'none', borderRadius: 8, padding: '9px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                Vérifier mon numéro →
+              </button>
+            </div>
+          )
+        ) : error && (
+          <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', color: '#e53e3e', borderRadius: 8, padding: 12, fontSize: 13 }}>{error}</div>
+        )}
 
         <div style={{ display: 'flex', gap: 10 }}>
           <button

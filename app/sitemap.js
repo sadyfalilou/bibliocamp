@@ -7,6 +7,9 @@ export default async function sitemap() {
     { url: `${BASE_URL}/`, changeFrequency: 'daily', priority: 1 },
     { url: `${BASE_URL}/login`, changeFrequency: 'monthly', priority: 0.5 },
     { url: `${BASE_URL}/faq`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE_URL}/manuels/faq`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE_URL}/tuteurs/faq`, changeFrequency: 'monthly', priority: 0.5 },
+    { url: `${BASE_URL}/tuteurs`, changeFrequency: 'daily', priority: 0.8 },
     { url: `${BASE_URL}/a-propos`, changeFrequency: 'yearly', priority: 0.4 },
     { url: `${BASE_URL}/international`, changeFrequency: 'monthly', priority: 0.6 },
     { url: `${BASE_URL}/international/mon-histoire`, changeFrequency: 'yearly', priority: 0.5 },
@@ -21,9 +24,10 @@ export default async function sitemap() {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
-  const [{ data: listings }, { data: sellers }] = await Promise.all([
+  const [{ data: listings }, { data: sellers }, { data: tutors }] = await Promise.all([
     supabase.from('listings').select('isbn, created_at').eq('status', 'active').not('isbn', 'is', null),
     supabase.from('listings').select('user_id, created_at').eq('status', 'active'),
+    supabase.from('tutors_with_rating').select('id').eq('is_active', true),
   ])
 
   const bookRoutes = (listings ?? [])
@@ -42,5 +46,11 @@ export default async function sitemap() {
     priority: 0.6,
   }))
 
-  return [...staticRoutes, ...bookRoutes, ...sellerRoutes]
+  const tutorRoutes = (tutors ?? []).map(t => ({
+    url: `${BASE_URL}/tuteurs/${t.id}`,
+    changeFrequency: 'weekly',
+    priority: 0.7,
+  }))
+
+  return [...staticRoutes, ...bookRoutes, ...sellerRoutes, ...tutorRoutes]
 }

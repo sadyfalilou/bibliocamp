@@ -12,8 +12,22 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
+  metadataBase: new URL("https://www.bibliocamp.ca"),
   title: "BiblioCamp — Achète et vends tes manuels scolaires",
   description: "La marketplace étudiante pour acheter et vendre des manuels scolaires d'occasion entre étudiants.",
+  openGraph: {
+    type: "website",
+    siteName: "BiblioCamp",
+    locale: "fr_CA",
+    url: "https://www.bibliocamp.ca",
+    title: "BiblioCamp — la marketplace étudiante québécoise",
+    description: "Achète et vends tes manuels d'occasion, trouve un tuteur ou une coloc — entre étudiants du Québec.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "BiblioCamp — la marketplace étudiante québécoise",
+    description: "Manuels d'occasion, tuteurs et colocs entre étudiants du Québec.",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -30,7 +44,6 @@ export const metadata = {
 export const viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
 };
 
 export default function RootLayout({ children }) {

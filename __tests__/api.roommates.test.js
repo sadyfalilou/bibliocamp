@@ -12,6 +12,7 @@ const mockUpload = jest.fn()
 const mockGetPublicUrl = jest.fn()
 const mockRemove = jest.fn()
 const mockProfileSingle = jest.fn()
+const mockOr = jest.fn() // capture l'argument passé à .or() (test anti-injection GET)
 
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
@@ -26,7 +27,7 @@ jest.mock('@supabase/supabase-js', () => ({
         chain.eq = jest.fn(() => chain)
         chain.ilike = jest.fn(() => chain)
         chain.lte = jest.fn(() => chain)
-        chain.or = jest.fn(() => chain)
+        chain.or = jest.fn((arg) => { mockOr(arg); return chain })
         chain.order = jest.fn(() => chain)
         chain.single = mockReadSingle
         chain.then = (resolve, reject) => mockReadList().then(resolve, reject)
@@ -121,6 +122,14 @@ describe('GET /api/roommates', () => {
     mockReadList.mockResolvedValue({ data: null, error: { message: 'DB error' } })
     const res = await GET(makeGetRequest())
     expect(res.status).toBe(500)
+  })
+
+  test('anti-injection : la recherche est nettoyée avant le filtre .or', async () => {
+    // La virgule (séparateur de conditions PostgREST) doit être neutralisée
+    await GET(makeGetRequest('?city=x,status.is.null'))
+    expect(mockOr).toHaveBeenCalledWith(
+      'title.ilike.%x status.is.null%,city.ilike.%x status.is.null%,campus.ilike.%x status.is.null%'
+    )
   })
 })
 

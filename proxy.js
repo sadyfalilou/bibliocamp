@@ -1,8 +1,11 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 
-const PUBLIC_ROUTES = ['/', '/login', '/reset-password', '/confidentialite', '/cgu', '/faq', '/a-propos', '/international', '/international/mon-histoire', '/robots.txt', '/sitemap.xml']
-const PUBLIC_PREFIXES = ['/book/', '/invite/', '/seller/']
+const PUBLIC_ROUTES = ['/', '/login', '/reset-password', '/confidentialite', '/cgu', '/faq', '/manuels/faq', '/a-propos', '/international', '/international/mon-histoire', '/tuteurs', '/robots.txt', '/sitemap.xml']
+// Note : '/tuteurs/' couvre aussi /tuteurs/modifier et /tuteurs/devenir-tuteur,
+// mais ces pages d'edition se protegent elles-memes (redirection vers /login
+// si pas de session).
+const PUBLIC_PREFIXES = ['/book/', '/invite/', '/seller/', '/tuteurs/']
 
 export async function proxy(req) {
   let supabaseResponse = NextResponse.next({ request: req })

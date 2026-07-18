@@ -15,7 +15,10 @@ function InviteSection({ userId }) {
 
   useEffect(() => {
     const load = async () => {
-      const res = await fetch(`/api/invite?user_id=${userId}`)
+      const { data: { session } } = await supabase.auth.getSession()
+      const res = await fetch('/api/invite', {
+        headers: session ? { Authorization: `Bearer ${session.access_token}` } : {}
+      })
       if (res.ok) {
         const d = await res.json()
         setInviteCode(d.code)

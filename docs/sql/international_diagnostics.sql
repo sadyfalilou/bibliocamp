@@ -1,9 +1,16 @@
 -- Diagnostic du projet d'etudes pour les etudiants internationaux (module
 -- /international). Formulaire en 7 etapes ; aucun champ ne porte sur le
 -- permis d'etudes/visa (volontairement absent, voir les disclaimers du
--- module). Acces uniquement via les routes API (cle service role),
--- RLS active sans policy = aucun acces direct cote client.
+-- module). Acces uniquement via les routes API (cle service role).
 -- A executer dans le SQL Editor de Supabase.
+--
+-- SECURITE -- table sensible (email, telephone, budget) : la RLS est ACTIVEE
+-- VOLONTAIREMENT SANS AUCUNE POLICY. En Postgres, RLS + 0 policy = deny-all :
+-- ni la cle anon (publique) ni un utilisateur connecte ne peut lire/ecrire
+-- directement ; seule la service-role (les routes API, qui filtrent par
+-- proprietaire) y accede. Un `select ... from pg_policies` renvoie donc 0 ligne
+-- pour cette table : c'est NORMAL, pas un oubli -- NE PAS ajouter de policy
+-- permissive (ce serait ouvrir un acces direct aux PII via la cle anon).
 
 create table if not exists international_diagnostics (
   id bigint generated always as identity primary key,

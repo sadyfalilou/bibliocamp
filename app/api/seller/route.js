@@ -31,7 +31,16 @@ export async function GET(request) {
 
   if (!profile) return NextResponse.json({ error: 'Vendeur introuvable' }, { status: 404 })
 
-  const reviewList = reviews ?? []
+  // Confidentialité : ce profil est public et accessible sans authentification.
+  // On n'expose que l'initiale du nom de famille pour éviter l'aspiration en
+  // masse des noms complets par énumération d'ID.
+  if (profile.last_name) profile.last_name = profile.last_name[0].toUpperCase()
+
+  const reviewList = (reviews ?? []).map(r => (
+    r.profiles && r.profiles.last_name
+      ? { ...r, profiles: { ...r.profiles, last_name: r.profiles.last_name[0].toUpperCase() } }
+      : r
+  ))
   const avgRating = reviewList.length
     ? Math.round((reviewList.reduce((sum, r) => sum + r.rating, 0) / reviewList.length) * 10) / 10
     : null

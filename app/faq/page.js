@@ -4,56 +4,7 @@ import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Footer from '../../components/Footer'
 import { supabase } from '../../lib/supabase'
-
-const FAQ = [
-  {
-    section: 'Compte et sécurité',
-    items: [
-      {
-        q: 'Pourquoi dois-je vérifier mon numéro de téléphone ?',
-        a: 'La vérification par SMS aide à garder une communauté d\'étudiants réels et limite les faux comptes. Elle est requise avant de publier une annonce ou de contacter quelqu\'un.'
-      },
-      {
-        q: 'Comment supprimer mon compte ?',
-        a: 'Va dans "Mon profil" puis la zone de gestion de compte. La suppression efface définitivement ton profil, tes annonces et tes conversations.'
-      },
-      {
-        q: 'Mes informations sont-elles partagées ?',
-        a: 'Non. Consulte notre page Confidentialité pour le détail de ce qui est collecté et comment c\'est utilisé.'
-      },
-    ]
-  },
-  {
-    section: 'Colocs',
-    items: [
-      {
-        q: 'Comment publier une annonce de colocation ?',
-        a: 'Depuis ton tableau de bord, ouvre la section "Colocs" puis "Publier une annonce". Tu peux ajouter plusieurs photos de la chambre, le prix, la ville et le type de logement.'
-      },
-      {
-        q: 'Puis-je modifier ou supprimer mon annonce de coloc ?',
-        a: 'Oui. Dans "Mes annonces colocs", clique sur ton annonce pour la modifier (texte, prix, photos) ou la retirer à tout moment.'
-      },
-      {
-        q: 'Comment signaler une annonce de colocation suspecte ?',
-        a: 'Ouvre l\'annonce concernée et utilise le bouton de signalement. Notre équipe examine chaque signalement et peut retirer l\'annonce si elle ne respecte pas nos conditions.'
-      },
-    ]
-  },
-  {
-    section: 'Avis sur les vendeurs',
-    items: [
-      {
-        q: 'Comment laisser un avis sur un vendeur de manuels ?',
-        a: 'Visite la page du vendeur (depuis une de ses annonces) et utilise le formulaire de notation pour lui donner une note de 1 à 5 étoiles et un commentaire.'
-      },
-      {
-        q: 'Puis-je modifier mon avis ?',
-        a: 'Oui, tant que tu es connecté avec le même compte. Tu peux modifier ou supprimer ton avis depuis la page du vendeur. Un seul avis par vendeur est autorisé par personne.'
-      },
-    ]
-  },
-]
+import { FAQ_GENERAL as FAQ } from '../../lib/faqData'
 
 function AccordionItem({ question, answer }) {
   const [isOpen, setIsOpen] = useState(false)

@@ -62,7 +62,7 @@ function Field({ label, hint, children, error }) {
   )
 }
 
-export default function DevenirTuteurView({ user, setView }) {
+export default function DevenirTuteurView({ user, setView, phoneSaved, onVerifyPhone }) {
   const [step, setStep]           = useState(0)
   const [loading, setLoading]     = useState(true)
   const [saving, setSaving]       = useState(false)
@@ -218,6 +218,19 @@ export default function DevenirTuteurView({ user, setView }) {
         <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>Étape {step + 1} sur {steps.length} — {steps[step]}</p>
       </div>
 
+      {/* Prévenir dès l'ouverture : le numéro doit être vérifié pour publier. */}
+      {!phoneSaved && (
+        <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 12, padding: '14px 16px', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+          <div style={{ flex: '1 1 260px', minWidth: 0 }}>
+            <div style={{ fontWeight: 800, fontSize: 14, color: '#7b5e00', marginBottom: 2 }}>📱 Vérifie ton numéro avant de publier</div>
+            <div style={{ fontSize: 13, color: '#7b5e00' }}>Ton profil ne pourra être publié qu&apos;avec un numéro nord-américain (+1) vérifié. Autant le faire maintenant.</div>
+          </div>
+          <button onClick={onVerifyPhone} style={{ background: '#00c9a7', color: 'white', border: 'none', borderRadius: 8, padding: '10px 18px', fontWeight: 700, fontSize: 13, cursor: 'pointer', whiteSpace: 'nowrap' }}>
+            Vérifier mon numéro →
+          </button>
+        </div>
+      )}
+
       <StepIndicator current={step} total={steps.length} />
 
       <div style={{ background: 'white', borderRadius: 14, border: '1px solid #e2e8f0', padding: '24px' }}>
@@ -371,7 +384,20 @@ export default function DevenirTuteurView({ user, setView }) {
               </div>
             </Field>
 
-            {errors.submit && (
+            {errors.submit && /v[ée]rif/i.test(errors.submit) ? (
+              phoneSaved ? (
+                <div style={{ background: '#f0fdf9', border: '1px solid #00c9a7', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#00a88a', marginTop: 8 }}>
+                  👍 Numéro vérifié. Clique de nouveau sur « Créer mon profil » pour finaliser.
+                </div>
+              ) : (
+                <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 8, padding: '12px 14px', fontSize: 13, color: '#7b5e00', marginTop: 8 }}>
+                  <p style={{ margin: '0 0 10px' }}>Ton numéro de téléphone n&apos;est pas encore vérifié. Il faut un numéro nord-américain (+1) pour publier.</p>
+                  <button onClick={onVerifyPhone} style={{ background: '#00c9a7', color: 'white', border: 'none', borderRadius: 8, padding: '9px 16px', fontWeight: 700, fontSize: 13, cursor: 'pointer' }}>
+                    Vérifier mon numéro →
+                  </button>
+                </div>
+              )
+            ) : errors.submit && (
               <div style={{ background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 8, padding: '10px 14px', fontSize: 13, color: '#c53030', marginTop: 8 }}>{errors.submit}</div>
             )}
           </div>

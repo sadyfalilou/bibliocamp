@@ -89,10 +89,7 @@ export default function Edit() {
 
   useEffect(() => {
     const fetchData = async () => {
-      // Charger la session et la listing en parallèle pour aller plus vite
-      const [{ data: { session } }, ] = await Promise.all([
-        supabase.auth.getSession()
-      ])
+      const { data: { session } } = await supabase.auth.getSession()
       if (!session) { router.push('/login'); return }
       sessionTokenRef.current = session.access_token
       setUser(session.user)
@@ -218,7 +215,7 @@ export default function Edit() {
       }
       return
     }
-    window.location.href = '/'
+    window.location.href = '/app'
   }
 
   if (fetching) return (
@@ -493,17 +490,6 @@ export default function Edit() {
                 </div>
               )}
             </div>
-
-            {serverError && (
-              <div style={{
-                background: '#fff5f5', border: '1px solid #fed7d7', borderRadius: 10,
-                padding: '12px 16px', marginBottom: 16,
-                color: '#c53030', fontSize: 14, fontWeight: 600,
-                display: 'flex', alignItems: 'center', gap: 8
-              }}>
-                ⚠️ {serverError}
-              </div>
-            )}
 
             <div style={{ display: 'flex', gap: 12 }}>
               <button type="submit" disabled={loading} style={{

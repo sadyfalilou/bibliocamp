@@ -65,7 +65,11 @@ export async function GET(request) {
     .eq('status', 'active')
     .order('created_at', { ascending: false })
 
-  if (q) query = query.or(`title.ilike.%${q}%,city.ilike.%${q}%,campus.ilike.%${q}%`)
+  // Nettoie la recherche : on retire les caractères qui ont un sens dans la
+  // grammaire des filtres PostgREST (,()*%:\") pour empêcher l'injection de
+  // filtres supplémentaires via le .or() ci-dessous.
+  const safeQ = q ? q.replace(/[,()*%:\\]/g, ' ').trim() : ''
+  if (safeQ) query = query.or(`title.ilike.%${safeQ}%,city.ilike.%${safeQ}%,campus.ilike.%${safeQ}%`)
   if (maxPrice) query = query.lte('rent_price', Number(maxPrice))
   if (roomType) query = query.eq('room_type', roomType)
 

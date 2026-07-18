@@ -243,7 +243,10 @@ export default function MesDemandesPage() {
                   <p style={{ fontSize: 12, color: '#64748b', margin: '0 0 4px', lineHeight: 1.5 }}>
                     {NEXT_STEP_TEXT[d.status] || NEXT_STEP_TEXT.soumis}
                   </p>
-                  {!['consultation_planifiee', 'termine'].includes(d.status) && (
+                  {/* La consultation ne peut être réservée qu'une fois le résultat
+                      disponible : avant, il n'y a rien à discuter (et le texte de
+                      l'étape annonce déjà qu'un courriel préviendra le demandeur). */}
+                  {d.status === 'resultat_disponible' && (
                     <a href={CALENDLY_URL} target="_blank" rel="noopener noreferrer"
                        style={{ fontSize: 12, fontWeight: 700, color: '#0f6e56', textDecoration: 'none' }}>
                       Réserver ma consultation →

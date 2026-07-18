@@ -1,8 +1,9 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { BADGE_LABELS } from '../lib/tutorBadge'
+import { useTutorProfile } from './useTutorProfile'
 
 const DAYS = [
   { key: 'lundi',     label: 'Lun' },
@@ -61,69 +62,26 @@ function StarPicker({ value, onChange }) {
 
 const RATING_LABELS = { 1: 'Très décevant', 2: 'Décevant', 3: 'Correct', 4: 'Bien', 5: 'Excellent !' }
 
-export default function TutorDetailPanel({ tutorId, currentUser, onClose, router, setView, phoneSaved, setVerifyRedirect }) {
-  const [tutor, setTutor]         = useState(null)
-  const [reviews, setReviews]     = useState([])
-  const [loading, setLoading]     = useState(true)
-  const [isOwn, setIsOwn]         = useState(false)
+export default function TutorDetailPanel({ tutorId, currentUser, onClose, router, setView, phoneSaved, setVerifyRedirect, setPendingContact, setVerifyOpen }) {
   const [contacting, setContacting] = useState(false)
-  const [showAllReviews, setShowAllReviews] = useState(false)
 
-  const [myReview, setMyReview]       = useState(null)
-  const [showReviewForm, setShowReviewForm] = useState(false)
-  const [reviewRating, setReviewRating]     = useState(0)
-  const [reviewComment, setReviewComment]   = useState('')
-  const [reviewError, setReviewError]       = useState('')
-  const [submittingReview, setSubmittingReview] = useState(false)
-  const [reviewSuccess, setReviewSuccess]   = useState(false)
+  // Logique partagée avec la fiche publique via le hook (chargement, avis,
+  // "déjà contacté"). Le rendu (panneau) et le contact restent propres ici.
+  const {
+    tutor, reviews, loading, isOwn,
+    showAllReviews, setShowAllReviews,
+    myReview, hasContacted,
+    showReviewForm, setShowReviewForm,
+    reviewRating, setReviewRating,
+    reviewComment, setReviewComment,
+    reviewError, setReviewError,
+    submittingReview, reviewSuccess, setReviewSuccess,
+    submitReview, openEditReview, deleteReview,
+  } = useTutorProfile({ tutorId, onNotFound: onClose })
 
-  useEffect(() => {
-    const load = async () => {
-      setLoading(true)
-      const { data: tutorData, error } = await supabase
-        .from('tutors_with_rating').select('*').eq('id', tutorId).single()
-      if (error || !tutorData) { onClose(); return }
-      if (!tutorData.is_active && currentUser?.id !== tutorData.user_id) { onClose(); return }
-      setTutor(tutorData)
-      setIsOwn(currentUser?.id === tutorData.user_id)
-
-      fetch(`/api/tutors/badges?ids=${tutorData.user_id}`)
-        .then(res => res.ok ? res.json() : null)
-        .then(json => {
-          if (json) setTutor(prev => prev ? { ...prev, response_badge: json.badges[tutorData.user_id] ?? null } : prev)
-        })
-        .catch(() => {})
-
-      if (currentUser?.id !== tutorData.user_id) {
-        supabase.rpc('increment_tutor_views', { tutor_id: tutorId }).then(() => {})
-      }
-
-      const { data: reviewsData } = await supabase
-        .from('tutor_reviews')
-        .select('*, profiles(first_name, last_name, avatar_url)')
-        .eq('tutor_id', tutorId)
-        .order('created_at', { ascending: false })
-      setReviews(reviewsData || [])
-
-      if (currentUser) {
-        const existing = (reviewsData || []).find(r => r.reviewer_id === currentUser.id)
-        if (existing) setMyReview(existing)
-      }
-
-      setLoading(false)
-    }
-    load()
-  }, [tutorId])
-
+  // Appelé uniquement quand le numéro est déjà vérifié (voir le rendu du bouton).
   const handleContact = async () => {
-    if (!currentUser) { router.push('/login'); return }
     if (isOwn) return
-    if (!phoneSaved) {
-      setVerifyRedirect('/inbox')
-      onClose()
-      setView('vendre')
-      return
-    }
     setContacting(true)
     try {
       const { data: { session } } = await supabase.auth.getSession()
@@ -141,67 +99,12 @@ export default function TutorDetailPanel({ tutorId, currentUser, onClose, router
     } catch { setContacting(false) }
   }
 
-  const submitReview = async () => {
-    setReviewError('')
-    if (reviewRating === 0) { setReviewError('Choisis une note.'); return }
-    if (reviewComment.trim().length > 0 && reviewComment.trim().length < 10) {
-      setReviewError('Le commentaire doit faire au moins 10 caractères.')
-      return
-    }
-    setSubmittingReview(true)
-    try {
-      if (myReview) {
-        const { error } = await supabase.from('tutor_reviews')
-          .update({ rating: reviewRating, comment: reviewComment.trim() || null })
-          .eq('id', myReview.id)
-        if (error) throw error
-      } else {
-        const { error } = await supabase.from('tutor_reviews').insert({
-          tutor_id: tutorId,
-          reviewer_id: currentUser.id,
-          rating: reviewRating,
-          comment: reviewComment.trim() || null,
-        })
-        if (error) throw error
-      }
-
-      const { data: refreshed } = await supabase
-        .from('tutor_reviews')
-        .select('*, profiles(first_name, last_name, avatar_url)')
-        .eq('tutor_id', tutorId)
-        .order('created_at', { ascending: false })
-      setReviews(refreshed || [])
-      const newMine = (refreshed || []).find(r => r.reviewer_id === currentUser.id)
-      setMyReview(newMine || null)
-
-      const { data: refreshedTutor } = await supabase
-        .from('tutors_with_rating').select('avg_rating, review_count').eq('id', tutorId).single()
-      if (refreshedTutor) setTutor(prev => ({ ...prev, ...refreshedTutor }))
-
-      setReviewSuccess(true)
-      setShowReviewForm(false)
-      setReviewComment('')
-    } catch {
-      setReviewError('Erreur lors de l\'envoi. Réessaie.')
-    } finally {
-      setSubmittingReview(false)
-    }
-  }
-
-  const openEditReview = () => {
-    setReviewRating(myReview.rating)
-    setReviewComment(myReview.comment || '')
-    setReviewSuccess(false)
-    setShowReviewForm(true)
-  }
-
-  const deleteReview = async () => {
-    if (!myReview) return
-    await supabase.from('tutor_reviews').delete().eq('id', myReview.id)
-    setMyReview(null)
-    setReviews(prev => prev.filter(r => r.id !== myReview.id))
-    setReviewRating(0)
-    setReviewComment('')
+  // Numéro non vérifié : on mémorise le contact et on ouvre la vérification.
+  // Après vérif, la conversation s'ouvre automatiquement (Niveau 2).
+  const startVerify = () => {
+    setPendingContact({ type: 'tutor', id: tutor.id, ownerId: tutor.user_id })
+    onClose()
+    setVerifyOpen(true)
   }
 
   return (
@@ -275,13 +178,23 @@ export default function TutorDetailPanel({ tutorId, currentUser, onClose, router
                     <Stars rating={tutor.avg_rating} count={tutor.review_count} />
                   </div>
 
-                  {!isOwn ? (
-                    <button onClick={handleContact} disabled={contacting} style={{ width: '100%', padding: '13px', background: contacting ? '#e2e8f0' : 'linear-gradient(135deg,#1a2e4a,#2d4a6b)', color: contacting ? '#94a3b8' : 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: contacting ? 'default' : 'pointer' }}>
-                      {contacting ? 'Redirection...' : `💬 Contacter ${tutor.first_name}`}
-                    </button>
-                  ) : (
+                  {isOwn ? (
                     <button onClick={() => router.push('/tuteurs/modifier')} style={{ width: '100%', padding: '13px', background: 'none', color: '#6c63ff', border: '2px solid #6c63ff', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: 'pointer' }}>
                       Modifier mon profil tuteur
+                    </button>
+                  ) : !phoneSaved ? (
+                    <div style={{ background: '#fff8e1', border: '1px solid #ffe082', borderRadius: 12, padding: '14px 16px' }}>
+                      <div style={{ fontWeight: 700, color: '#7b5e00', fontSize: 14, marginBottom: 4 }}>🇨🇦 Numéro canadien requis</div>
+                      <div style={{ color: '#a07020', fontSize: 13, marginBottom: 12, lineHeight: 1.4 }}>
+                        Tu dois vérifier un numéro canadien (+1) pour contacter ce tuteur.
+                      </div>
+                      <button onClick={startVerify} style={{ width: '100%', padding: '11px', background: '#1a2e4a', color: 'white', border: 'none', borderRadius: 10, fontSize: 14, fontWeight: 700, cursor: 'pointer' }}>
+                        Vérifier mon numéro →
+                      </button>
+                    </div>
+                  ) : (
+                    <button onClick={handleContact} disabled={contacting} style={{ width: '100%', padding: '13px', background: contacting ? '#e2e8f0' : 'linear-gradient(135deg,#1a2e4a,#2d4a6b)', color: contacting ? '#94a3b8' : 'white', border: 'none', borderRadius: 12, fontSize: 15, fontWeight: 700, cursor: contacting ? 'default' : 'pointer' }}>
+                      {contacting ? 'Redirection...' : `💬 Contacter ${tutor.first_name}`}
                     </button>
                   )}
                 </div>
@@ -369,10 +282,14 @@ export default function TutorDetailPanel({ tutorId, currentUser, onClose, router
                       <button onClick={openEditReview} style={{ fontSize: 12, fontWeight: 600, color: '#6c63ff', background: 'none', border: '1px solid #6c63ff', borderRadius: 8, padding: '5px 12px', cursor: 'pointer' }}>
                         Modifier mon avis
                       </button>
-                    ) : (
+                    ) : hasContacted ? (
                       <button onClick={() => { setShowReviewForm(true); setReviewSuccess(false) }} style={{ fontSize: 12, fontWeight: 700, color: 'white', background: '#1a2e4a', border: 'none', borderRadius: 8, padding: '6px 14px', cursor: 'pointer' }}>
                         + Laisser un avis
                       </button>
+                    ) : (
+                      <span style={{ fontSize: 11, color: '#a0aec0', fontStyle: 'italic' }}>
+                        Contacte le tuteur pour laisser un avis
+                      </span>
                     )
                   )}
                 </div>
