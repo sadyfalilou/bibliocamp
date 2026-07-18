@@ -1,6 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
-import { sendEmail } from '../../../lib/sendEmail'
+import { sendEmail, escapeHtml } from '../../../lib/sendEmail'
 
 const VALID_ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
@@ -32,6 +32,8 @@ async function notifyBookAlerts(supabase, listing) {
     .eq('notified', false)
   if (!alerts || alerts.length === 0) return
 
+  const safeTitle = escapeHtml(listing.title)
+  const safeIsbn = encodeURIComponent(listing.isbn)
   for (const alert of alerts) {
     try {
       await sendEmail({
@@ -39,8 +41,8 @@ async function notifyBookAlerts(supabase, listing) {
         subject: `📚 "${listing.title}" est maintenant disponible sur BiblioCamp`,
         html: `
           <p>Bonne nouvelle !</p>
-          <p>Le manuel <strong>${listing.title}</strong> que tu attendais vient d'être mis en vente sur BiblioCamp, à <strong>${listing.price} $</strong>.</p>
-          <p><a href="https://www.bibliocamp.ca/book/${listing.isbn}">Voir l'annonce →</a></p>
+          <p>Le manuel <strong>${safeTitle}</strong> que tu attendais vient d'être mis en vente sur BiblioCamp, à <strong>${Number(listing.price)} $</strong>.</p>
+          <p><a href="https://www.bibliocamp.ca/book/${safeIsbn}">Voir l'annonce →</a></p>
           <p style="color:#888;font-size:12px">Tu reçois ce courriel parce que tu t'es inscrit à une alerte pour ce manuel sur BiblioCamp.</p>
         `,
       })

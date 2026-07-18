@@ -55,7 +55,7 @@ export default function RoommatesView({ user, setView, initialSearch, phoneSaved
     const res = await fetch('/api/roommates/contact', {
       method: 'POST',
       headers: { Authorization: `Bearer ${session?.access_token}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ roommate_listing_id: listing.id, owner_id: listing.user_id })
+      body: JSON.stringify({ roommate_listing_id: listing.id })
     })
     const json = await res.json()
     if (res.ok) window.location.href = `/inbox?conv=${json.conversation_id}`

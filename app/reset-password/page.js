@@ -23,7 +23,7 @@ export default function ResetPassword() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (password !== confirm) { alert('Les mots de passe ne correspondent pas.'); return }
-    if (password.length < 6) { alert('Le mot de passe doit contenir au moins 6 caractères.'); return }
+    if (password.length < 8) { alert('Le mot de passe doit contenir au moins 8 caractères.'); return }
     setLoading(true)
     const { error } = await supabase.auth.updateUser({ password })
     setLoading(false)

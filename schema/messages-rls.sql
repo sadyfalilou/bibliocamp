@@ -22,6 +22,8 @@
 DROP POLICY IF EXISTS "Rate limit messages" ON messages;
 DROP POLICY IF EXISTS "Envoyer un message" ON messages;
 DROP POLICY IF EXISTS "messages: envoi par l'auteur" ON messages;
+-- Nom final aussi, pour que le script soit ré-exécutable sans erreur 42710.
+DROP POLICY IF EXISTS "messages: envoi par l'auteur (participant + anti-spam)" ON messages;
 
 CREATE POLICY "messages: envoi par l'auteur (participant + anti-spam)"
   ON messages FOR INSERT
@@ -39,6 +41,7 @@ CREATE POLICY "messages: envoi par l'auteur (participant + anti-spam)"
 -- ── CORRECTIF 2 — UPDATE limité au marquage "lu" des messages REÇUS, contenu verrouillé
 -- (le client ne fait que passer read=true sur les messages des autres).
 DROP POLICY IF EXISTS "Marquer comme lu" ON messages;
+DROP POLICY IF EXISTS "messages: marquer comme lu (destinataire, contenu verrouille)" ON messages;
 
 CREATE POLICY "messages: marquer comme lu (destinataire, contenu verrouille)"
   ON messages FOR UPDATE

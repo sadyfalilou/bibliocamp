@@ -1,20 +1,34 @@
 import { POST } from '../app/api/book-alerts/route'
 
 const mockUpsert = jest.fn()
+const mockGte = jest.fn()
+const mockRateLimitInsert = jest.fn()
 
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
-    from: jest.fn(() => ({ upsert: mockUpsert })),
+    from: jest.fn((table) => {
+      if (table === 'rate_limits') {
+        return {
+          select: jest.fn(() => ({ eq: jest.fn(() => ({ gte: mockGte })) })),
+          insert: mockRateLimitInsert,
+        }
+      }
+      return { upsert: mockUpsert }
+    }),
   })),
 }))
 
-function makeRequest(body) {
-  return { json: async () => body }
+function makeRequest(body, ip = '1.2.3.4') {
+  const headers = new Headers()
+  if (ip) headers.set('x-forwarded-for', ip)
+  return { json: async () => body, headers }
 }
 
 describe('POST /api/book-alerts', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    mockGte.mockResolvedValue({ count: 0, error: null }) // sous la limite
+    mockRateLimitInsert.mockResolvedValue({ error: null })
     mockUpsert.mockResolvedValue({ error: null })
   })
 
@@ -35,6 +49,13 @@ describe('POST /api/book-alerts', () => {
       expect.objectContaining({ email: 'etudiant@exemple.com', isbn: '9781234567890', title: 'Calculus' }),
       { onConflict: 'email,isbn' }
     )
+  })
+
+  test('limite de débit dépassée → 429', async () => {
+    mockGte.mockResolvedValue({ count: 10, error: null })
+    const res = await POST(makeRequest({ email: 'a@b.com', isbn: '9781234567890' }))
+    expect(res.status).toBe(429)
+    expect(mockUpsert).not.toHaveBeenCalled()
   })
 
   test('erreur supabase → 500', async () => {
