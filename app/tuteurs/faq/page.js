@@ -3,76 +3,7 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Footer from '../../../components/Footer'
-
-const FAQ = [
-  {
-    section: 'Pour les étudiants',
-    items: [
-      {
-        q: 'Est-ce gratuit de trouver un tuteur ?',
-        a: 'Oui, BiblioCamp est gratuit pour trouver un tuteur. Tu paies uniquement le tuteur directement pour ses sessions — le tarif est affiché sur son profil.'
-      },
-      {
-        q: 'Comment choisir un bon tuteur ?',
-        a: 'Consulte les avis laissés par d\'autres étudiants, vérifie les matières enseignées et le tarif. N\'hésite pas à envoyer un message pour poser tes questions avant de réserver une session.'
-      },
-      {
-        q: 'Comment contacter un tuteur ?',
-        a: 'Clique sur le profil d\'un tuteur puis sur "Contacter". Un message s\'ouvre dans ta messagerie BiblioCamp. Tu peux discuter de tes besoins, de la disponibilité et du tarif avant de vous rencontrer.'
-      },
-      {
-        q: 'Que faire si le tuteur n\'est pas satisfaisant ?',
-        a: 'Laisse un avis honnête sur son profil pour aider les autres étudiants. Si tu rencontres un problème grave, contacte-nous via la page de signalement.'
-      },
-      {
-        q: 'Comment payer le tuteur ?',
-        a: 'Le paiement se fait directement entre toi et le tuteur — en personne ou par virement. BiblioCamp ne prend aucune commission et ne gère pas les paiements pour l\'instant.'
-      },
-    ]
-  },
-  {
-    section: 'Pour les tuteurs',
-    items: [
-      {
-        q: 'Comment devenir tuteur ?',
-        a: 'Clique sur "Devenir tuteur" et remplis le formulaire en 4 étapes : ton profil de base, tes matières, tes disponibilités et ta présentation. Ton profil est en ligne immédiatement.'
-      },
-      {
-        q: 'Dois-je être étudiant pour être tuteur ?',
-        a: 'Tu dois être étudiant actif ou diplômé récent. Ton institution est liée à ton profil BiblioCamp, ce qui aide les étudiants à te trouver.'
-      },
-      {
-        q: 'Comment fixer mon tarif ?',
-        a: 'Tu es libre de fixer ton tarif entre 10 $ et 150 $/heure. La moyenne sur la plateforme se situe entre 20 $ et 40 $/h. Un tarif compétitif pour tes premières sessions t\'aidera à accumuler des avis.'
-      },
-      {
-        q: 'Puis-je masquer mon profil temporairement ?',
-        a: 'Oui. Dans "Mon profil tuteur", un simple toggle te permet de masquer ton profil pendant les examens ou les vacances, sans perdre tes informations.'
-      },
-      {
-        q: 'Comment modifier mon profil ?',
-        a: 'Va dans "Mon profil tuteur" depuis la sidebar ou depuis la page Tuteurs. Tu peux modifier toutes tes informations à tout moment et sauvegarder en un clic.'
-      },
-    ]
-  },
-  {
-    section: 'Sécurité et bon comportement',
-    items: [
-      {
-        q: 'Où se rencontrer pour les sessions ?',
-        a: 'Nous recommandons fortement les lieux publics : bibliothèque universitaire, café, salle d\'étude sur campus. Évite les domiciles privés lors des premières rencontres.'
-      },
-      {
-        q: 'Que faire si quelqu\'un me demande de faire ses devoirs ?',
-        a: 'Refuse catégoriquement. BiblioCamp est une plateforme d\'entraide académique, pas de plagiat. Les tuteurs qui offrent ce service sont bannis. Si tu reçois une telle demande, signale-la.'
-      },
-      {
-        q: 'Comment fonctionne le système d\'avis ?',
-        a: 'Après une conversation avec un tuteur, tu peux laisser un avis avec une note de 1 à 5 étoiles et un commentaire. Chaque utilisateur ne peut laisser qu\'un seul avis par tuteur.'
-      },
-    ]
-  },
-]
+import { FAQ_TUTEURS as FAQ } from '../../../lib/faqData'
 
 function AccordionItem({ question, answer }) {
   const [isOpen, setIsOpen] = useState(false)
