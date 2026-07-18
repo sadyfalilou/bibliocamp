@@ -30,8 +30,10 @@
 - RLS Supabase sur toutes les tables (SELECT/INSERT/UPDATE/DELETE), politiques limitées au propriétaire ; fichiers versionnés dans `schema/` (`rls-policies.sql`, `tutors-rls.sql`, `messages-rls.sql`)
 - **Accès admin** via la colonne `profiles.is_admin` (source de vérité unique) — `ADMIN_EMAILS` ne sert plus qu'aux notifications courriel du module international
 - `SUPABASE_SERVICE_ROLE_KEY` uniquement côté serveur (routes API)
-- Rate limiting non contournable (messages, envoi OTP, `check-phone` par 1re IP)
+- Rate limiting non contournable par 1re IP (messages, envoi OTP, `check-phone`, alertes manuel `book-alerts`)
 - Anti-injection PostgREST sur les recherches (`.or` nettoyé) et validation UUID des identifiants
+- Échappement HTML des champs utilisateur interpolés dans les courriels (`escapeHtml` dans `lib/sendEmail.js`) — anti-injection de markup
+- Destinataire des conversations dérivé côté serveur depuis l'annonce/le profil tuteur, jamais d'un paramètre client
 - Minimisation de PII sur les profils publics (nom de famille réduit à l'initiale)
 - Validation des champs côté client (`lib/validation.js`) et côté serveur (routes API)
 - ISBN, état du livre et méthode de transaction obligatoires à la création
@@ -81,15 +83,25 @@ SENTRY_DSN=
 ```
 app/
 ├── api/
-│   ├── conversations/   # Créer/trouver une conversation
+│   ├── conversations/   # Créer/trouver une conversation (destinataire dérivé de l'annonce)
 │   ├── invite/          # Système de parrainage
 │   ├── listings/        # CRUD annonces + changement statut
-│   ├── seller/          # Profil vendeur public
+│   ├── seller/          # Profil vendeur public (single)
+│   ├── sellers/         # Profils vendeurs publics en lot (anti N+1)
 │   ├── book/            # Infos manuel (Google Books)
+│   ├── book-alerts/     # Alerte courriel "manuel disponible" (rate-limited)
+│   ├── isbn/            # Recherche ISBN (catalogue maison → Google Books → Open Library)
+│   ├── cover/           # Proxy image de couverture (allowlist de domaines)
 │   ├── badges/          # Calcul et récupération badges
-│   ├── stats/           # Statistiques utilisateur
+│   ├── stats/           # Statistiques (accueil public : annonces/tuteurs/colocs)
 │   ├── roommates/       # CRUD annonces colocs + contact propriétaire
-│   ├── tutors/          # Création profil tuteur + contact tuteur
+│   ├── tutors/          # Création profil tuteur + contact tuteur + badges
+│   ├── send-otp/        # Envoi du code SMS (Twilio Verify, rate-limited)
+│   ├── verify-otp/      # Vérification du code → phone_verified
+│   ├── check-phone/     # Validation numéro + blocage VoIP (Twilio Lookup)
+│   ├── newsletter/      # Désabonnement infolettre (token)
+│   ├── cron/            # Tâches planifiées (newsletter de rentrée)
+│   ├── delete-account/  # Suppression de compte + données (Loi 25)
 │   ├── international-diagnostics/ # Diagnostic étudiant international (soumission, suivi)
 │   └── admin/           # Rapports (manuels + colocs), invitations, stats, catalogue manuel, diagnostics international
 ├── app/                 # Dashboard / Marketplace (protégé) — manuels, tuteurs, colocs
@@ -107,11 +119,16 @@ app/
 ├── admin/               # Pages admin
 ├── cgu/                 # Conditions générales
 └── confidentialite/     # Politique de confidentialité
-components/
-├── BadgeList.js         # Affichage badges
-└── Logo.js              # Logo BIBLIOCAMP
+components/              # Vues et composants partagés (accueil, colocs, tuteurs,
+│                        # profils publics, menu profil, modale de vérif téléphone,
+│                        # badges, FAQ…) + hooks (useTutorList, useTutorProfile)
+│   └── admin/           # Graphiques Chart.js (StatsCharts)
 lib/
-└── validation.js        # Source unique de vérité pour la validation
+├── validation.js        # Source unique de vérité pour la validation
+├── sendEmail.js         # Envoi Resend (unitaire + batch) + escapeHtml
+├── tutorBadge.js        # Calcul des badges de réactivité tuteur
+├── faqData.js           # Contenu des FAQ
+└── supabase.js          # Client Supabase navigateur (clé anon)
 proxy.js                 # Middleware Next.js — protection des routes
 ```
 
@@ -125,7 +142,7 @@ proxy.js                 # Middleware Next.js — protection des routes
 ## 🧪 Tests
 
 ```bash
-# Tests unitaires (145 tests, 10 suites)
+# Tests unitaires (239 tests, 22 suites)
 npm test
 
 # Tests E2E Playwright (serveur local requis)
@@ -142,6 +159,10 @@ npm run test:e2e:ui
 - [x] Pages publiques vendeur et manuel (sans compte)
 - [x] Système de parrainage
 - [x] Badges utilisateur
-- [ ] Notation des vendeurs
+- [x] Notation des vendeurs et des tuteurs
+- [x] Module tuteurs (profils publics, recherche, avis)
+- [x] Module colocs (annonces, recherche, signalement)
+- [x] Module international (diagnostic, suivi, gestion admin)
+- [x] Alertes courriel "manuel disponible" + infolettre de rentrée
 - [ ] Notifications push mobile
 - [ ] Offres / contre-offres de prix
