@@ -246,7 +246,7 @@ function HomeContent() {
         Sentry.setUser({ id: user.id, email: user.email })
         const { data: profile } = await supabase
           .from('profiles')
-          .select('*')
+          .select('id, first_name, last_name, avatar_url, institution, campus, program, subjects, phone_verified')
           .eq('id', user.id)
           .single()
         userIdRef.current = user.id

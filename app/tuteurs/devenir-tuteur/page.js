@@ -109,7 +109,7 @@ export default function DevenirTuteurPage() {
       const { data: existing } = await supabase.from('tutors').select('id').eq('user_id', user.id).single()
       if (existing) { router.push('/tuteurs/modifier'); return }
 
-      const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      const { data: prof } = await supabase.from('profiles').select('first_name, last_name, avatar_url, institution, campus, phone_verified').eq('id', user.id).single()
       setProfile(prof)
       setLoading(false)
     }

@@ -89,7 +89,7 @@ export default function ModifierTuteurPage() {
       const { data: { user } } = await supabase.auth.getUser()
       if (!user) { router.push('/login'); return }
 
-      const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      const { data: prof } = await supabase.from('profiles').select('first_name, last_name, avatar_url, institution, campus').eq('id', user.id).single()
       setProfile(prof)
 
       const { data: tutor, error } = await supabase.from('tutors').select('*').eq('user_id', user.id).single()
