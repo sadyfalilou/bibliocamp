@@ -41,6 +41,7 @@
 - Minimisation de PII sur les profils publics (nom de famille réduit à l'initiale)
 - Jeton de désabonnement isolé dans `profile_tokens`, table sans politique RLS — accessible à la seule service role, jamais lisible par un compte connecté
 - Lecture de `profiles` limitée à soi-même, aux comptes qui publient (annonce, profil tuteur, coloc) et à ses interlocuteurs — l'annuaire complet n'est plus énumérable par un compte quelconque
+- `is_admin` et `phone_verified` verrouillés par déclencheur : une écriture depuis le navigateur est acceptée puis silencieusement annulée ; seules les routes serveur (service role) peuvent les modifier
 - Validation des champs côté client (`lib/validation.js`) et côté serveur (routes API)
 - ISBN, état du livre et méthode de transaction obligatoires à la création
 - Vérification du téléphone obligatoire (`phone_verified`) avant toute publication publique — annonce manuel, annonce coloc, profil tuteur — sinon `403`

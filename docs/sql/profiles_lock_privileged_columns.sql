@@ -11,18 +11,24 @@
 -- il RESTAURE simplement la valeur d'origine des deux colonnes protegees. Une
 -- tentative d'elevation passe donc silencieusement… sans aucun effet.
 --
--- Les routes serveur utilisent la service_role : PostgREST bascule alors sur
--- ce role, que le declencheur laisse passer (verify-otp doit pouvoir ecrire
--- phone_verified).
+-- Seuls les roles clients de PostgREST sont restreints : `anon` et
+-- `authenticated`. La service_role (routes serveur, dont verify-otp) et
+-- `postgres` (editeur SQL du tableau de bord) ecrivent normalement.
 
 create or replace function profiles_lock_privileged_columns()
 returns trigger
 language plpgsql
-security definer
+-- SECURITY INVOKER (defaut) : indispensable. En SECURITY DEFINER, current_user
+-- vaudrait le proprietaire de la fonction (postgres) et jamais 'service_role' :
+-- verify-otp ne pourrait plus ecrire phone_verified.
 set search_path = public
 as $$
 begin
-  if current_user <> 'service_role' then
+  -- On restreint les DEUX roles clients de PostgREST, plutot que d'autoriser
+  -- un seul role. Sinon `postgres` (editeur SQL du tableau de bord) et tout
+  -- autre role d'administration se retrouvent bloques : c'est ce qui empechait
+  -- de modifier is_admin depuis l'editeur.
+  if current_user in ('anon', 'authenticated') then
     new.is_admin       := coalesce(old.is_admin, false);
     new.phone_verified := coalesce(old.phone_verified, false);
   end if;
@@ -39,11 +45,13 @@ create trigger profiles_lock_privileged_columns_update
 create or replace function profiles_force_privileged_defaults()
 returns trigger
 language plpgsql
-security definer
+-- SECURITY INVOKER (defaut) : indispensable. En SECURITY DEFINER, current_user
+-- vaudrait le proprietaire de la fonction (postgres) et jamais 'service_role' :
+-- verify-otp ne pourrait plus ecrire phone_verified.
 set search_path = public
 as $$
 begin
-  if current_user <> 'service_role' then
+  if current_user in ('anon', 'authenticated') then
     new.is_admin       := false;
     new.phone_verified := false;
   end if;
