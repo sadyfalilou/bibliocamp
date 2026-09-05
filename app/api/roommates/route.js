@@ -1,9 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
+import { uploadImages } from '../../../lib/storage'
 
 const VALID_ROOM_TYPES = ['chambre_privee', 'chambre_partagee', 'appartement_complet']
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5 MB
 const MAX_IMAGES = 6
 
 function validate({ title, rent_price, room_type }) {
@@ -26,29 +25,6 @@ async function getUser(request) {
   if (!auth?.startsWith('Bearer ')) return null
   const { data: { user } } = await adminClient().auth.getUser(auth.slice(7))
   return user
-}
-
-// Upload une liste de File vers le bucket 'images', retourne {error} ou {urls}
-async function uploadImages(supabase, imageFiles, userId, route) {
-  const urls = []
-  for (const imageFile of imageFiles) {
-    if (!ALLOWED_TYPES.includes(imageFile.type)) {
-      return { error: 'Format image non supporté. Utilise JPG, PNG ou WebP.' }
-    }
-    if (imageFile.size > MAX_IMAGE_SIZE) {
-      return { error: "Chaque image ne peut pas dépasser 5 MB." }
-    }
-    const fileName = `coloc-${Date.now()}-${Math.random().toString(36).slice(2, 8)}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
-    const bytes = await imageFile.arrayBuffer()
-    const { error: uploadErr } = await supabase.storage.from('images').upload(fileName, bytes, { contentType: imageFile.type })
-    if (uploadErr) {
-      Sentry.captureException(uploadErr, { extra: { route, action: 'image-upload', userId } })
-      return { error: "Erreur lors de l'upload d'une image." }
-    }
-    const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName)
-    urls.push(urlData.publicUrl)
-  }
-  return { urls }
 }
 
 // GET /api/roommates — liste publique des annonces actives, avec filtres optionnels
@@ -114,7 +90,7 @@ export async function POST(request) {
     return Response.json({ error: `Maximum ${MAX_IMAGES} photos par annonce.` }, { status: 400 })
   }
 
-  const uploadResult = await uploadImages(supabase, imageFiles, user.id, 'POST /api/roommates')
+  const uploadResult = await uploadImages(supabase, imageFiles, { userId: user.id, route: 'POST /api/roommates', prefix: 'coloc-' })
   if (uploadResult.error) return Response.json({ error: uploadResult.error }, { status: 500 })
   const imageUrls = uploadResult.urls
 
@@ -179,7 +155,7 @@ export async function PATCH(request) {
       return Response.json({ error: `Maximum ${MAX_IMAGES} photos par annonce.` }, { status: 400 })
     }
 
-    const uploadResult = await uploadImages(supabase, newFiles, user.id, 'PATCH /api/roommates')
+    const uploadResult = await uploadImages(supabase, newFiles, { userId: user.id, route: 'PATCH /api/roommates', prefix: 'coloc-' })
     if (uploadResult.error) return Response.json({ error: uploadResult.error }, { status: 500 })
 
     const finalImages = [...keptImages, ...uploadResult.urls]

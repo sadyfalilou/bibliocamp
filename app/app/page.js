@@ -60,6 +60,11 @@ function isValidPhone(phone) {
   return digits.length >= 10 && digits.length <= 15
 }
 
+// Les manuels d'un lot sont stockés en texte, un titre par ligne.
+function bundleItems(listing) {
+  return String(listing?.bundle_items ?? '').split('\n').map(v => v.trim()).filter(Boolean)
+}
+
 const LISTINGS_PER_PAGE = 24
 
 function HomeContent() {
@@ -97,6 +102,7 @@ function HomeContent() {
   const [filterCourse, setFilterCourse] = useState('')
   const [filterTransaction, setFilterTransaction] = useState('')
   const [expandedSeller, setExpandedSeller] = useState(null)
+  const [photoState, setPhotoState] = useState({ id: null, idx: 0 })
   const [showSellerBooks, setShowSellerBooks] = useState(null)
   const [wishlist, setWishlist] = useState(new Set())
   const [showProfileMenu, setShowProfileMenu] = useState(false)
@@ -195,7 +201,7 @@ function HomeContent() {
     const term = search.trim().replace(/[,()*%:\\]/g, ' ').trim()
     if (term) {
       const isbnTerm = term.replace(/[-\s]/g, '')
-      query = query.or(`title.ilike.%${term}%,course_code.ilike.%${term}%,authors.ilike.%${term}%,isbn.ilike.%${isbnTerm}%`)
+      query = query.or(`title.ilike.%${term}%,course_code.ilike.%${term}%,authors.ilike.%${term}%,bundle_items.ilike.%${term}%,isbn.ilike.%${isbnTerm}%`)
     }
     if (filterEtat) query = query.eq('description', filterEtat)
     if (filterCourse) query = query.eq('course_code', filterCourse)
@@ -606,7 +612,8 @@ function HomeContent() {
       const matchCourse = item.course_code?.toLowerCase().includes(search.toLowerCase())
       const matchIsbn = item.isbn?.replace(/[-\s]/g, '').includes(q)
       const matchAuthors = item.authors?.toLowerCase().includes(search.toLowerCase())
-      if (!matchTitle && !matchCourse && !matchIsbn && !matchAuthors) return false
+      const matchBundle = item.bundle_items?.toLowerCase().includes(search.toLowerCase())
+      if (!matchTitle && !matchCourse && !matchIsbn && !matchAuthors && !matchBundle) return false
     }
     if (filterEtat && item.description !== filterEtat) return false
     if (filterCourse && item.course_code !== filterCourse) return false
@@ -690,6 +697,9 @@ function HomeContent() {
     if (!selectedBook) { setRelatedListings([]); return }
     const related = listings.filter(item => {
       if (item.id === selectedBook.id) return false
+      // Un lot n'est jamais « le même livre » qu'un autre : deux lots qui portent
+      // le même titre restent deux annonces distinctes.
+      if (selectedBook.is_bundle || item.is_bundle) return false
       if (selectedBook.isbn && item.isbn) return item.isbn === selectedBook.isbn
       return item.title.toLowerCase() === selectedBook.title.toLowerCase()
     })
@@ -1392,6 +1402,17 @@ function HomeContent() {
                         >
                           {item.title}
                         </div>
+                        {item.is_bundle && (
+                          <div style={{ marginBottom: 4 }}>
+                            <span style={{ background: '#ede9fe', color: '#6c63ff', fontSize: 11, fontWeight: 800, padding: '2px 9px', borderRadius: 20 }}>
+                              📚 Lot de {bundleItems(item).length} manuels
+                            </span>
+                            <div style={{ fontSize: 13, color: '#718096', marginTop: 4 }}>
+                              {bundleItems(item).slice(0, 3).join(' · ')}
+                              {bundleItems(item).length > 3 && ` · +${bundleItems(item).length - 3} autres`}
+                            </div>
+                          </div>
+                        )}
                         {item.authors && (
                           <div style={{ fontSize: 13, color: '#718096' }}>
                             Auteurs : {item.authors}
@@ -1616,17 +1637,35 @@ function HomeContent() {
                     <span style={{ color: '#718096', fontSize: 14, marginLeft: 8 }}>
                       Tu peux publier tes manuels.
                     </span>
+                    <div
+                      onClick={() => router.push('/create/multiple')}
+                      style={{ fontSize: 13, color: '#00a88a', cursor: 'pointer', marginTop: 2, fontWeight: 600 }}
+                    >
+                      ou crée plusieurs annonces séparées d&apos;un coup →
+                    </div>
                   </div>
-                  <button onClick={() => router.push('/create')} style={{
-                    marginLeft: 'auto', background: '#1a2e4a', color: 'white',
-                    border: 'none', borderRadius: 8, padding: '10px 20px',
-                    fontWeight: 700, fontSize: 14, cursor: 'pointer'
-                  }}
-                    onMouseEnter={e => e.target.style.background = '#00c9a7'}
-                    onMouseLeave={e => e.target.style.background = '#1a2e4a'}
-                  >
-                    + Publier un manuel
-                  </button>
+                  <div style={{ marginLeft: 'auto', display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <button onClick={() => router.push('/create')} style={{
+                      background: '#1a2e4a', color: 'white',
+                      border: 'none', borderRadius: 8, padding: '10px 20px',
+                      fontWeight: 700, fontSize: 14, cursor: 'pointer'
+                    }}
+                      onMouseEnter={e => e.target.style.background = '#00c9a7'}
+                      onMouseLeave={e => e.target.style.background = '#1a2e4a'}
+                    >
+                      + Publier un manuel
+                    </button>
+                    <button onClick={() => router.push('/create/lot')} style={{
+                      background: 'white', color: '#1a2e4a',
+                      border: '1.5px solid #1a2e4a', borderRadius: 8, padding: '10px 20px',
+                      fontWeight: 700, fontSize: 14, cursor: 'pointer'
+                    }}
+                      onMouseEnter={e => { e.target.style.borderColor = '#00c9a7'; e.target.style.color = '#00c9a7' }}
+                      onMouseLeave={e => { e.target.style.borderColor = '#1a2e4a'; e.target.style.color = '#1a2e4a' }}
+                    >
+                      📚 Vendre un lot
+                    </button>
+                  </div>
                 </div>
 
               ) : (
@@ -1984,6 +2023,12 @@ function HomeContent() {
       />
 
       {selectedBook && (() => {
+        const bookPhotos = selectedBook.image_urls?.length
+          ? selectedBook.image_urls
+          : (selectedBook.image_url ? [selectedBook.image_url] : [])
+        // Repart de la 1re photo dès qu'on ouvre une autre annonce, sans effet.
+        const photoIdx = photoState.id === selectedBook.id ? photoState.idx : 0
+        const showPhoto = (idx) => setPhotoState({ id: selectedBook.id, idx })
         const allSellers = [selectedBook, ...relatedListings].sort((a, b) => a.price - b.price)
         const filteredSellers = allSellers.filter(s => {
           if (filterMethods.size > 0) {
@@ -2024,9 +2069,48 @@ function HomeContent() {
                 }}>×</button>
               </div>
 
+              {/* Galerie — un lot porte plusieurs photos de la pile de livres */}
+              {selectedBook.is_bundle && (
+                <div style={{ padding: '16px 20px 0' }}>
+                  <div style={{ position: 'relative', borderRadius: 12, overflow: 'hidden', height: 230, background: 'linear-gradient(135deg,#1a2e4a,#0d4f6b)' }}>
+                    {bookPhotos.length > 0 ? (
+                      <img src={bookPhotos[photoIdx]} alt={selectedBook.title} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', fontSize: 44 }}>📚</div>
+                    )}
+                    {bookPhotos.length > 1 && (
+                      <>
+                        <button onClick={() => showPhoto((photoIdx - 1 + bookPhotos.length) % bookPhotos.length)} style={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16 }}>‹</button>
+                        <button onClick={() => showPhoto((photoIdx + 1) % bookPhotos.length)} style={{ position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)', background: 'rgba(0,0,0,0.5)', color: 'white', border: 'none', borderRadius: '50%', width: 32, height: 32, cursor: 'pointer', fontSize: 16 }}>›</button>
+                        <div style={{ position: 'absolute', bottom: 8, right: 8, background: 'rgba(0,0,0,0.6)', color: 'white', fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20 }}>
+                          {photoIdx + 1} / {bookPhotos.length}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  {bookPhotos.length > 1 && (
+                    <div style={{ display: 'flex', gap: 6, marginTop: 8, overflowX: 'auto' }}>
+                      {bookPhotos.map((url, i) => (
+                        <img
+                          key={url}
+                          src={url}
+                          alt=""
+                          onClick={() => showPhoto(i)}
+                          style={{
+                            width: 52, height: 52, objectFit: 'cover', borderRadius: 6, cursor: 'pointer', flexShrink: 0,
+                            border: i === photoIdx ? '2px solid #00c9a7' : '1px solid #e2e8f0',
+                            opacity: i === photoIdx ? 1 : 0.65,
+                          }}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
               {/* Livre principal */}
               <div style={{ padding: '16px 20px', display: 'flex', gap: 16, alignItems: 'flex-start' }}>
-                {selectedBook.image_url ? (
+                {selectedBook.is_bundle ? null : selectedBook.image_url ? (
                   <img src={selectedBook.image_url} alt={selectedBook.title} style={{ width: 80, height: 100, objectFit: 'cover', borderRadius: 8, flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.15)' }} />
                 ) : (
                   <div style={{ width: 80, height: 100, background: 'linear-gradient(135deg,#1a2e4a,#0d4f6b)', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 30, flexShrink: 0 }}>📖</div>
@@ -2040,8 +2124,19 @@ function HomeContent() {
                     </div>
                   )}
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                    {selectedBook.is_bundle && <span style={{ background: '#ede9fe', color: '#6c63ff', fontSize: 11, fontWeight: 800, padding: '3px 10px', borderRadius: 20 }}>📚 Lot de {bundleItems(selectedBook).length} manuels</span>}
                     {selectedBook.course_code && <span style={{ background: '#e6f9f5', color: '#00a88a', fontSize: 11, fontWeight: 700, padding: '3px 10px', borderRadius: 20 }}>{selectedBook.course_code}</span>}
                   </div>
+                  {selectedBook.is_bundle && bundleItems(selectedBook).length > 0 && (
+                    <div style={{ marginTop: 12, background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: 10, padding: '12px 14px' }}>
+                      <div style={{ fontSize: 11, fontWeight: 800, color: '#6c63ff', textTransform: 'uppercase', letterSpacing: 0.5, marginBottom: 8 }}>
+                        Les {bundleItems(selectedBook).length} manuels du lot
+                      </div>
+                      <ol style={{ margin: 0, paddingLeft: 20, color: '#334155', fontSize: 13, lineHeight: 1.8 }}>
+                        {bundleItems(selectedBook).map((item, i) => <li key={i}>{item}</li>)}
+                      </ol>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -2060,6 +2155,7 @@ function HomeContent() {
                 >
                   {wishlist.has(selectedBook.id) ? '❤️' : '🤍'}
                 </button>
+                {!selectedBook.is_bundle && (
                 <button
                   onClick={() => {
                     const params = new URLSearchParams()
@@ -2083,6 +2179,7 @@ function HomeContent() {
                 >
                   💰 Vendre mon exemplaire
                 </button>
+                )}
               </div>
             </div>
 
@@ -2092,7 +2189,9 @@ function HomeContent() {
               {/* Titre + filtres dynamiques */}
               <div style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: '#1a2e4a', marginBottom: 10 }}>
-                  {allSellers.length} vendeur{allSellers.length > 1 ? 's' : ''} · trié par prix
+                  {selectedBook.is_bundle
+                    ? 'Le vendeur de ce lot'
+                    : `${allSellers.length} vendeur${allSellers.length > 1 ? 's' : ''} · trié par prix`}
                 </div>
                 <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                   {(() => {

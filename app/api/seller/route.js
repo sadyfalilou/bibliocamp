@@ -18,7 +18,7 @@ export async function GET(request) {
       .single(),
     supabase
       .from('listings')
-      .select('id, title, authors, isbn, price, original_price, description, image_url, meet_campus, meet_city, post, campus, course_code, created_at, status')
+      .select('id, title, authors, isbn, price, original_price, description, image_url, image_urls, is_bundle, bundle_items, meet_campus, meet_city, post, campus, course_code, created_at, status')
       .eq('user_id', userId)
       .eq('status', 'active')
       .order('created_at', { ascending: false }),

@@ -6,6 +6,10 @@ import { supabase } from '../../../lib/supabase'
 import { useRouter, useParams } from 'next/navigation'
 import Logo from '../../../components/Logo'
 import ProfileMenu from '../../../components/ProfileMenu'
+import {
+  MAX_BUNDLE_IMAGES, MIN_BUNDLE_ITEMS, MAX_BUNDLE_ITEMS,
+  parseBundleItems, validateBundleFields,
+} from '../../../lib/validation'
 
 const ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
 
@@ -30,6 +34,11 @@ export default function Edit() {
   const [image, setImage] = useState(null)
   const [imagePreview, setImagePreview] = useState(null)
   const [existingImageUrl, setExistingImageUrl] = useState(null)
+  const [isBundle, setIsBundle] = useState(false)
+  const [items, setItems] = useState('')
+  const [keptImages, setKeptImages] = useState([]) // URLs déjà en ligne
+  const [photos, setPhotos] = useState([])         // { file, preview } ajoutées
+  const [compressing, setCompressing] = useState(false)
   const [loading, setLoading] = useState(false)
   const [fetching, setFetching] = useState(true)
   const [errors, setErrors] = useState({})
@@ -116,6 +125,9 @@ export default function Edit() {
       setPost(data.post || false)
       setExistingImageUrl(data.image_url || null)
       setImagePreview(data.image_url || null)
+      setIsBundle(!!data.is_bundle)
+      setItems(data.bundle_items || '')
+      setKeptImages(data.image_urls?.length ? data.image_urls : (data.image_url ? [data.image_url] : []))
       setFetching(false)
     }
 
@@ -154,6 +166,25 @@ export default function Edit() {
     setImagePreview(URL.createObjectURL(compressed))
   }
 
+  const addBundlePhotos = async (e) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+    const room = Math.max(MAX_BUNDLE_IMAGES - keptImages.length - photos.length, 0)
+    setCompressing(true)
+    const added = []
+    for (const file of files.slice(0, room)) {
+      try {
+        const compressed = await imageCompression(file, { maxSizeMB: 1, maxWidthOrHeight: 1600, useWebWorker: true })
+        added.push({ file: new File([compressed], file.name, { type: compressed.type }), preview: URL.createObjectURL(compressed) })
+      } catch {
+        added.push({ file, preview: URL.createObjectURL(file) })
+      }
+    }
+    setPhotos(prev => [...prev, ...added])
+    setCompressing(false)
+    if (fileInputRef.current) fileInputRef.current.value = ''
+  }
+
   const handleRemoveImage = () => {
     setImage(null)
     setImagePreview(null)
@@ -165,6 +196,47 @@ export default function Edit() {
 
   const handleUpdate = async (e) => {
     e.preventDefault()
+    setServerError('')
+
+    if (isBundle) {
+      // Un lot ne se valide pas comme une annonce simple : pas d'ISBN, mais une
+      // liste de titres. Même fonction que le serveur et que le formulaire de
+      // création, pour que les trois disent exactement la même chose.
+      const err = validateBundleFields({
+        title, bundle_items: items, price, original_price: originalPrice || null,
+        campus, description: etat, meet_campus: meetCampus, meet_city: meetCity, post,
+      })
+      if (err) { setServerError(err); return }
+      setLoading(true)
+
+      const body = new FormData()
+      body.append('listing_id', id)
+      body.append('is_bundle', 'true')
+      body.append('title', title)
+      body.append('bundle_items', items)
+      body.append('course_code', course)
+      body.append('price', price)
+      body.append('original_price', originalPrice)
+      body.append('description', etat)
+      body.append('campus', campus)
+      body.append('meet_campus', meetCampus)
+      body.append('meet_city', meetCity)
+      body.append('post', post)
+      keptImages.forEach(url => body.append('keepImages', url))
+      photos.forEach(p => body.append('images', p.file))
+
+      const res = await fetch('/api/listings', {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${sessionTokenRef.current}` },
+        body,
+      })
+      const json = await res.json()
+      setLoading(false)
+      if (!res.ok) { setServerError(json.error || 'Erreur lors de la mise à jour.'); return }
+      window.location.href = '/app'
+      return
+    }
+
     // Valider tous les champs avant envoi
     const allErrors = {
       title: validateField('title', title),
@@ -280,7 +352,7 @@ export default function Edit() {
 
               <div style={{ marginBottom: 18 }}>
                 <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
-                  Titre du manuel <span style={{ color: '#e53e3e' }}>*</span>
+                  {isBundle ? "Titre de l'annonce" : 'Titre du manuel'} <span style={{ color: '#e53e3e' }}>*</span>
                   <span style={{ fontWeight: 400, color: '#a0aec0', fontSize: 12, marginLeft: 8 }}>{title.length}/150</span>
                 </label>
                 <input
@@ -292,21 +364,42 @@ export default function Edit() {
                 <ErrorMsg name="title" />
               </div>
 
-              <div style={{ marginBottom: 18 }}>
-                <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
-                  Auteur(s)
-                </label>
-                <input
-                  value={authors}
-                  onChange={e => handleFieldChange('authors', e.target.value, setAuthors)}
-                  onBlur={e => touch('authors', e.target.value)}
-                  placeholder="ex: Philip Kotler, Kevin Lane Keller"
-                  style={fieldStyle('authors')}
-                />
-                <ErrorMsg name="authors" />
-              </div>
+              {isBundle ? (
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
+                    Les manuels du lot — un par ligne <span style={{ color: '#e53e3e' }}>*</span>
+                  </label>
+                  <textarea
+                    value={items}
+                    onChange={e => setItems(e.target.value)}
+                    rows={7}
+                    placeholder={"Comptabilité intermédiaire\nMathématiques financières\nDroit des affaires"}
+                    style={{ ...fieldStyle('items'), resize: 'vertical', lineHeight: 1.6, fontFamily: "'Segoe UI', sans-serif" }}
+                  />
+                  <div style={{ fontSize: 12, color: parseBundleItems(items).length >= MIN_BUNDLE_ITEMS ? '#718096' : '#d97706', marginTop: 4 }}>
+                    {parseBundleItems(items).length} manuel{parseBundleItems(items).length > 1 ? 's' : ''} dans le lot
+                    {parseBundleItems(items).length < MIN_BUNDLE_ITEMS && ` — il en faut au moins ${MIN_BUNDLE_ITEMS}`}
+                    {parseBundleItems(items).length > MAX_BUNDLE_ITEMS && ` — maximum ${MAX_BUNDLE_ITEMS}`}
+                  </div>
+                </div>
+              ) : (
+                <div style={{ marginBottom: 18 }}>
+                  <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>
+                    Auteur(s)
+                  </label>
+                  <input
+                    value={authors}
+                    onChange={e => handleFieldChange('authors', e.target.value, setAuthors)}
+                    onBlur={e => touch('authors', e.target.value)}
+                    placeholder="ex: Philip Kotler, Kevin Lane Keller"
+                    style={fieldStyle('authors')}
+                  />
+                  <ErrorMsg name="authors" />
+                </div>
+              )}
 
               <div style={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', gap: 16, marginBottom: 18 }}>
+                {!isBundle && (
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>ISBN</label>
                   <input
@@ -318,6 +411,7 @@ export default function Edit() {
                   />
                   <ErrorMsg name="isbn" />
                 </div>
+                )}
                 <div style={{ flex: 1 }}>
                   <label style={{ display: 'block', fontWeight: 600, color: '#1a2e4a', fontSize: 14, marginBottom: 6 }}>Code de cours</label>
                   <input
@@ -450,8 +544,53 @@ export default function Edit() {
               border: '1px solid #e2e8f0', marginBottom: 24
             }}>
               <h2 style={{ fontSize: 12, fontWeight: 700, color: '#a0aec0', margin: '0 0 20px', textTransform: 'uppercase', letterSpacing: 1 }}>
-                Photo de couverture
+                {isBundle ? `Photos du lot (max ${MAX_BUNDLE_IMAGES})` : 'Photo de couverture'}
               </h2>
+
+              {isBundle ? (
+                <>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', marginBottom: 12 }}>
+                    {keptImages.map((url, i) => (
+                      <div key={url} style={{ position: 'relative' }}>
+                        <img src={url} alt="" style={{ width: 84, height: 84, objectFit: 'cover', borderRadius: 8, border: '1px solid #e2e8f0' }} />
+                        <button
+                          type="button"
+                          onClick={() => setKeptImages(prev => prev.filter((_, j) => j !== i))}
+                          style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', border: 'none', background: '#e53e3e', color: 'white', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}
+                        >×</button>
+                      </div>
+                    ))}
+                    {photos.map((p, i) => (
+                      <div key={`new-${i}`} style={{ position: 'relative' }}>
+                        <img src={p.preview} alt="" style={{ width: 84, height: 84, objectFit: 'cover', borderRadius: 8, border: '1px solid #00c9a7' }} />
+                        <button
+                          type="button"
+                          onClick={() => setPhotos(prev => prev.filter((_, j) => j !== i))}
+                          style={{ position: 'absolute', top: -6, right: -6, width: 22, height: 22, borderRadius: '50%', border: 'none', background: '#e53e3e', color: 'white', cursor: 'pointer', fontSize: 13, lineHeight: 1 }}
+                        >×</button>
+                      </div>
+                    ))}
+                  </div>
+                  <input ref={fileInputRef} type="file" accept="image/jpeg,image/png,image/webp" multiple onChange={addBundlePhotos} style={{ display: 'none' }} />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={keptImages.length + photos.length >= MAX_BUNDLE_IMAGES || compressing}
+                    style={{
+                      background: '#f8fafc', color: '#1a2e4a', border: '1px solid #e2e8f0',
+                      borderRadius: 8, padding: '9px 16px', fontSize: 13, fontWeight: 600,
+                      cursor: keptImages.length + photos.length >= MAX_BUNDLE_IMAGES ? 'not-allowed' : 'pointer',
+                      opacity: keptImages.length + photos.length >= MAX_BUNDLE_IMAGES ? 0.5 : 1,
+                    }}
+                  >
+                    {compressing ? 'Compression…' : '+ Ajouter des photos'}
+                  </button>
+                  <span style={{ fontSize: 12, color: '#718096', marginLeft: 10 }}>
+                    {keptImages.length + photos.length}/{MAX_BUNDLE_IMAGES}
+                  </span>
+                </>
+              ) : (
+              <>
               <label style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 justifyContent: 'center', gap: 10,
@@ -488,6 +627,8 @@ export default function Edit() {
                 <div style={{ color: '#e53e3e', fontSize: 12, fontWeight: 600, marginTop: 8, display: 'flex', alignItems: 'center', gap: 4 }}>
                   ⚠ {errors.image}
                 </div>
+              )}
+              </>
               )}
             </div>
 

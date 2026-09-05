@@ -1,26 +1,54 @@
 import { createClient } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
 import { sendEmail, escapeHtml } from '../../../lib/sendEmail'
+import { validateListingFields, validateBundleFields, parseBundleItems, MAX_BUNDLE_IMAGES, ALLOWED_IMAGE_TYPES, MAX_IMAGE_SIZE } from '../../../lib/validation'
+import { uploadImages } from '../../../lib/storage'
 
-const VALID_ETATS = ['Neuf', 'Très bon état', 'Bon état', 'Acceptable']
-const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp']
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024 // 5 MB
+// Champs communs aux deux formes d'annonce, extraits du formulaire.
+function readFields(formData) {
+  return {
+    title: formData.get('title') || '',
+    authors: formData.get('authors') || '',
+    isbn: formData.get('isbn') || '',
+    course_code: formData.get('course_code') || '',
+    price: formData.get('price'),
+    original_price: formData.get('original_price') || null,
+    description: formData.get('description') || '',
+    campus: formData.get('campus') || '',
+    meet_campus: formData.get('meet_campus') === 'true',
+    meet_city: formData.get('meet_city') === 'true',
+    post: formData.get('post') === 'true',
+    is_bundle: formData.get('is_bundle') === 'true',
+    bundle_items: formData.get('bundle_items') || '',
+  }
+}
 
-function validate({ title, authors, isbn, course_code, price, original_price, campus, description, meet_campus, meet_city, post }) {
-  if (!title || title.trim().length === 0) return 'Le titre est obligatoire.'
-  if (title.trim().length > 150) return 'Le titre ne peut pas dépasser 150 caractères.'
-  if (authors && authors.length > 200) return 'Le champ auteurs ne peut pas dépasser 200 caractères.'
-  if (!isbn || isbn.trim().length === 0) return "L'ISBN est obligatoire."
-  if (!/^\d{10,13}$/.test(isbn.replace(/[-\s]/g, ''))) return 'ISBN invalide — doit contenir 10 ou 13 chiffres.'
-  if (course_code && course_code.length > 20) return 'Le code de cours ne peut pas dépasser 20 caractères.'
-  if (!price || isNaN(Number(price)) || Number(price) <= 0 || Number(price) > 9999) return 'Le prix doit être entre 1 $ et 9 999 $.'
-  if (original_price && (isNaN(Number(original_price)) || Number(original_price) <= 0 || Number(original_price) > 9999)) return 'Le prix neuf doit être entre 1 $ et 9 999 $.'
-  if (original_price && Number(original_price) <= Number(price)) return 'Le prix neuf doit être supérieur au prix de vente.'
-  if (campus && campus.length > 100) return 'Le campus ne peut pas dépasser 100 caractères.'
-  if (!description || description.trim().length === 0) return "L'état du livre est obligatoire."
-  if (!VALID_ETATS.includes(description)) return 'État du livre invalide.'
-  if (!meet_campus && !meet_city && !post) return 'Choisis au moins une méthode de transaction.'
-  return null
+// Une annonce de lot n'a pas d'ISBN : ce qui l'identifie, c'est sa liste de
+// titres. La validation bifurque donc selon la forme de l'annonce.
+function validateFields(fields) {
+  return fields.is_bundle ? validateBundleFields(fields) : validateListingFields(fields)
+}
+
+// Colonnes communes envoyées en base, pour la création comme la modification.
+function toRow(fields, images) {
+  const items = fields.is_bundle ? parseBundleItems(fields.bundle_items) : []
+  return {
+    title: fields.title.trim(),
+    authors: fields.is_bundle ? '' : fields.authors.trim(),
+    isbn: fields.is_bundle ? null : (fields.isbn.replace(/[-\s]/g, '') || null),
+    course_code: fields.course_code.trim().toUpperCase() || null,
+    price: Number(fields.price),
+    original_price: fields.original_price ? Number(fields.original_price) : null,
+    description: fields.description,
+    campus: fields.campus.trim(),
+    meet_campus: fields.meet_campus,
+    meet_city: fields.meet_city,
+    post: fields.post,
+    is_bundle: fields.is_bundle,
+    bundle_items: fields.is_bundle ? items.join('\n') : null,
+    image_url: images[0] || null,
+    image_urls: images,
+  }
 }
 
 async function notifyBookAlerts(supabase, listing) {
@@ -57,6 +85,42 @@ async function notifyBookAlerts(supabase, listing) {
     .in('id', alerts.map(a => a.id))
 }
 
+// Rassemble les URLs d'images finales d'une annonce.
+// Une annonce simple garde une image (couverture ou fichier) ; un lot en accepte
+// plusieurs, comme les annonces de colocs.
+async function collectImages(supabase, formData, fields, userId, route) {
+  const kept = formData.getAll('keepImages').filter(Boolean)
+  const files = formData.getAll('images').filter(f => f && f.size > 0)
+  const single = formData.get('image')
+  if (single && single.size > 0) files.push(single)
+
+  const max = fields.is_bundle ? MAX_BUNDLE_IMAGES : 1
+  if (kept.length + files.length > max) {
+    return { error: `Maximum ${max} photo${max > 1 ? 's' : ''} par annonce.`, status: 400 }
+  }
+
+  const bad = files.find(f => !ALLOWED_IMAGE_TYPES.includes(f.type) || f.size > MAX_IMAGE_SIZE)
+  if (bad) {
+    return {
+      error: ALLOWED_IMAGE_TYPES.includes(bad.type)
+        ? "L'image ne peut pas dépasser 5 MB."
+        : 'Format image non supporté. Utilise JPG, PNG ou WebP.',
+      status: 400,
+    }
+  }
+
+  const uploaded = files.length
+    ? await uploadImages(supabase, files, { userId, route, prefix: fields.is_bundle ? 'lot-' : '' })
+    : { urls: [] }
+  if (uploaded.error) return { error: uploaded.error, status: 500 }
+
+  // Repli sur l'URL de couverture (Google Books) ou l'image déjà en place.
+  const fallback = formData.get('image_url') || formData.get('existing_image_url') || null
+  const images = [...kept, ...uploaded.urls]
+  if (images.length === 0 && fallback) images.push(fallback)
+  return { images }
+}
+
 async function getUser(request) {
   const auth = request.headers.get('authorization')
   if (!auth?.startsWith('Bearer ')) return null
@@ -88,60 +152,16 @@ export async function POST(request) {
   }
 
   const formData = await request.formData()
-  const meetCampus = formData.get('meet_campus') === 'true'
-  const meetCity = formData.get('meet_city') === 'true'
-  const postVal = formData.get('post') === 'true'
-  const fields = {
-    title: formData.get('title') || '',
-    authors: formData.get('authors') || '',
-    isbn: formData.get('isbn') || '',
-    course_code: formData.get('course_code') || '',
-    price: formData.get('price'),
-    original_price: formData.get('original_price') || null,
-    description: formData.get('description') || '',
-    campus: formData.get('campus') || '',
-    meet_campus: meetCampus,
-    meet_city: meetCity,
-    post: postVal,
-  }
+  const fields = readFields(formData)
 
-  const err = validate(fields)
+  const err = validateFields(fields)
   if (err) return Response.json({ error: err }, { status: 400 })
 
-  // Validation et upload image
-  let imageUrl = formData.get('image_url') || null // URL Google Books si pas de fichier uploadé
-  const imageFile = formData.get('image')
-  if (imageFile && imageFile.size > 0) {
-    if (!ALLOWED_TYPES.includes(imageFile.type)) {
-      return Response.json({ error: 'Format image non supporté. Utilise JPG, PNG ou WebP.' }, { status: 400 })
-    }
-    if (imageFile.size > MAX_IMAGE_SIZE) {
-      return Response.json({ error: "L'image ne peut pas dépasser 5 MB." }, { status: 400 })
-    }
-    const fileName = `${Date.now()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
-    const bytes = await imageFile.arrayBuffer()
-    const { error: uploadErr } = await supabase.storage.from('images').upload(fileName, bytes, { contentType: imageFile.type })
-    if (uploadErr) {
-      Sentry.captureException(uploadErr, { extra: { route: 'POST /api/listings', action: 'image-upload', userId: user.id } })
-      return Response.json({ error: "Erreur lors de l'upload de l'image." }, { status: 500 })
-    }
-    const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName)
-    imageUrl = urlData.publicUrl
-  }
+  const imageResult = await collectImages(supabase, formData, fields, user.id, 'POST /api/listings')
+  if (imageResult.error) return Response.json({ error: imageResult.error }, { status: imageResult.status })
 
   const { data, error } = await supabase.from('listings').insert([{
-    title: fields.title.trim(),
-    authors: fields.authors.trim(),
-    isbn: fields.isbn.replace(/[-\s]/g, '') || null,
-    course_code: fields.course_code.trim().toUpperCase() || null,
-    price: Number(fields.price),
-    original_price: fields.original_price ? Number(fields.original_price) : null,
-    description: fields.description,
-    campus: fields.campus.trim(),
-    meet_campus: fields.meet_campus,
-    meet_city: fields.meet_city,
-    post: fields.post,
-    image_url: imageUrl,
+    ...toRow(fields, imageResult.images),
     user_id: user.id
   }]).select().single()
 
@@ -169,63 +189,17 @@ export async function PATCH(request) {
   const listingId = formData.get('listing_id')
   if (!listingId) return Response.json({ error: 'ID annonce manquant.' }, { status: 400 })
 
-  const meetCampusPatch = formData.get('meet_campus') === 'true'
-  const meetCityPatch = formData.get('meet_city') === 'true'
-  const postPatch = formData.get('post') === 'true'
-  const fields = {
-    title: formData.get('title') || '',
-    authors: formData.get('authors') || '',
-    isbn: formData.get('isbn') || '',
-    course_code: formData.get('course_code') || '',
-    price: formData.get('price'),
-    original_price: formData.get('original_price') || null,
-    description: formData.get('description') || '',
-    campus: formData.get('campus') || '',
-    meet_campus: meetCampusPatch,
-    meet_city: meetCityPatch,
-    post: postPatch,
-  }
+  const fields = readFields(formData)
 
-  const err = validate(fields)
+  const err = validateFields(fields)
   if (err) return Response.json({ error: err }, { status: 400 })
 
-  // Image
-  let imageUrl = formData.get('existing_image_url') || null
-  const imageFile = formData.get('image')
-  if (imageFile && imageFile.size > 0) {
-    if (!ALLOWED_TYPES.includes(imageFile.type)) {
-      return Response.json({ error: 'Format image non supporté. Utilise JPG, PNG ou WebP.' }, { status: 400 })
-    }
-    if (imageFile.size > MAX_IMAGE_SIZE) {
-      return Response.json({ error: "L'image ne peut pas dépasser 5 MB." }, { status: 400 })
-    }
-    const fileName = `${Date.now()}-${imageFile.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
-    const bytes = await imageFile.arrayBuffer()
-    const { error: uploadErr } = await supabase.storage.from('images').upload(fileName, bytes, { contentType: imageFile.type })
-    if (uploadErr) {
-      Sentry.captureException(uploadErr, { extra: { route: 'PATCH /api/listings', action: 'image-upload', userId: user.id } })
-      return Response.json({ error: "Erreur lors de l'upload de l'image." }, { status: 500 })
-    }
-    const { data: urlData } = supabase.storage.from('images').getPublicUrl(fileName)
-    imageUrl = urlData.publicUrl
-  }
+  const imageResult = await collectImages(supabase, formData, fields, user.id, 'PATCH /api/listings')
+  if (imageResult.error) return Response.json({ error: imageResult.error }, { status: imageResult.status })
 
   const { data, error } = await supabase
     .from('listings')
-    .update({
-      title: fields.title.trim(),
-      authors: fields.authors.trim(),
-      isbn: fields.isbn.replace(/[-\s]/g, '') || null,
-      course_code: fields.course_code.trim().toUpperCase() || null,
-      price: Number(fields.price),
-      original_price: fields.original_price ? Number(fields.original_price) : null,
-      description: fields.description,
-      campus: fields.campus.trim(),
-      meet_campus: fields.meet_campus,
-      meet_city: fields.meet_city,
-      post: fields.post,
-      image_url: imageUrl
-    })
+    .update(toRow(fields, imageResult.images))
     .eq('id', listingId)
     .eq('user_id', user.id)
     .select()
@@ -253,17 +227,17 @@ export async function DELETE(request) {
 
   const { data: listing, error: fetchErr } = await supabase
     .from('listings')
-    .select('id, image_url, user_id')
+    .select('id, image_url, image_urls, user_id')
     .eq('id', listingId)
     .eq('user_id', user.id)
     .single()
 
   if (fetchErr || !listing) return Response.json({ error: 'Annonce introuvable ou accès refusé.' }, { status: 403 })
 
-  if (listing.image_url) {
-    const fileName = listing.image_url.split('/').pop()
-    if (fileName) await supabase.storage.from('images').remove([fileName])
-  }
+  // Un lot porte plusieurs photos : on les supprime toutes du bucket.
+  const urls = listing.image_urls?.length ? listing.image_urls : (listing.image_url ? [listing.image_url] : [])
+  const fileNames = urls.map(u => u.split('/').pop()).filter(Boolean)
+  if (fileNames.length) await supabase.storage.from('images').remove(fileNames)
 
   const { error: deleteErr } = await supabase.from('listings').delete().eq('id', listingId).eq('user_id', user.id)
   if (deleteErr) {
