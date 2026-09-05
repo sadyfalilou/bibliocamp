@@ -36,10 +36,27 @@ CREATE POLICY "listings: suppression par le propriétaire"
   USING (auth.uid() = user_id);
 
 -- ── profiles ─────────────────────────────────────────────────
--- Les profils sont publics en lecture (pseudo, campus, etc.)
-CREATE POLICY "profiles: lecture publique"
+-- Lecture limitee a ce qu'un utilisateur a une raison de voir : lui-meme, les
+-- comptes qui PUBLIENT quelque chose (leur nom est deja public), et ses
+-- interlocuteurs. Avant l'audit de septembre 2026, cette politique etait
+-- USING (true) : n'importe quel compte pouvait aspirer l'annuaire complet.
+-- `TO authenticated` est essentiel — sans lui, un anonyme satisferait les
+-- conditions EXISTS et lirait les profils de tous les vendeurs.
+-- Voir docs/sql/profiles_rls_restreindre_lecture.sql
+CREATE POLICY "profiles: soi-meme, publieurs et interlocuteurs"
   ON profiles FOR SELECT
-  USING (true);
+  TO authenticated
+  USING (
+    auth.uid() = id
+    OR EXISTS (SELECT 1 FROM listings          l WHERE l.user_id = profiles.id)
+    OR EXISTS (SELECT 1 FROM tutors            t WHERE t.user_id = profiles.id)
+    OR EXISTS (SELECT 1 FROM roommate_listings r WHERE r.user_id = profiles.id)
+    OR EXISTS (
+      SELECT 1 FROM conversations c
+      WHERE (c.user1_id = auth.uid() AND c.user2_id = profiles.id)
+         OR (c.user2_id = auth.uid() AND c.user1_id = profiles.id)
+    )
+  );
 
 -- Chaque utilisateur gère uniquement son propre profil
 CREATE POLICY "profiles: modification par le propriétaire"
