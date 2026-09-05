@@ -199,7 +199,7 @@ export default function Profile() {
 
       const { data } = await supabase
         .from('profiles')
-        .select('*')
+        .select('first_name, last_name, campus, institution, program, avatar_url, newsletter_opt_in, message_emails_opt_in')
         .eq('id', session.user.id)
         .single()
 

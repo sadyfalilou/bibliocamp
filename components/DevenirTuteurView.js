@@ -86,7 +86,7 @@ export default function DevenirTuteurView({ user, setView, phoneSaved, onVerifyP
       if (!user) { setLoading(false); return }
       const { data: existing } = await supabase.from('tutors').select('id').eq('user_id', user.id).single()
       if (existing) { setAlreadyTutor(true); setLoading(false); return }
-      const { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
+      const { data: prof } = await supabase.from('profiles').select('first_name, last_name, avatar_url, institution, campus, program').eq('id', user.id).single()
       setProfile(prof)
       setLoading(false)
     }
