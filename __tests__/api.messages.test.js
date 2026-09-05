@@ -10,6 +10,7 @@ const mockRateInsert = jest.fn()
 const mockRateDelete = jest.fn()
 const mockConversationUpdate = jest.fn()
 const mockSendEmail = jest.fn()
+const mockTokenSelect = jest.fn()
 
 jest.mock('@sentry/nextjs', () => ({ captureException: jest.fn() }))
 
@@ -38,6 +39,12 @@ jest.mock('@supabase/supabase-js', () => ({
           })),
           insert: mockRateInsert,
           delete: jest.fn(() => ({ eq: mockRateDelete })),
+        }
+      }
+      if (table === 'profile_tokens') {
+        return {
+          select: jest.fn(() => ({ in: mockTokenSelect })),
+          upsert: jest.fn(() => Promise.resolve({ error: null })),
         }
       }
       if (table === 'messages') {
@@ -88,7 +95,9 @@ describe('POST /api/messages', () => {
     mockAfterPromises.length = 0
     mockGetUser.mockResolvedValue({ data: { user: { id: 'buyer-1' } } })
     mockConversationSingle.mockResolvedValue({ data: { ...CONV }, error: null })
-    mockProfileSingle.mockResolvedValue({ data: { message_emails_opt_in: true, newsletter_unsub_token: 'tok-1', first_name: 'Ali' }, error: null })
+    mockProfileSingle.mockResolvedValue({ data: { message_emails_opt_in: true, first_name: 'Ali' }, error: null })
+    // Le jeton de desabonnement vit desormais dans profile_tokens
+    mockTokenSelect.mockResolvedValue({ data: [{ user_id: 'seller-1', unsub_token: 'tok-1' }], error: null })
     mockMessageInsert.mockResolvedValue({ data: { id: 100, content: 'ok' }, error: null })
     mockConversationUpdate.mockResolvedValue({ error: null })
     mockRateCount.mockResolvedValue({ count: 0, error: null })
@@ -156,6 +165,12 @@ describe('POST /api/messages', () => {
     })
     await post(validBody)
     expect(mockSendEmail).toHaveBeenCalledTimes(1)
+  })
+
+  test('le jeton de desabonnement ne vient plus de profiles', async () => {
+    await post()
+    const html = mockSendEmail.mock.calls[0][0].html
+    expect(html).toContain('tok-1') // provient de profile_tokens
   })
 
   test('destinataire désabonné → pas de courriel', async () => {

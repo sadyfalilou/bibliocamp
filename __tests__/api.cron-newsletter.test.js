@@ -4,6 +4,7 @@ const mockMaybeSingle = jest.fn()
 const mockProfilesSelect = jest.fn()
 const mockInsert = jest.fn()
 const mockListUsers = jest.fn()
+const mockTokenSelect = jest.fn()
 
 jest.mock('@supabase/supabase-js', () => ({
   createClient: jest.fn(() => ({
@@ -20,6 +21,12 @@ jest.mock('@supabase/supabase-js', () => ({
       }
       if (table === 'profiles') {
         return { select: jest.fn(() => ({ eq: mockProfilesSelect })) }
+      }
+      if (table === 'profile_tokens') {
+        return {
+          select: jest.fn(() => ({ in: mockTokenSelect })),
+          upsert: jest.fn(() => Promise.resolve({ error: null })),
+        }
       }
       return {}
     }),
@@ -47,6 +54,7 @@ describe('GET /api/cron/newsletter-rentree', () => {
     mockMaybeSingle.mockResolvedValue({ data: null })
     mockInsert.mockResolvedValue({ data: null, error: null })
     mockListUsers.mockResolvedValue({ data: { users: [] }, error: null })
+    mockTokenSelect.mockResolvedValue({ data: [{ user_id: 'u1', unsub_token: 'tok-1' }], error: null })
   })
 
   afterEach(() => {

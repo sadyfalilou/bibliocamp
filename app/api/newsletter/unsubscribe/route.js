@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
+import { findUserByUnsubToken } from '../../../../lib/profileTokens'
 
 function htmlPage(message) {
   return `<!DOCTYPE html><html lang="fr"><head><meta charset="utf-8"/><title>BiblioCamp</title>
@@ -35,10 +36,15 @@ export async function GET(request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY
   )
 
+  // Le jeton n'est plus une colonne de profiles : on resout d'abord son
+  // proprietaire dans profile_tokens, table reservee a la service_role.
+  const userId = await findUserByUnsubToken(supabase, token)
+  if (!userId) return new Response(htmlPage('Lien de désabonnement invalide ou déjà utilisé.'), { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+
   const { data, error } = await supabase
     .from('profiles')
     .update({ [column]: false })
-    .eq('newsletter_unsub_token', token)
+    .eq('id', userId)
     .select('id')
     .maybeSingle()
 

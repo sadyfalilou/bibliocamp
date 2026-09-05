@@ -4,6 +4,7 @@ import * as Sentry from '@sentry/nextjs'
 import { sendEmail } from '../../../lib/sendEmail'
 import { validateMessage } from '../../../lib/validation'
 import { ACTIVE_WINDOW_MS, NOTIF_COOLDOWN_MS, buildMessageEmail, buildPreview } from '../../../lib/messageNotifications'
+import { getUnsubToken } from '../../../lib/profileTokens'
 
 function adminClient() {
   return createClient(
@@ -56,7 +57,7 @@ async function notifyRecipient(supabase, { conversation, senderId, recipientId, 
 
   const { data: recipient } = await supabase
     .from('profiles')
-    .select('message_emails_opt_in, newsletter_unsub_token')
+    .select('message_emails_opt_in')
     .eq('id', recipientId)
     .single()
   if (recipient?.message_emails_opt_in === false) return 'opted-out'
@@ -89,11 +90,12 @@ async function notifyRecipient(supabase, { conversation, senderId, recipientId, 
   // sujet, et on échappe le HTML dans le corps.
   senderName = senderName.replace(/[\r\n]+/g, ' ').trim().slice(0, 60)
 
+  // Le jeton vit dans profile_tokens, hors de portee des clients.
   const { subject, html } = buildMessageEmail({
     senderName,
     preview: buildPreview(content),
     conversationId: conversation.id,
-    unsubToken: recipient?.newsletter_unsub_token,
+    unsubToken: await getUnsubToken(supabase, recipientId),
   })
 
   try {

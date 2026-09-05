@@ -39,6 +39,7 @@
 - Destinataire des conversations dérivé côté serveur depuis l'annonce/le profil tuteur, jamais d'un paramètre client
 - Envoi des messages via `POST /api/messages` — auteur dérivé du jeton, participation à la conversation vérifiée, contenu validé côté serveur (`validateMessage`)
 - Minimisation de PII sur les profils publics (nom de famille réduit à l'initiale)
+- Jeton de désabonnement isolé dans `profile_tokens`, table sans politique RLS — accessible à la seule service role, jamais lisible par un compte connecté
 - Validation des champs côté client (`lib/validation.js`) et côté serveur (routes API)
 - ISBN, état du livre et méthode de transaction obligatoires à la création
 - Vérification du téléphone obligatoire (`phone_verified`) avant toute publication publique — annonce manuel, annonce coloc, profil tuteur — sinon `403`
@@ -136,6 +137,7 @@ components/              # Vues et composants partagés (accueil, colocs, tuteur
 lib/
 ├── validation.js        # Source unique de vérité pour la validation (client + routes API)
 ├── messageNotifications.js # Fenêtres et gabarit du courriel « nouveau message »
+├── profileTokens.js     # Jetons de désabonnement (table `profile_tokens`, service role only)
 ├── storage.js           # Upload d'images partagé (manuels, lots, colocs)
 ├── sendEmail.js         # Envoi Resend (unitaire + batch) + escapeHtml
 ├── tutorBadge.js        # Calcul des badges de réactivité tuteur
@@ -154,7 +156,7 @@ proxy.js                 # Middleware Next.js — protection des routes
 ## 🧪 Tests
 
 ```bash
-# Tests unitaires (305 tests, 27 suites)
+# Tests unitaires (316 tests, 28 suites)
 npm test
 
 # Tests E2E Playwright (serveur local requis)
