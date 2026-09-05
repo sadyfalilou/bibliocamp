@@ -293,9 +293,26 @@ function CreateInner() {
             {' / '}
             <span style={{ color: '#1a2e4a', fontWeight: 600 }}>Publier un manuel</span>
           </div>
-          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#1a2e4a', margin: '0 0 16px' }}>
+          <h1 style={{ fontSize: 26, fontWeight: 900, color: '#1a2e4a', margin: '0 0 10px' }}>
             Publier un manuel
           </h1>
+
+          <div style={{ marginBottom: 16, fontSize: 14, color: '#718096', lineHeight: 1.7 }}>
+            Tu en as plusieurs à vendre ?{' '}
+            <span
+              onClick={() => router.push('/create/lot')}
+              style={{ color: '#00c9a7', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Vends-les en lot, dans une seule annonce →
+            </span>
+            <br />
+            <span
+              onClick={() => router.push('/create/multiple')}
+              style={{ color: '#00c9a7', fontWeight: 700, cursor: 'pointer' }}
+            >
+              Ou crée une annonce séparée par manuel →
+            </span>
+          </div>
 
           <form onSubmit={handleSubmit}>
 

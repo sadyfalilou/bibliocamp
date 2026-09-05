@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
+import { NOTIF_COOLDOWN_MINUTES } from '../../lib/messageNotifications'
 import { supabase } from '../../lib/supabase'
 import { useRouter } from 'next/navigation'
 import Logo from '../../components/Logo'
@@ -169,6 +170,7 @@ export default function Profile() {
   const [institution, setInstitution] = useState('')
   const [program, setProgram] = useState('')
   const [newsletterOptIn, setNewsletterOptIn] = useState(false)
+  const [messageEmailsOptIn, setMessageEmailsOptIn] = useState(true)
   const [avatarUrl, setAvatarUrl] = useState(null)
   const [avatarPreview, setAvatarPreview] = useState(null)
   const [uploadingAvatar, setUploadingAvatar] = useState(false)
@@ -208,6 +210,7 @@ export default function Profile() {
         setInstitution(data.institution || '')
         setProgram(data.program || '')
         setNewsletterOptIn(data.newsletter_opt_in || false)
+        setMessageEmailsOptIn(data.message_emails_opt_in !== false)
         setAvatarUrl(data.avatar_url || null)
         setAvatarPreview(data.avatar_url || null)
       }
@@ -254,6 +257,7 @@ export default function Profile() {
       institution,
       program,
       newsletter_opt_in: newsletterOptIn,
+      message_emails_opt_in: messageEmailsOptIn,
       avatar_url: avatarUrl
     })
     setSaving(false)
@@ -471,6 +475,15 @@ export default function Profile() {
           {/* Préférences */}
           <div style={{ background: 'white', borderRadius: 14, padding: '24px', border: '1px solid #e2e8f0', marginBottom: 24 }}>
             <h2 style={{ fontSize: 12, fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: 1, margin: '0 0 18px' }}>Préférences</h2>
+            <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14, color: '#374151', cursor: 'pointer', lineHeight: 1.5, marginBottom: 14 }}>
+              <input
+                type="checkbox"
+                checked={messageEmailsOptIn}
+                onChange={e => setMessageEmailsOptIn(e.target.checked)}
+                style={{ marginTop: 2, width: 16, height: 16, flexShrink: 0, accentColor: '#00c9a7' }}
+              />
+              {`M'avertir par courriel quand je reçois un message — au plus un avis toutes les ${NOTIF_COOLDOWN_MINUTES} minutes par conversation, et aucun si j'ai déjà la discussion ouverte`}
+            </label>
             <label style={{ display: 'flex', alignItems: 'flex-start', gap: 8, fontSize: 14, color: '#374151', cursor: 'pointer', lineHeight: 1.5 }}>
               <input
                 type="checkbox"

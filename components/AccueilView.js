@@ -149,6 +149,16 @@ export default function AccueilView({ userProfile, userId, router, setView, onSe
                     -{Math.round(((listing.original_price - listing.price) / listing.original_price) * 100)}%
                   </div>
                 )}
+                {listing.is_bundle && (
+                  <div style={{ position: 'absolute', top: 6, right: 6, background: '#ede9fe', fontSize: 9, fontWeight: 800, color: '#6c63ff', padding: '2px 7px', borderRadius: 20 }}>
+                    📚 Lot
+                  </div>
+                )}
+                {listing.image_urls?.length > 1 && (
+                  <div style={{ position: 'absolute', bottom: 6, right: 6, background: 'rgba(0,0,0,0.6)', fontSize: 9, fontWeight: 700, color: 'white', padding: '2px 7px', borderRadius: 20 }}>
+                    +{listing.image_urls.length - 1}
+                  </div>
+                )}
                 {listing.course_code && (
                   <div style={{ position: 'absolute', bottom: 6, left: 6, background: 'white', fontSize: 9, fontWeight: 700, color: '#00a88a', padding: '2px 7px', borderRadius: 20 }}>
                     {listing.course_code}

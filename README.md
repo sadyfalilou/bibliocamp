@@ -6,6 +6,8 @@
 
 - 🔐 Authentification email + réinitialisation mot de passe
 - 📖 Annonces de manuels avec photo, ISBN, auteurs, état, méthode de transaction
+- 📦 Annonce de lot (`/create/lot`) — plusieurs manuels vendus **ensemble** dans une seule annonce : liste des titres, jusqu'à 6 photos de la pile, un prix global ; les titres du lot sont cherchables
+- 📚 Publication de plusieurs annonces (`/create/multiple`) — coller jusqu'à 20 ISBN, titres et couvertures récupérés automatiquement, réglages communs, succès partiel ligne par ligne
 - 🔍 Recherche par titre, ISBN, auteur, code de cours — filtres campus/institution cliquables
 - 💬 Messagerie temps réel — ouverture directe de la conversation depuis la fiche manuel
 - 🗑️ Suppression de conversation (avec confirmation)
@@ -15,6 +17,7 @@
 - 🎁 Système de parrainage avec lien d'invitation unique
 - 📱 Vérification téléphone canadien (+1, anti-VoIP via Twilio)
 - 🔔 Notifications sonores et badge en temps réel
+- 📧 Notification courriel à la réception d'un message — envoyée seulement si le destinataire n'a pas la conversation ouverte, au plus une par conversation et par quart d'heure, désactivable depuis le profil
 - 🛡️ Page admin signalements + gestion invitations
 - 🏠 Colocs — annonces de chambre/coloc (publication, recherche/filtres, panneau de détail, signalement)
 - ⭐ Avis/notation des vendeurs de manuels (page vendeur publique)
@@ -34,6 +37,7 @@
 - Anti-injection PostgREST sur les recherches (`.or` nettoyé) et validation UUID des identifiants
 - Échappement HTML des champs utilisateur interpolés dans les courriels (`escapeHtml` dans `lib/sendEmail.js`) — anti-injection de markup
 - Destinataire des conversations dérivé côté serveur depuis l'annonce/le profil tuteur, jamais d'un paramètre client
+- Envoi des messages via `POST /api/messages` — auteur dérivé du jeton, participation à la conversation vérifiée, contenu validé côté serveur (`validateMessage`)
 - Minimisation de PII sur les profils publics (nom de famille réduit à l'initiale)
 - Validation des champs côté client (`lib/validation.js`) et côté serveur (routes API)
 - ISBN, état du livre et méthode de transaction obligatoires à la création
@@ -74,6 +78,9 @@ TWILIO_ACCOUNT_SID=
 TWILIO_AUTH_TOKEN=
 TWILIO_VERIFY_SERVICE_SID=
 ADMIN_EMAILS=                 # notifications courriel (international) — l'ACCÈS admin passe par profiles.is_admin
+RESEND_API_KEY=               # alertes manuel, infolettre, notification de message
+RESEND_FROM_EMAIL=
+CRON_SECRET=                  # autorise /api/cron/*
 NEXT_PUBLIC_SENTRY_DSN=
 SENTRY_DSN=
 ```
@@ -84,8 +91,9 @@ SENTRY_DSN=
 app/
 ├── api/
 │   ├── conversations/   # Créer/trouver une conversation (destinataire dérivé de l'annonce)
+│   ├── messages/        # Envoi d'un message + notification courriel, marquage lu (`/read`)
 │   ├── invite/          # Système de parrainage
-│   ├── listings/        # CRUD annonces + changement statut
+│   ├── listings/        # CRUD annonces + changement statut + publication en lot (`/batch`)
 │   ├── seller/          # Profil vendeur public (single)
 │   ├── sellers/         # Profils vendeurs publics en lot (anti N+1)
 │   ├── book/            # Infos manuel (Google Books)
@@ -111,6 +119,8 @@ app/
 ├── seller/[id]/         # Profil vendeur public
 ├── invite/[code]/       # Page d'invitation parrainage
 ├── create/              # Publier un manuel (protégé)
+├── create/lot/          # Vendre un lot de manuels — une annonce, N livres (protégé)
+├── create/multiple/     # Créer N annonces distinctes d'un coup (protégé)
 ├── edit/[id]/           # Modifier une annonce (protégé)
 ├── inbox/               # Messagerie (protégé)
 ├── profile/             # Profil utilisateur (protégé)
@@ -124,7 +134,9 @@ components/              # Vues et composants partagés (accueil, colocs, tuteur
 │                        # badges, FAQ…) + hooks (useTutorList, useTutorProfile)
 │   └── admin/           # Graphiques Chart.js (StatsCharts)
 lib/
-├── validation.js        # Source unique de vérité pour la validation
+├── validation.js        # Source unique de vérité pour la validation (client + routes API)
+├── messageNotifications.js # Fenêtres et gabarit du courriel « nouveau message »
+├── storage.js           # Upload d'images partagé (manuels, lots, colocs)
 ├── sendEmail.js         # Envoi Resend (unitaire + batch) + escapeHtml
 ├── tutorBadge.js        # Calcul des badges de réactivité tuteur
 ├── faqData.js           # Contenu des FAQ
@@ -142,7 +154,7 @@ proxy.js                 # Middleware Next.js — protection des routes
 ## 🧪 Tests
 
 ```bash
-# Tests unitaires (239 tests, 22 suites)
+# Tests unitaires (305 tests, 27 suites)
 npm test
 
 # Tests E2E Playwright (serveur local requis)
@@ -164,5 +176,7 @@ npm run test:e2e:ui
 - [x] Module colocs (annonces, recherche, signalement)
 - [x] Module international (diagnostic, suivi, gestion admin)
 - [x] Alertes courriel "manuel disponible" + infolettre de rentrée
+- [x] Notification courriel à la réception d'un message
 - [ ] Notifications push mobile
+- [x] Annonce de lot + publication de plusieurs annonces
 - [ ] Offres / contre-offres de prix
