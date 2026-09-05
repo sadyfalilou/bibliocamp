@@ -1,0 +1,25 @@
+-- APPLIQUE en production le 2026-09-05.
+--
+-- Suppression de la politique « profiles: is_admin non modifiable par le
+-- client » (UPDATE, USING (true), WITH CHECK (is_admin = (select is_admin
+-- from profiles where id = auth.uid()))).
+--
+-- Trois defauts cumules :
+--   1. Sa sous-requete lisait `profiles` depuis une politique de `profiles`.
+--      Combinee a la nouvelle politique de lecture, elle produisait une
+--      recursion infinie (42P17) : toute ecriture de profil renvoyait 500.
+--   2. Son verrou etait inoperant : PostgreSQL combine les politiques
+--      permissives par OU, WITH CHECK compris. « Gerer son profil » satisfait
+--      deja le CHECK avec (id = auth.uid()), quelle que soit la valeur ecrite.
+--   3. Son USING (true) rendait ciblable la ligne d'AUTRUI : un compte pouvait
+--      modifier le profil d'un autre (nom, avatar, ou lui retirer
+--      phone_verified pour l'empecher de publier).
+--
+-- La supprimer a restaure les ecritures ET referme la modification croisee.
+--
+-- RESTE OUVERT : un compte peut encore se donner is_admin = true ou
+-- phone_verified = true sur SA propre ligne. Correctif prevu par declencheur,
+-- voir profiles_lock_privileged_columns.sql — surtout PAS par privileges de
+-- colonnes, qui cassent les ecritures PostgREST.
+
+drop policy if exists "profiles: is_admin non modifiable par le client" on profiles;

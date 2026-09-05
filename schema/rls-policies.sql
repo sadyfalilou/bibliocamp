@@ -1,7 +1,27 @@
 -- ============================================================
 -- BiblioCamp — Politiques RLS Supabase
--- À exécuter dans l'éditeur SQL de ton projet Supabase.
--- Vérifie que RLS est activé sur chaque table avant d'appliquer.
+--
+-- ⚠️ ETAT REEL DE LA PRODUCTION, releve le 2026-09-05 via pg_policies.
+-- Ce fichier a longtemps diverge de la base : il declarait des politiques sous
+-- des noms qui n'ont jamais existe en production, et en omettait plusieurs.
+-- Avant toute modification, reverifie :
+--   select tablename, policyname, cmd, roles, qual, with_check
+--   from pg_policies where schemaname='public' order by tablename, cmd;
+--
+-- Constats de l'audit de septembre 2026 non corriges a ce jour :
+--   • profiles  : un compte peut encore se donner is_admin/phone_verified sur
+--                 sa propre ligne (correctif prevu : declencheur, voir
+--                 docs/sql/profiles_lock_privileged_columns.sql)
+--   • seller_reviews : aucune verification d'interaction prealable, contrairement
+--                 a tutor_reviews — n'importe qui peut noter n'importe quel vendeur
+--   • messages  : un participant peut supprimer les messages de l'autre
+--   • conversations : quatre politiques redondantes, la politique ALL suffit
+--   • listings  : plafond RLS de 10 annonces/jour jamais atteint (toutes les
+--                 publications passent par la service_role, qui ignore la RLS)
+--   • roles     : plusieurs politiques ciblent {public} au lieu de
+--                 {authenticated} ; sans danger (leurs conditions testent
+--                 auth.uid(), NULL pour un anonyme) mais l'intention n'est pas
+--                 declaree
 -- ============================================================
 
 -- ── Activer RLS sur toutes les tables ───────────────────────
