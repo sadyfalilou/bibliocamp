@@ -9,9 +9,8 @@
 --   from pg_policies where schemaname='public' order by tablename, cmd;
 --
 -- Constats de l'audit de septembre 2026 non corriges a ce jour :
---   • profiles  : un compte peut encore se donner is_admin/phone_verified sur
---                 sa propre ligne (correctif prevu : declencheur, voir
---                 docs/sql/profiles_lock_privileged_columns.sql)
+--   (profiles : is_admin/phone_verified — CORRIGE le 2026-09-05 par declencheur,
+--    voir docs/sql/profiles_lock_privileged_columns.sql)
 --   • seller_reviews : aucune verification d'interaction prealable, contrairement
 --                 a tutor_reviews — n'importe qui peut noter n'importe quel vendeur
 --   • messages  : un participant peut supprimer les messages de l'autre
