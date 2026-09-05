@@ -1,6 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 import * as Sentry from '@sentry/nextjs'
 import { sendBatchEmails } from '../../../../lib/sendEmail'
+import { getUnsubTokens } from '../../../../lib/profileTokens'
 
 const BASE_URL = 'https://www.bibliocamp.ca'
 
@@ -83,7 +84,7 @@ export async function GET(request) {
 
   const { data: subscribers, error: subErr } = await supabase
     .from('profiles')
-    .select('id, newsletter_unsub_token')
+    .select('id')
     .eq('newsletter_opt_in', true)
   if (subErr) {
     Sentry.captureException(subErr, { extra: { route: 'GET /api/cron/newsletter-rentree', step: 'fetch-subscribers' } })
@@ -92,13 +93,14 @@ export async function GET(request) {
   if (!subscribers || subscribers.length === 0) return Response.json({ ok: true, sent: 0 })
 
   const emailById = await getAllEmails(supabase)
+  const tokenById = await getUnsubTokens(supabase, subscribers.map(s => s.id))
   const { intro, subject } = CAMPAIGNS[campaignKey]
 
   const emails = subscribers
     .map(s => emailById[s.id] && ({
       to: emailById[s.id],
       subject,
-      html: emailHtml(intro, s.newsletter_unsub_token),
+      html: emailHtml(intro, tokenById[s.id]),
     }))
     .filter(Boolean)
 
