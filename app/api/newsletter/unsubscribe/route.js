@@ -9,8 +9,25 @@ a{color:#00c9a7;font-weight:700;text-decoration:none}</style></head>
 <body><div class="card"><div style="font-size:40px;margin-bottom:12px">📚</div><p style="font-size:16px;font-weight:600">${message}</p><a href="https://www.bibliocamp.ca">Retour à BiblioCamp →</a></div></body></html>`
 }
 
+// ?type=messages désabonne des courriels de notification de message ;
+// sans ce paramètre, on désabonne de l'infolettre (comportement historique
+// des liens déjà envoyés).
+const TYPES = {
+  newsletter: {
+    column: 'newsletter_opt_in',
+    done: "Tu as été désabonné de l'infolettre BiblioCamp.",
+  },
+  messages: {
+    column: 'message_emails_opt_in',
+    done: "Tu ne recevras plus de courriel quand un étudiant t'écrit sur BiblioCamp. Tes messages continuent d'arriver dans ta messagerie.",
+  },
+}
+
 export async function GET(request) {
-  const token = new URL(request.url).searchParams.get('token')
+  const url = new URL(request.url)
+  const token = url.searchParams.get('token')
+  const type = TYPES[url.searchParams.get('type')] ? url.searchParams.get('type') : 'newsletter'
+  const { column, done } = TYPES[type]
   if (!token) return new Response(htmlPage('Lien de désabonnement invalide.'), { status: 400, headers: { 'Content-Type': 'text/html; charset=utf-8' } })
 
   const supabase = createClient(
@@ -20,7 +37,7 @@ export async function GET(request) {
 
   const { data, error } = await supabase
     .from('profiles')
-    .update({ newsletter_opt_in: false })
+    .update({ [column]: false })
     .eq('newsletter_unsub_token', token)
     .select('id')
     .maybeSingle()
@@ -32,5 +49,5 @@ export async function GET(request) {
 
   if (!data) return new Response(htmlPage('Lien de désabonnement invalide ou déjà utilisé.'), { status: 404, headers: { 'Content-Type': 'text/html; charset=utf-8' } })
 
-  return new Response(htmlPage("Tu as été désabonné de l'infolettre BiblioCamp."), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
+  return new Response(htmlPage(done), { headers: { 'Content-Type': 'text/html; charset=utf-8' } })
 }

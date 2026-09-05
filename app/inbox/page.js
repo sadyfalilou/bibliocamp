@@ -27,6 +27,7 @@ function InboxInner() {
   const [messages, setMessages] = useState([])
   const [newMessage, setNewMessage] = useState('')
   const [sending, setSending] = useState(false)
+  const [sendError, setSendError] = useState('')
   const [loading, setLoading] = useState(true)
   const [unreadByConv, setUnreadByConv] = useState({})
   const [isMobile, setIsMobile] = useState(false)
@@ -191,19 +192,41 @@ function InboxInner() {
     } catch (e) {}
   }
 
+  // Les routes API attendent un jeton valide. `getSession` peut rendre un jeton
+  // déjà expiré (onglet resté longtemps en arrière-plan, où le rafraîchissement
+  // automatique est bridé par le navigateur) : on le renouvelle avant qu'il ne
+  // périme, sinon l'envoi repart en « Non autorisé ».
+  const getAccessToken = async () => {
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) return null
+    const expiresInMs = (session.expires_at ?? 0) * 1000 - Date.now()
+    if (expiresInMs > 60_000) return session.access_token
+    const { data } = await supabase.auth.refreshSession()
+    return data?.session?.access_token ?? null
+  }
+
   const markAsRead = async (convId) => {
     if (!user) return
-    await supabase.from('messages')
-      .update({ read: true })
-      .eq('conversation_id', convId)
-      .neq('sender_id', user.id)
     setUnreadByConv(prev => { const next = { ...prev }; delete next[convId]; return next })
+    const token = await getAccessToken()
+    if (!token) return
+    // La route horodate aussi la lecture : c'est ce qui évite d'envoyer un
+    // courriel de notification à quelqu'un qui a la conversation ouverte.
+    await fetch('/api/messages/read', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ conversation_id: convId }),
+    })
   }
 
   const sendMessage = async (e) => {
     e.preventDefault()
     if (!newMessage.trim() || !selectedConv || sending) return
     setSending(true)
+    setSendError('')
     const content = newMessage.trim()
     setNewMessage('')
 
@@ -218,28 +241,47 @@ function InboxInner() {
     }
     setMessages(prev => [...prev, tempMsg])
 
-    const { data, error } = await supabase.from('messages').insert({
-      conversation_id: selectedConv,
-      sender_id: user.id,
-      content
-    }).select().single()
+    // L'envoi passe par le serveur : il valide le contenu, remonte la
+    // conversation, et notifie le destinataire par courriel s'il est absent.
+    const postMessage = (token) => fetch('/api/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ conversation_id: selectedConv, content }),
+    })
 
-    // Remplace le message temporaire par le vrai
-    if (data) {
-      setMessages(prev => prev.map(m => m.id === tempMsg.id ? data : m))
+    let sent = null
+    try {
+      let res = await postMessage(await getAccessToken())
+      // Jeton refusé malgré tout : on force un rafraîchissement et on réessaie
+      // une fois, plutôt que d'afficher « Non autorisé » à quelqu'un de connecté.
+      if (res.status === 401) {
+        const { data } = await supabase.auth.refreshSession()
+        if (data?.session?.access_token) res = await postMessage(data.session.access_token)
+      }
+      const json = await res.json()
+      if (res.ok) sent = json.message
+      else if (res.status === 401) setSendError('Ta session a expiré — reconnecte-toi pour envoyer ce message.')
+      else setSendError(json.error || "Le message n'a pas pu être envoyé.")
+    } catch {
+      setSendError('Erreur réseau — le message n\'a pas été envoyé.')
     }
 
-    if (!error) {
-      // Réinitialise les flags de suppression douce pour les deux users
-      // → si l'un avait supprimé la conv, elle réapparaît quand un nouveau message arrive
-      await supabase.from('conversations')
-        .update({
-          last_message_at: new Date().toISOString(),
-          deleted_by_user1: false,
-          deleted_by_user2: false,
-        })
-        .eq('id', selectedConv)
+    if (sent) {
+      // Le canal Realtime a pu insérer ce même message avant que la réponse
+      // n'arrive : on retire l'optimiste et on n'ajoute le vrai que s'il n'est
+      // pas déjà là, sinon React voit deux enfants avec la même clé.
+      setMessages(prev => {
+        const withoutTemp = prev.filter(m => m.id !== tempMsg.id)
+        return withoutTemp.some(m => m.id === sent.id) ? withoutTemp : [...withoutTemp, sent]
+      })
       fetchConversations(user.id)
+    } else {
+      // Échec : on retire le message optimiste et on rend son texte à l'auteur
+      setMessages(prev => prev.filter(m => m.id !== tempMsg.id))
+      setNewMessage(content)
     }
     setSending(false)
   }
@@ -570,6 +612,11 @@ function InboxInner() {
                 {newMessage.length > 800 && (
                   <div style={{ fontSize: 11, color: newMessage.length > 950 ? '#e53e3e' : '#f59e0b', textAlign: 'right', marginBottom: 4 }}>
                     {newMessage.length}/1000 caractères
+                  </div>
+                )}
+                {sendError && (
+                  <div style={{ fontSize: 12, color: '#e53e3e', marginBottom: 6, fontWeight: 600 }}>
+                    {sendError}
                   </div>
                 )}
                 <div style={{ display: 'flex', gap: 10 }}>
