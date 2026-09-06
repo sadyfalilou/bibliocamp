@@ -63,8 +63,23 @@ export default function Footer({ onManuelsClick, onTuteursClick, onColocsClick }
           </div>
         </div>
 
-        <div style={{ borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 18, color: 'rgba(255,255,255,0.4)', fontSize: 12 }}>
-          © 2026 BiblioCamp — Fait pour les étudiants, par des étudiants
+        <div style={{
+          borderTop: '1px solid rgba(255,255,255,0.1)', paddingTop: 18,
+          color: 'rgba(255,255,255,0.4)', fontSize: 12,
+          display: 'flex', flexWrap: 'wrap', gap: '6px 16px', justifyContent: 'space-between',
+        }}>
+          <span>© 2026 BiblioCamp — Fait pour les étudiants, par des étudiants</span>
+          {/* Credit : meme taille et meme couleur que la mention de droits
+              d'auteur, le lien ne se distingue que par son soulignement. Le
+              texte du lien reste le nom de marque — pas de mots-cles. */}
+          <span>
+            Conçu et développé par{' '}
+            <a
+              href="https://hakimnumerique.com"
+              rel="noopener"
+              style={{ color: 'inherit', textDecoration: 'underline' }}
+            >Hakim Numérique</a>
+          </span>
         </div>
       </div>
 
